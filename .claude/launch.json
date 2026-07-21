@@ -1,0 +1,21 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "django-backend",
+      "runtimeExecutable": "C:\\Users\\esali\\APLICACION DE MULTAS\\venv\\Scripts\\python.exe",
+      "runtimeArgs": [
+        "C:\\Users\\esali\\APLICACION DE MULTAS\\backend\\manage.py",
+        "runserver",
+        "127.0.0.1:8000"
+      ],
+      "port": 8000
+    },
+    {
+      "name": "frontend",
+      "runtimeExecutable": "C:\\Users\\esali\\APLICACION DE MULTAS\\frontend\\dev.bat",
+      "runtimeArgs": [],
+      "port": 5173
+    }
+  ]
+}
