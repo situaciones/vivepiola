@@ -44,7 +44,11 @@
       "Bash(awk '{printf \"%-46s %10s bytes  %s\\\\n\", $7, $5, $6}')",
       "Bash(./venv/Scripts/python.exe \"/c/Users/esali/AppData/Local/Temp/claude/C--Users-esali-APLICACION-DE-MULTAS/66d1b3a7-eae7-466c-872b-fbcca0470336/scratchpad/resumen_condominio.py\")",
       "Bash(./venv/Scripts/python.exe \"/c/Users/esali/AppData/Local/Temp/claude/C--Users-esali-APLICACION-DE-MULTAS\\\\66d1b3a7-eae7-466c-872b-fbcca0470336\\\\scratchpad\\\\resumen_condominio.py\")",
-      "Bash(xargs grep -l \"Debido\")"
+      "Bash(xargs grep -l \"Debido\")",
+      "Bash(awk -F/ '{print $1}')",
+      "Bash(git add *)",
+      "Bash(git commit *)",
+      "Bash(git push *)"
     ]
   }
 }
