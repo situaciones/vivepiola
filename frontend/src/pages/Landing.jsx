@@ -2,8 +2,8 @@ import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
   Activity, AlertTriangle, ArrowRight, Bot, Camera, Check, CheckCircle2, FileText,
-  Gavel, LayoutGrid, Lock, Mail, MessageSquareText, Scale, ScrollText, ShieldCheck,
-  Sparkles, TrendingUp, Upload, Users, Wallet, X,
+  Gavel, LayoutGrid, Lock, Mail, MessageSquareText, Scale, ShieldCheck,
+  Sparkles, TrendingUp, Users, Wallet, X,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import './Landing.css';
@@ -55,17 +55,6 @@ const SALVAGUARDAS = [
     texto: 'Si el residente no tiene contacto registrado, el caso queda en pausa hasta poder notificar de verdad.' },
   { Icon: ShieldCheck, titulo: 'Comite, administracion y residente protegidos',
     texto: 'Cada decision y cada paso queda documentado. Todos los involucrados quedan respaldados.' },
-];
-
-const MODULOS = [
-  { Icon: Upload, titulo: 'Arranca en minutos',
-    texto: 'Sube el registro de residentes con sus contactos y el reglamento. Una IA los lee y deja todo listo, alineado a la Ley 21.442 y a tu reglamento.' },
-  { Icon: Sparkles, titulo: 'La IA clasifica cada caso',
-    texto: 'Determina el tipo y el monto segun tu reglamento. Quien decide solo confirma. Nada queda al azar.' },
-  { Icon: MessageSquareText, titulo: 'Libro de Novedades digital',
-    texto: 'Los copropietarios dejan reclamos y solicitudes. Respondes dentro del plazo legal, sin que se te pase ninguno.' },
-  { Icon: Wallet, titulo: 'Gastos comunes',
-    texto: 'Las multas firmes pasan a obligacion economica en el aviso de cobro del mes.' },
 ];
 
 function nz(x, y) {
@@ -137,10 +126,17 @@ export default function Landing() {
     if (!canvas) return undefined;
     let t;
     const build = () => drawTerrain(canvas);
+    const schedule = () => { clearTimeout(t); t = setTimeout(build, 80); };
     build();
-    const onResize = () => { clearTimeout(t); t = setTimeout(build, 120); };
-    window.addEventListener('resize', onResize);
-    return () => { window.removeEventListener('resize', onResize); clearTimeout(t); };
+    // El canvas mide 0 en el primer render: el observer redibuja apenas tiene tamaño real.
+    const ro = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(schedule) : null;
+    if (ro) ro.observe(canvas);
+    window.addEventListener('resize', schedule);
+    return () => {
+      window.removeEventListener('resize', schedule);
+      if (ro) ro.disconnect();
+      clearTimeout(t);
+    };
   }, []);
 
   const enviarLead = (e) => {
@@ -157,7 +153,6 @@ export default function Landing() {
             <a href="#flujo">El ciclo</a>
             <a href="#roles">Trazabilidad</a>
             <a href="#salvaguardas">Salvaguardas</a>
-            <a href="#modulos">Modulos</a>
           </div>
           <div className="nav-right">
             <Link to={rutaApp} className="nav-login">Entrar</Link>
@@ -211,7 +206,7 @@ export default function Landing() {
             <h2>Cada caso, del reporte al cobro, en un solo mapa</h2>
             <p>Ves en que paso va cada multa, notificacion o reclamo y quien lo tiene en sus manos.
               Nadie avanza sin cumplir el paso anterior.</p>
-            <p>Y todo queda <strong>registrado</strong>: aunque pasen años, cualquiera puede verificar que nada fue alterado.</p>
+            <p>Y todo queda <strong>registrado</strong>: cada paso, con su responsable y su hora.</p>
           </div>
           <div className="map">
             <div className="map-top">
@@ -264,7 +259,7 @@ export default function Landing() {
           <div className="sec-head">
             <div className="sec-eye">Lo que ganas</div>
             <h2>La informacion siempre esta de tu lado</h2>
-            <p>Cualquiera puede verificar que nada fue alterado, aunque hayan pasado años.</p>
+            <p>Conoce el estatus real y quien es el responsable en cada punto o parte del proceso.</p>
           </div>
           <div className="grid2">
             {BENEFICIOS.map((b) => (
@@ -290,24 +285,6 @@ export default function Landing() {
               <div key={s.titulo} className="feat">
                 <span className="fi"><s.Icon size={20} strokeWidth={2} /></span>
                 <div><h3>{s.titulo}</h3><p>{s.texto}</p></div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ---------- MODULOS ---------- */}
-      <section id="modulos">
-        <div className="wrap">
-          <div className="sec-head">
-            <div className="sec-eye">Para tu administracion</div>
-            <h2>Todo lo que necesita tu comunidad, en un solo lugar</h2>
-          </div>
-          <div className="grid2">
-            {MODULOS.map((m) => (
-              <div key={m.titulo} className="feat">
-                <span className="fi"><m.Icon size={20} strokeWidth={2} /></span>
-                <div><h3>{m.titulo}</h3><p>{m.texto}</p></div>
               </div>
             ))}
           </div>
