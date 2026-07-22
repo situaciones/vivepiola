@@ -16,7 +16,7 @@
 .vp{font-family:'Inter',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;color:var(--ink);background:var(--bg);line-height:1.5;-webkit-font-smoothing:antialiased;overflow-x:hidden}
 .vp a{color:inherit;text-decoration:none}
 .wrap{max-width:1160px;margin:0 auto;padding:0 24px}
-.vp h1,.vp h2,.vp h3{margin:0;text-wrap:balance;letter-spacing:-.02em}
+.vp h1,.vp h2,.vp h3{margin:0;text-wrap:balance;letter-spacing:-.02em;color:var(--ink)}
 .vp p{margin:0}
 .btn{display:inline-flex;align-items:center;gap:8px;font-weight:700;font-size:.92rem;padding:12px 22px;border-radius:999px;cursor:pointer;border:1px solid transparent;transition:.18s;font-family:inherit}
 
@@ -88,10 +88,11 @@
 .node:hover{background:rgba(120,220,210,.06)}
 .node .ico{width:40px;height:40px;border-radius:11px;display:grid;place-items:center;flex-shrink:0;color:#fff}
 .node.n1 .ico{background:linear-gradient(135deg,#2f8bff,#00b5e2)}
-.node.n2 .ico{background:linear-gradient(135deg,#0069ff,#3b6bff)}
-.node.n3 .ico{background:linear-gradient(135deg,#7a5cff,#a26bff)}
+.node.n2 .ico{background:linear-gradient(135deg,#7a5cff,#a26bff)}
+.node.n3 .ico{background:linear-gradient(135deg,#0069ff,#3b6bff)}
+.node.n4 .ico{background:linear-gradient(135deg,#2f8bff,#00b5e2)}
 .node.n5 .ico{background:linear-gradient(135deg,var(--amber),#e8890a)}
-.node.n4 .ico{background:linear-gradient(135deg,var(--green),#12a060)}
+.node.n6 .ico{background:linear-gradient(135deg,var(--green),#12a060)}
 .node .body{flex:1;min-width:0}
 .node .body b{display:block;font-size:.92rem;color:var(--ink);font-weight:700}
 .node .body small{font-size:.77rem;color:var(--muted)}

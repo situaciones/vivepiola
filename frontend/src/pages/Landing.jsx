@@ -1,62 +1,71 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
-  AlertTriangle, ArrowRight, Bell, Camera, Check, CheckCircle2, FileText, Gavel,
-  LayoutGrid, Lock, Mail, MapPin, MessageSquareText, ScrollText, ShieldCheck,
-  Users, Wallet, X, Zap,
+  Activity, AlertTriangle, ArrowRight, Bot, Camera, Check, CheckCircle2, FileText,
+  Gavel, LayoutGrid, Lock, Mail, MessageSquareText, Scale, ScrollText, ShieldCheck,
+  Sparkles, TrendingUp, Upload, Users, Wallet, X,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import './Landing.css';
 
 const EXIGENCIAS = [
-  'Separacion de roles',
-  'Libro de Novedades (20 dias)',
+  'Alineado a la Ley 21.442',
   'Notificacion con valor legal',
+  'Trazabilidad total',
   'Derecho a descargo',
 ];
 
+const NODOS = [
+  { cls: 'n1', Icon: Camera, titulo: 'Se levanta el reporte', sub: 'Un vecino o el personal, con foto', pill: 'ok', pillTxt: 'Reportado' },
+  { cls: 'n2', Icon: Sparkles, titulo: 'La IA clasifica', sub: 'Tipo y monto segun tu reglamento', pill: 'ok', pillTxt: '3 UF' },
+  { cls: 'n3', Icon: Gavel, titulo: 'Comite o administracion revisa', sub: 'Acepta o rechaza · app, WhatsApp o correo', pill: 'ok', pillTxt: 'Aceptada' },
+  { cls: 'n4', Icon: Mail, titulo: 'Notificacion al residente', sub: 'Con valor legal', pill: 'ok', pillTxt: 'Enviada' },
+  { cls: 'n5', Icon: MessageSquareText, titulo: 'Descargo del residente', sub: '5 dias para defenderse · se resuelve y se le explica', pill: 'warn', pillTxt: '5 dias' },
+  { cls: 'n6', Icon: Wallet, titulo: 'Multa firme → expediente', sub: 'Comprobante generado · pasa a obligacion economica', pill: '', pillTxt: 'En curso' },
+];
+
 const ROLES = [
-  { cls: 'r1', Icon: Camera, nombre: 'Conserje', limite: 'No fija multas', LimIcon: X,
-    texto: 'Reporta lo que ve —ruidos, mascotas, daños— con foto. Solo registra el hecho tal como paso.' },
-  { cls: 'r2', Icon: Gavel, nombre: 'Comite', limite: 'Unico que sanciona', LimIcon: Check,
-    texto: 'Revisa la evidencia y aplica la multa segun el reglamento, con su monto exacto. El punto de decision.' },
-  { cls: 'r3', Icon: Mail, nombre: 'Administracion', limite: 'Ejecuta, no decide', LimIcon: X,
-    texto: 'Notifica al dueño, registra si objeta y, cuando la multa es firme, la suma a los gastos comunes.' },
+  { cls: 'r1', Icon: Camera, nombre: 'Quien reporta', limite: 'Solo reporta', LimIcon: X,
+    texto: 'Cualquiera puede levantar un caso: el personal, la administracion o un vecino, con foto.' },
+  { cls: 'r2', Icon: Gavel, nombre: 'Quien decide', limite: 'Acepta o rechaza', LimIcon: Check,
+    texto: 'El comite o la administracion, segun tu condominio, revisa la evidencia y aplica la multa segun el reglamento.' },
+  { cls: 'r3', Icon: Mail, nombre: 'Administracion', limite: 'Ejecuta y cobra', LimIcon: Check,
+    texto: 'Notifica, lleva el expediente y, cuando la multa es firme, la ingresa como obligacion economica.' },
   { cls: 'r4', Icon: Users, nombre: 'Residente', limite: 'Derecho a defensa', LimIcon: Check,
-    texto: 'Recibe la notificacion y puede presentar su descargo en 5 dias. Si no esta de acuerdo, va a la asamblea.' },
+    texto: 'Recibe la notificacion y puede presentar su descargo en 5 dias. Siempre sabe el porque.' },
 ];
 
 const BENEFICIOS = [
-  { Icon: Lock, titulo: 'Nadie puede alterar nada',
-    texto: 'Una vez registrado, queda sellado. El respaldo perfecto para el comite en la asamblea.' },
-  { Icon: MapPin, titulo: 'Cada foto guarda donde y cuando',
-    texto: 'Nadie puede decir "esa foto no es de mi depto" o "es vieja". Queda marcada con hora y lugar.' },
-  { Icon: Bell, titulo: 'El Libro de Novedades al dia',
-    texto: 'La ley te da 20 dias para responder. El sistema te avisa antes de que se te pase el plazo.' },
-  { Icon: FileText, titulo: 'Un informe listo para la asamblea',
-    texto: 'Con un clic bajas el expediente ordenado y sellado. Se acabo llegar con las manos vacias.' },
+  { Icon: FileText, titulo: 'Informe por unidad',
+    texto: 'Descarga el detalle de multas de cada unidad, sus reincidencias y como evolucionan en el tiempo.' },
+  { Icon: Activity, titulo: 'Puntos criticos de la comunidad',
+    texto: 'El comite y la administracion ven los temas y zonas mas conflictivos, para actuar con un plan concreto.' },
+  { Icon: Scale, titulo: 'Valido ante entidades legales',
+    texto: 'Si algun dia hay que presentarlo en un juzgado u otra entidad, generas un informe formal y verificable.' },
+  { Icon: TrendingUp, titulo: 'Mas multas pagadas, mas ingresos',
+    texto: 'La trazabilidad y la notificacion real elevan el pago de las multas: mas ingresos para el condominio.' },
 ];
 
 const SALVAGUARDAS = [
-  { Icon: CheckCircle2, titulo: 'Bloquea las multas inventadas',
-    texto: 'Si el hecho nunca se reporto, o el comite intenta aprobar algo que no esta en el reglamento, el sistema lo detiene. No se sanciona a dedo.' },
-  { Icon: AlertTriangle, titulo: 'Sin correo, no hay multa',
-    texto: 'Si el dueño no tiene correo registrado, la multa queda bloqueada hasta poder notificar de verdad. La notificacion siempre es real.' },
-  { Icon: Zap, titulo: 'Contencion inmediata para riesgos',
-    texto: 'Ante una fuga de gas o una piscina sin vigilancia, se ordena corregir ya, sin esperar reunion. El comite ratifica despues.' },
-  { Icon: ShieldCheck, titulo: 'El comite queda protegido',
-    texto: 'Son vecinos voluntarios, no abogados. Cada decision queda documentada: si hay conflicto, la evidencia los respalda.' },
+  { Icon: CheckCircle2, titulo: 'Nada es discrecional',
+    texto: 'No hay multas porque si: la IA valida cada caso contra la Ley 21.442 y el reglamento de tu comunidad.' },
+  { Icon: Bot, titulo: 'Un bot filtra lo que no corresponde',
+    texto: 'Antes de llegar a quien decide, un bot descarta lo que claramente no es una infraccion.' },
+  { Icon: AlertTriangle, titulo: 'Sin contacto, no hay multa',
+    texto: 'Si el residente no tiene contacto registrado, el caso queda en pausa hasta poder notificar de verdad.' },
+  { Icon: ShieldCheck, titulo: 'Comite, administracion y residente protegidos',
+    texto: 'Cada decision y cada paso queda documentado. Todos los involucrados quedan respaldados.' },
 ];
 
 const MODULOS = [
-  { Icon: ScrollText, titulo: 'Multas del reglamento',
-    texto: 'La IA lee tu reglamento en PDF y el comite aplica las infracciones en un par de clics, con la redaccion exacta.' },
+  { Icon: Upload, titulo: 'Arranca en minutos',
+    texto: 'Sube el registro de residentes con sus contactos y el reglamento. Una IA los lee y deja todo listo, alineado a la Ley 21.442 y a tu reglamento.' },
+  { Icon: Sparkles, titulo: 'La IA clasifica cada caso',
+    texto: 'Determina el tipo y el monto segun tu reglamento. Quien decide solo confirma. Nada queda al azar.' },
   { Icon: MessageSquareText, titulo: 'Libro de Novedades digital',
     texto: 'Los copropietarios dejan reclamos y solicitudes. Respondes dentro del plazo legal, sin que se te pase ninguno.' },
   { Icon: Wallet, titulo: 'Gastos comunes',
-    texto: 'Las multas firmes se suman solas al aviso de cobro del mes. Sin planillas ni calculos a mano.' },
-  { Icon: Users, titulo: 'Cada uno en su rol',
-    texto: 'Conserje, comite y administracion: cada uno con su acceso y su funcion, tal como exige la Ley 21.442.' },
+    texto: 'Las multas firmes pasan a obligacion economica en el aviso de cobro del mes.' },
 ];
 
 function nz(x, y) {
@@ -147,7 +156,7 @@ export default function Landing() {
           <Link to="/" className="brand"><BrandMark />VIVEPIOLA</Link>
           <div className="nav-links">
             <a href="#flujo">El ciclo</a>
-            <a href="#roles">Roles</a>
+            <a href="#roles">Trazabilidad</a>
             <a href="#salvaguardas">Salvaguardas</a>
             <a href="#modulos">Modulos</a>
           </div>
@@ -165,10 +174,11 @@ export default function Landing() {
         </div>
         <div className="hero-inner">
           <span className="h-eyebrow rise d1">● Cumple la Ley 21.442</span>
-          <h1 className="rise d2">Nadie es <span className="hl">juez y parte.</span></h1>
+          <h1 className="rise d2">Trazabilidad de multas, <span className="hl">notificaciones y reclamos.</span></h1>
           <p className="hero-lead rise d2">
-            Una sola plataforma que hace cumplir el orden que manda la ley: el conserje reporta,
-            el comite aplica la multa y la administracion notifica y cobra. Todo con foto, fecha y sello.
+            Sube el registro de residentes y tu reglamento: una IA los lee y clasifica cada caso,
+            alineada a la Ley 21.442. Desde el reporte hasta el cobro, todos los involucrados saben
+            en que va cada multa. Nada es discrecional.
           </p>
           <div className="hero-ctas rise d3">
             <a href="#demo" className="btn btn-cyan">Quiero verlo funcionando</a>
@@ -177,7 +187,7 @@ export default function Landing() {
         </div>
 
         <div className="hero-trust rise d4">
-          <div className="lbl">El respaldo legal en el que se apoyan los comites de administracion</div>
+          <div className="lbl">El respaldo legal en el que se apoyan comites y administraciones</div>
           <div className="items">
             {EXIGENCIAS.map((c) => (
               <span key={c}><Check size={15} strokeWidth={3} /> {c}</span>
@@ -186,9 +196,9 @@ export default function Landing() {
         </div>
 
         <div className="stats rise d4">
-          <div className="stat"><div className="n">100<em>%</em></div><div className="t">Trazable · cada paso queda sellado y verificable</div></div>
-          <div className="stat"><div className="n">20<em> dias</em></div><div className="t">El plazo legal de respuesta, siempre vigilado</div></div>
-          <div className="stat"><div className="n">0</div><div className="t">Multas sin respaldo que se caen en la asamblea</div></div>
+          <div className="stat"><div className="n">100<em>%</em></div><div className="t">Trazable · todos ven el estado en tiempo real</div></div>
+          <div className="stat"><div className="n">3<em> canales</em></div><div className="t">Notificacion por app, WhatsApp y correo</div></div>
+          <div className="stat"><div className="n">20<em> dias</em></div><div className="t">Plazo legal del Libro de Novedades, vigilado</div></div>
         </div>
         <div className="hero-foot" />
         <canvas id="terrain" ref={terrainRef} aria-hidden="true" />
@@ -199,10 +209,10 @@ export default function Landing() {
         <div className="wrap flow-grid">
           <div className="flow-copy">
             <div className="eye">El ciclo de la multa</div>
-            <h2>Cada sancion, del reporte al cobro, en un solo mapa</h2>
-            <p>Como un mapa de infraestructura, ves en que paso va cada multa y quien la tiene en sus manos.
+            <h2>Cada caso, del reporte al cobro, en un solo mapa</h2>
+            <p>Ves en que paso va cada multa, notificacion o reclamo y quien lo tiene en sus manos.
               Nadie avanza sin cumplir el paso anterior.</p>
-            <p>Y todo queda <strong>sellado</strong>: aunque pasen años, cualquiera puede verificar que nada fue alterado.</p>
+            <p>Y todo queda <strong>registrado</strong>: aunque pasen años, cualquiera puede verificar que nada fue alterado.</p>
           </div>
           <div className="map">
             <div className="map-top">
@@ -211,48 +221,30 @@ export default function Landing() {
             </div>
             <div className="map-sub">Ruidos molestos · 23:04</div>
             <div className="nodes">
-              <div className="node n1">
-                <span className="ico"><Camera size={19} strokeWidth={2} /></span>
-                <div className="body"><b>Conserje reporta</b><small>Con foto · fecha y hora</small></div>
-                <span className="pill ok">Hecho</span>
-              </div>
-              <div className="connector" />
-              <div className="node n2">
-                <span className="ico"><Gavel size={19} strokeWidth={2} /></span>
-                <div className="body"><b>Comite aplica</b><small>Segun reglamento · Art. 4</small></div>
-                <span className="pill ok">3 UF</span>
-              </div>
-              <div className="connector" />
-              <div className="node n3">
-                <span className="ico"><Mail size={19} strokeWidth={2} /></span>
-                <div className="body"><b>Notificacion</b><small>Correo con valor legal</small></div>
-                <span className="pill ok">Enviada</span>
-              </div>
-              <div className="connector" />
-              <div className="node n5">
-                <span className="ico"><MessageSquareText size={19} strokeWidth={2} /></span>
-                <div className="body"><b>Descargo del dueño</b><small>5 dias para defenderse · el comite resuelve</small></div>
-                <span className="pill warn">5 dias</span>
-              </div>
-              <div className="connector" />
-              <div className="node n4">
-                <span className="ico"><Wallet size={19} strokeWidth={2} /></span>
-                <div className="body"><b>Firme → Gastos comunes</b><small>Se suma al cobro del mes</small></div>
-                <span className="pill">En curso</span>
-              </div>
+              {NODOS.map((n, i) => (
+                <div key={n.cls}>
+                  <div className={`node ${n.cls}`}>
+                    <span className="ico"><n.Icon size={19} strokeWidth={2} /></span>
+                    <div className="body"><b>{n.titulo}</b><small>{n.sub}</small></div>
+                    <span className={`pill ${n.pill}`}>{n.pillTxt}</span>
+                  </div>
+                  {i < NODOS.length - 1 && <div className="connector" />}
+                </div>
+              ))}
             </div>
-            <div className="map-foot"><Lock size={12} strokeWidth={2.2} /> Si el comite acepta el descargo, la multa se anula · todo queda sellado</div>
+            <div className="map-foot"><Lock size={12} strokeWidth={2.2} /> Todos los involucrados ven el estado en tiempo real · queda en el expediente de la unidad</div>
           </div>
         </div>
       </section>
 
-      {/* ---------- ROLES ---------- */}
+      {/* ---------- TRAZABILIDAD (valor central) ---------- */}
       <section id="roles" className="band">
         <div className="wrap">
           <div className="sec-head">
             <div className="sec-eye">El valor central</div>
-            <h2>Nadie es juez y parte</h2>
-            <p>La ley separa quien reporta, quien decide y quien cobra. Si alguien intenta saltarse un paso, el sistema lo bloquea.</p>
+            <h2>Trazabilidad de multas, notificaciones y reclamos</h2>
+            <p>Desde el reporte hasta el cobro, cada involucrado —quien reporta, quien decide, la administracion
+              y el residente— sabe en que estado va cada caso. Esa trazabilidad es el corazon de VIVEPIOLA.</p>
           </div>
           <div className="roles">
             {ROLES.map((r) => (
@@ -272,7 +264,7 @@ export default function Landing() {
         <div className="wrap">
           <div className="sec-head">
             <div className="sec-eye">Lo que ganas</div>
-            <h2>La prueba siempre esta de tu lado</h2>
+            <h2>La informacion siempre esta de tu lado</h2>
             <p>Cualquiera puede verificar que nada fue alterado, aunque hayan pasado años.</p>
           </div>
           <div className="grid2">
@@ -328,9 +320,8 @@ export default function Landing() {
         <div className="wrap thesis">
           <div className="mk-lg"><ShieldCheck size={26} strokeWidth={2.2} /></div>
           <p className="q">
-            VIVEPIOLA es un <span className="hl">guardia digital</span> que sigue cada sancion desde el
-            reporte hasta el cobro, verificando que cada paso sea valido segun la ley y dejando un rastro
-            que nadie puede negar.
+            VIVEPIOLA sigue cada sancion desde el reporte hasta el cobro, verificando que cada paso sea
+            valido segun la ley y dejando <span className="hl">un rastro que nadie puede negar.</span>
           </p>
         </div>
       </section>
@@ -347,7 +338,7 @@ export default function Landing() {
                 <ul>
                   <li><CheckCircle2 size={16} strokeWidth={2.6} /> Al dia con la Ley 21.442, sin abogados</li>
                   <li><CheckCircle2 size={16} strokeWidth={2.6} /> Te acompañamos en la puesta en marcha</li>
-                  <li><CheckCircle2 size={16} strokeWidth={2.6} /> No cambias como trabaja tu conserje hoy</li>
+                  <li><CheckCircle2 size={16} strokeWidth={2.6} /> No cambias como trabaja tu equipo hoy</li>
                 </ul>
               </div>
               <div className="form">
