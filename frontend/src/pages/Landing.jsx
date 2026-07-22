@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
-  Activity, AlertTriangle, ArrowRight, Bot, Camera, Check, CheckCircle2, FileText,
-  Gavel, LayoutGrid, Lock, Mail, MessageSquareText, Scale, ShieldCheck,
+  Activity, AlertTriangle, ArrowRight, Bot, Camera, Check, CheckCircle2, Database,
+  FileText, Flag, Gavel, Mail, MessageSquareText, Play, Pause, Scale, ShieldCheck,
   Sparkles, TrendingUp, Users, Wallet, X,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
@@ -15,13 +15,31 @@ const EXIGENCIAS = [
   'Derecho a descargo',
 ];
 
-const NODOS = [
-  { cls: 'n1', Icon: Camera, titulo: 'Se levanta el reporte', sub: 'Un vecino o el personal, con foto', pill: 'ok', pillTxt: 'Reportado' },
-  { cls: 'n2', Icon: Sparkles, titulo: 'La IA clasifica', sub: 'Tipo y monto segun tu reglamento', pill: 'ok', pillTxt: '3 UF' },
-  { cls: 'n3', Icon: Gavel, titulo: 'Comite o administracion revisa', sub: 'Acepta o rechaza · app, WhatsApp o correo', pill: 'ok', pillTxt: 'Aceptada' },
-  { cls: 'n4', Icon: Mail, titulo: 'Notificacion al residente', sub: 'Con valor legal', pill: 'ok', pillTxt: 'Enviada' },
-  { cls: 'n5', Icon: MessageSquareText, titulo: 'Descargo del residente', sub: '5 dias para defenderse · se resuelve y se le explica', pill: 'warn', pillTxt: '5 dias' },
-  { cls: 'n6', Icon: Wallet, titulo: 'Multa firme → expediente', sub: 'Comprobante generado · pasa a obligacion economica', pill: '', pillTxt: 'En curso' },
+const FLUJO = [
+  { Icon: Database, actor: 'Configuracion', corto: 'Configuracion inicial', titulo: 'Configuracion inicial',
+    desc: 'Se carga la nomina de residentes (planilla tipo Excel) junto con todos los reglamentos aplicables: copropiedad, estacionamientos, uso de espacios comunes y mas.' },
+  { Icon: Flag, actor: 'Denunciante', corto: 'Ingreso de la denuncia', titulo: 'Ingreso de la denuncia',
+    desc: 'Un conserje, un miembro del comite o un vecino —con opcion de mantener el anonimato— ingresa el reporte de la infraccion al sistema.' },
+  { Icon: Sparkles, actor: 'Inteligencia Artificial', corto: 'Analisis con IA', titulo: 'Analisis con IA',
+    desc: 'La IA cruza los datos de la denuncia con los reglamentos: identifica los articulos infringidos, tipifica la falta, calcula el monto y redacta una propuesta formal de multa.' },
+  { Icon: Gavel, actor: 'Comite', corto: 'Primer filtro: el comite', titulo: 'Primer filtro: el comite revisa',
+    desc: 'El comite revisa la propuesta de la IA. Puede rechazarla (el proceso termina) o aprobarla. Si la aprueba, el sistema emite la notificacion al residente.' },
+  { Icon: MessageSquareText, actor: 'Residente', corto: 'Derecho a apelacion', titulo: 'Derecho a apelacion',
+    desc: 'El residente recibe la notificacion y tiene un plazo de 5 dias para presentar su apelacion a traves de los canales integrados: app, correo o WhatsApp.' },
+  { Icon: Scale, actor: 'Comite', corto: 'Resolucion del comite', titulo: 'Resolucion del comite',
+    desc: 'El comite evalua la apelacion. Puede mantener la multa intacta, aplicar un porcentaje de descuento (30%, 50%) o condonarla dejandola en cero.' },
+  { Icon: Wallet, actor: 'Administrador', corto: 'Traspaso a cobro', titulo: 'Traspaso a cobro',
+    desc: 'Si la resolucion determina que hay un monto a pagar, la instruccion pasa a la administracion para cargarla en la proxima boleta de gastos comunes.' },
+  { Icon: FileText, actor: 'Sistema', corto: 'Trazabilidad e historial', titulo: 'Trazabilidad e historial',
+    desc: 'Todo el proceso —fechas, actores, apelaciones y resoluciones— queda en un informe dentro de la carpeta digital del residente. El sistema aplica multiplicadores automaticos si hay reincidencia.' },
+];
+
+const ACTORES = [
+  { Icon: Sparkles, nombre: 'Inteligencia Artificial', rol: 'Analiza los hechos, cruza con los reglamentos, calcula montos y redacta.' },
+  { Icon: Flag, nombre: 'Denunciante', rol: 'Ingresa el reporte inicial de la infraccion.' },
+  { Icon: Gavel, nombre: 'Comite de administracion', rol: 'Ministro de fe y juez: aprueba multas y resuelve apelaciones.' },
+  { Icon: Users, nombre: 'Residente', rol: 'Recibe notificaciones, ejerce su defensa y asume el pago.' },
+  { Icon: Wallet, nombre: 'Administrador', rol: 'Ejecuta el cobro en el gasto comun, con un informe transparente.' },
 ];
 
 const ROLES = [
@@ -114,6 +132,54 @@ function BrandMark({ size = 17 }) {
   return <span className="mk"><ShieldCheck size={size} strokeWidth={2.4} /></span>;
 }
 
+function FlujoInteractivo() {
+  const [activo, setActivo] = useState(0);
+  const [pausado, setPausado] = useState(false);
+  const total = FLUJO.length;
+
+  useEffect(() => {
+    if (pausado) return undefined;
+    const id = setInterval(() => setActivo((a) => (a + 1) % total), 4200);
+    return () => clearInterval(id);
+  }, [pausado, total, activo]);
+
+  const paso = FLUJO[activo];
+  const PasoIcon = paso.Icon;
+
+  return (
+    <div className="flujo" onMouseEnter={() => setPausado(true)} onMouseLeave={() => setPausado(false)}>
+      <div className="stepper">
+        <div className="stepper-rail">
+          <span className="stepper-fill" style={{ height: `${(activo / (total - 1)) * 100}%` }} />
+        </div>
+        {FLUJO.map((p, i) => {
+          const estado = i < activo ? 'done' : i === activo ? 'now' : '';
+          return (
+            <button key={p.corto} type="button" className={`step ${estado}`} onClick={() => setActivo(i)} aria-current={i === activo}>
+              <span className="step-dot">{i < activo ? <Check size={14} strokeWidth={3} /> : i + 1}</span>
+              <span className="step-label"><b>{p.corto}</b><em>{p.actor}</em></span>
+            </button>
+          );
+        })}
+      </div>
+
+      <div className="flow-panel">
+        <div className="panel-head">
+          <span className="panel-ico"><PasoIcon size={26} strokeWidth={1.9} /></span>
+          <span className="panel-step">Paso {String(activo + 1).padStart(2, '0')} / {String(total).padStart(2, '0')}</span>
+          <button type="button" className="panel-play" onClick={() => setPausado((p) => !p)} aria-label={pausado ? 'Reanudar' : 'Pausar'}>
+            {pausado ? <Play size={14} /> : <Pause size={14} />}
+          </button>
+        </div>
+        <h3 key={`t${activo}`} className="panel-title fade">{paso.titulo}</h3>
+        <p key={`d${activo}`} className="panel-desc fade">{paso.desc}</p>
+        <div className="panel-actor"><span className="dotmini" /> Responsable: <b>{paso.actor}</b></div>
+        {!pausado && <span className="autobar" key={activo} />}
+      </div>
+    </div>
+  );
+}
+
 export default function Landing() {
   const { usuario } = useAuth();
   const rutaApp = usuario ? '/app' : '/login';
@@ -197,35 +263,22 @@ export default function Landing() {
         <canvas id="terrain" ref={terrainRef} aria-hidden="true" />
       </header>
 
-      {/* ---------- FLUJO / MAPA ---------- */}
+      {/* ---------- FLUJO INTERACTIVO ---------- */}
       <section id="flujo">
-        <div className="wrap flow-grid">
-          <div className="flow-copy">
-            <div className="eye">El ciclo de la multa</div>
-            <h2>Cada caso, del reporte al cobro, en un solo mapa</h2>
-            <p>Ves en que paso va cada multa, notificacion o reclamo y quien lo tiene en sus manos.
-              Nadie avanza sin cumplir el paso anterior.</p>
-            <p>Y todo queda <strong>registrado</strong>: cada paso, con su responsable y su hora.</p>
+        <div className="wrap">
+          <div className="sec-head">
+            <div className="sec-eye">El ciclo de la multa</div>
+            <h2>De la denuncia al cobro, con trazabilidad total</h2>
+            <p>Ocho pasos, cada uno con su responsable. Toca una etapa para ver el detalle, o deja que avance solo.</p>
           </div>
-          <div className="map">
-            <div className="map-top">
-              <span className="map-title"><LayoutGrid size={15} strokeWidth={2} /> Multa · Notificacion · Reclamos</span>
-              <span className="seal"><Lock size={11} strokeWidth={2.4} /> SELLADO</span>
-            </div>
-            <div className="map-sub">Ruidos molestos · 23:04</div>
-            <div className="nodes">
-              {NODOS.map((n, i) => (
-                <div key={n.cls}>
-                  <div className={`node ${n.cls}`}>
-                    <span className="ico"><n.Icon size={19} strokeWidth={2} /></span>
-                    <div className="body"><b>{n.titulo}</b><small>{n.sub}</small></div>
-                    <span className={`pill ${n.pill}`}>{n.pillTxt}</span>
-                  </div>
-                  {i < NODOS.length - 1 && <div className="connector" />}
-                </div>
-              ))}
-            </div>
-            <div className="map-foot"><Lock size={12} strokeWidth={2.2} /> Todos los involucrados ven el estado en tiempo real · queda en el expediente de la unidad</div>
+          <FlujoInteractivo />
+          <div className="actores">
+            {ACTORES.map((a) => (
+              <div key={a.nombre} className="actor">
+                <span className="actor-ico"><a.Icon size={18} strokeWidth={2} /></span>
+                <div><b>{a.nombre}</b><span>{a.rol}</span></div>
+              </div>
+            ))}
           </div>
         </div>
       </section>
