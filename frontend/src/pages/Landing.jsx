@@ -167,7 +167,7 @@ export default function Landing() {
           <span>20d</span><span>15d</span><span>10d</span><span>5d</span><span>0</span>
         </div>
         <div className="hero-inner">
-          <span className="h-eyebrow rise d1">● Cumple la Ley 21.442</span>
+          <span className="h-eyebrow rise d1">● Ley 21.442, su reglamento y el de tu condominio</span>
           <h1 className="rise d2">Trazabilidad de multas, <span className="hl">notificaciones y reclamos.</span></h1>
           <p className="hero-lead rise d2">
             Sube el registro de residentes y tu reglamento: una IA los lee y clasifica cada caso,
@@ -210,7 +210,7 @@ export default function Landing() {
           </div>
           <div className="map">
             <div className="map-top">
-              <span className="map-title"><LayoutGrid size={15} strokeWidth={2} /> Ciclo de la multa · Depto 302</span>
+              <span className="map-title"><LayoutGrid size={15} strokeWidth={2} /> Multa · Notificacion · Reclamos</span>
               <span className="seal"><Lock size={11} strokeWidth={2.4} /> SELLADO</span>
             </div>
             <div className="map-sub">Ruidos molestos · 23:04</div>
@@ -276,7 +276,6 @@ export default function Landing() {
       <section id="salvaguardas" className="band">
         <div className="wrap">
           <div className="sec-head">
-            <div className="sec-eye">A prueba de reclamos</div>
             <h2>Las salvaguardas que te protegen</h2>
             <p>No basta con seguir el orden: el sistema tambien frena los abusos y cubre los casos dificiles.</p>
           </div>
@@ -291,17 +290,6 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* ---------- THESIS ---------- */}
-      <section className="band">
-        <div className="wrap thesis">
-          <div className="mk-lg"><ShieldCheck size={26} strokeWidth={2.2} /></div>
-          <p className="q">
-            VIVEPIOLA sigue cada sancion desde el reporte hasta el cobro, verificando que cada paso sea
-            valido segun la ley y dejando <span className="hl">un rastro que nadie puede negar.</span>
-          </p>
-        </div>
-      </section>
-
       {/* ---------- CTA ---------- */}
       <section id="demo">
         <div className="wrap">
@@ -310,7 +298,7 @@ export default function Landing() {
               <div>
                 <h2>Que tu comite y tu administracion duerman tranquilos</h2>
                 <p>Agenda una demo de 20 minutos. Te mostramos, con las multas de tu propio condominio,
-                  como dejar todo en orden y a prueba de reclamos.</p>
+                  como dejar todo en orden y con trazabilidad completa.</p>
                 <ul>
                   <li><CheckCircle2 size={16} strokeWidth={2.6} /> Al dia con la Ley 21.442, sin abogados</li>
                   <li><CheckCircle2 size={16} strokeWidth={2.6} /> Te acompañamos en la puesta en marcha</li>
