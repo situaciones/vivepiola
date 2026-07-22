@@ -58,7 +58,8 @@
       "Bash(\"/c/Users/esali/APLICACION DE MULTAS/venv/Scripts/python.exe\" -m http.server 8899)",
       "Bash(printf '<!doctype html><html lang=\"es\"><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"></head><body>\\\\n')",
       "Bash(cat vivepiola_landing_concepto.html)",
-      "Bash(printf '\\\\n</body></html>')"
+      "Bash(printf '\\\\n</body></html>')",
+      "Bash(\"/c/Users/esali/APLICACION DE MULTAS/venv/Scripts/python.exe\" -m http.server 8890)"
     ]
   }
 }
