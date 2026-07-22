@@ -170,10 +170,10 @@ export default function Landing() {
           <span className="h-eyebrow rise d1">● Ley 21.442, su reglamento y el de tu condominio</span>
           <h1 className="rise d2">Trazabilidad de multas, <span className="hl">notificaciones y reclamos.</span></h1>
           <p className="hero-lead rise d2">
-            Sube el registro de residentes y tu reglamento: una IA los lee y clasifica cada caso,
-            alineada a la Ley 21.442. Desde el reporte hasta el cobro, todos los involucrados saben
-            en que va cada multa. Nada es discrecional.
+            Sube, clasifica y cobra con certeza. IA alineada a la Ley 21.442, al reglamento
+            de la ley y a los reglamentos de tu condominio.
           </p>
+          <p className="hero-kicker rise d3">Sin rodeos, sin favoritismos, sin demoras.</p>
           <div className="hero-ctas rise d3">
             <a href="#demo" className="btn btn-cyan">Quiero verlo funcionando</a>
             <a href="#flujo" className="btn btn-outline-l">Ver el ciclo de la multa</a>

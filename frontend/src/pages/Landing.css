@@ -44,7 +44,9 @@
 .h-eyebrow{display:inline-flex;align-items:center;gap:8px;font-size:.76rem;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--h-cyan);background:rgba(55,224,218,.1);border:1px solid rgba(55,224,218,.28);padding:6px 14px;border-radius:999px}
 .hero h1{font-size:clamp(2rem,4.4vw,3.2rem);font-weight:800;line-height:1.12;margin:20px auto 20px;max-width:22ch;color:#fff}
 .hero h1 .hl{background:linear-gradient(100deg,var(--h-cyan),#7af0ea);-webkit-background-clip:text;background-clip:text;color:transparent}
-.hero-lead{font-size:1.16rem;color:var(--h-muted);max-width:600px;margin:0 auto 30px}
+/* text-wrap:balance evita las lineas centradas de largo desparejo */
+.hero-lead{font-size:1.14rem;color:var(--h-muted);max-width:640px;margin:0 auto 14px;text-wrap:balance}
+.hero-kicker{font-size:.98rem;font-weight:700;color:var(--h-cyan);letter-spacing:.01em;margin:0 auto 28px;text-wrap:balance}
 .hero-ctas{display:flex;gap:14px;justify-content:center;flex-wrap:wrap}
 .btn-outline-l{background:transparent;color:var(--h-ink);border-color:rgba(180,220,215,.4)}
 .btn-outline-l:hover{border-color:var(--h-cyan);color:var(--h-cyan)}
@@ -71,7 +73,7 @@
 .sec-head{max-width:700px;margin:0 auto 46px;text-align:center}
 .sec-eye{font-size:.76rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--brand);margin-bottom:12px}
 .sec-head h2{font-size:clamp(1.7rem,3.4vw,2.4rem);font-weight:800}
-.sec-head p{color:var(--muted);font-size:1.05rem;margin-top:14px}
+.sec-head p{color:var(--muted);font-size:1.05rem;margin-top:14px;text-wrap:balance}
 
 /* FLOW MAP */
 .flow-grid{display:grid;grid-template-columns:.92fr 1.08fr;gap:44px;align-items:center;max-width:1040px;margin:0 auto}
