@@ -192,7 +192,6 @@ export default function Landing() {
         <div className="stats rise d4">
           <div className="stat"><div className="n">100<em>%</em></div><div className="t">Trazable · todos ven el estado en tiempo real</div></div>
           <div className="stat"><div className="n">3<em> canales</em></div><div className="t">Notificacion por app, WhatsApp y correo</div></div>
-          <div className="stat"><div className="n">20<em> dias</em></div><div className="t">Plazo legal del Libro de Novedades, vigilado</div></div>
         </div>
         <div className="hero-foot" />
         <canvas id="terrain" ref={terrainRef} aria-hidden="true" />
