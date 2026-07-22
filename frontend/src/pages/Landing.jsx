@@ -93,11 +93,10 @@ function drawTerrain(canvas) {
     const yBase = horizon + persp * persp * (H - horizon);
     for (let i = 0; i <= cols; i++) {
       const t = i / cols;
-      let h = Math.sin(t * 6.283 * 1.6 + 0.6) * 0.5 + Math.sin(t * 6.283 * 3.2 + 1.3) * 0.26 + Math.sin(t * 6.283 * 0.7) * 0.42;
-      h += (nz(i, j) * 2 - 1) * 0.42;
-      const shape = Math.abs(Math.cos(t * Math.PI));
-      h = h * 0.5 + shape * 1.25;
-      const amp = 64 * (0.22 + persp);
+      let h = Math.sin(t * 6.283 * 1.7 + 0.6) * 0.5 + Math.sin(t * 6.283 * 3.1 + 1.3) * 0.28 + Math.sin(t * 6.283 * 0.9 + 0.4) * 0.34;
+      h += (nz(i, j) * 2 - 1) * 0.4;
+      h = h * 0.6 + 0.5;
+      const amp = 62 * (0.25 + persp);
       row.push({ x: t * W, y: yBase - h * amp, h, p: persp });
     }
     pts.push(row);
@@ -108,13 +107,13 @@ function drawTerrain(canvas) {
       const b = Math.min(1, 0.12 + pt.h * 0.42) * (0.28 + 0.72 * pt.p);
       if (i < cols) {
         const q = pts[j][i + 1];
-        ctx.strokeStyle = `rgba(90,236,222,${0.05 + b * 0.30})`;
+        ctx.strokeStyle = `rgba(90,236,222,${0.06 + b * 0.34})`;
         ctx.lineWidth = 1;
         ctx.beginPath(); ctx.moveTo(pt.x, pt.y); ctx.lineTo(q.x, q.y); ctx.stroke();
       }
       if (j < rows - 1) {
         const q2 = pts[j + 1][i];
-        ctx.strokeStyle = `rgba(66,206,200,${0.04 + b * 0.18})`;
+        ctx.strokeStyle = `rgba(66,206,200,${0.05 + b * 0.22})`;
         ctx.lineWidth = 1;
         ctx.beginPath(); ctx.moveTo(pt.x, pt.y); ctx.lineTo(q2.x, q2.y); ctx.stroke();
       }
