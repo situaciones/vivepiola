@@ -50,7 +50,9 @@
       "Bash(git commit *)",
       "Bash(git push *)",
       "WebFetch(domain:vivepiola-p3oup.ondigitalocean.app)",
-      "Bash(doctl apps *)"
+      "Bash(doctl apps *)",
+      "Bash(npm -v)",
+      "Bash(npm run *)"
     ]
   }
 }
