@@ -37,7 +37,7 @@ const FLUJO = [
 const ACTORES = [
   { Icon: Sparkles, nombre: 'Inteligencia Artificial', rol: 'Analiza los hechos, cruza con los reglamentos, calcula montos y redacta.' },
   { Icon: Flag, nombre: 'Denunciante', rol: 'Ingresa el reporte inicial de la infraccion.' },
-  { Icon: Gavel, nombre: 'Comite de administracion', rol: 'Ministro de fe y juez: aprueba multas y resuelve apelaciones.' },
+  { Icon: Gavel, nombre: 'Comite de administracion', rol: 'Aprueba las multas y resuelve las apelaciones.' },
   { Icon: Users, nombre: 'Residente', rol: 'Recibe notificaciones, ejerce su defensa y asume el pago.' },
   { Icon: Wallet, nombre: 'Administrador', rol: 'Ejecuta el cobro en el gasto comun, con un informe transparente.' },
 ];
