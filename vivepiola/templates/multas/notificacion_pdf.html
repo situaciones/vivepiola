@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8" />
+<style>
+  body { font-family: Helvetica, Arial, sans-serif; font-size: 12px; color: #222; }
+  h1 { font-size: 18px; margin-bottom: 0; }
+  .subtitulo { color: #555; margin-top: 2px; margin-bottom: 20px; }
+  table { width: 100%; border-collapse: collapse; margin-bottom: 16px; }
+  td, th { padding: 6px 8px; border: 1px solid #ccc; text-align: left; vertical-align: top; }
+  th { background-color: #f2f2f2; width: 35%; }
+  .aviso { margin-top: 24px; padding: 10px; border: 1px solid #999; background-color: #fafafa; }
+  .footer { margin-top: 30px; font-size: 10px; color: #777; }
+</style>
+</head>
+<body>
+  <h1>{{ voc.multa_num }}</h1>
+  <p class="subtitulo">{{ multa.condominio.nombre }}</p>
+
+  <table>
+    <tr><th>{{ voc.termino_unidad_cap }}</th><td>{{ multa.unidad.identificador }}</td></tr>
+    <tr><th>{{ voc.termino_sujeto_cap }}</th><td>{{ multa.persona_infractor.nombre_completo }}</td></tr>
+    <tr><th>Cedula / identificacion</th><td>{{ multa.persona_infractor.cedula_identidad }}</td></tr>
+    <tr><th>Domicilio</th><td>{{ multa.persona_infractor.domicilio }}</td></tr>
+    <tr><th>Infraccion</th><td>{{ multa.infraccion.descripcion }}</td></tr>
+    <tr><th>Articulo / clausula</th><td>{{ multa.infraccion.articulo_referencia }}</td></tr>
+    <tr><th>Monto</th><td>{{ multa.monto }} {{ multa.infraccion.unidad_monto }}</td></tr>
+    <tr><th>Fecha del hecho</th><td>{{ multa.ticket.fecha_hecho|date:"d-m-Y H:i" }}</td></tr>
+    <tr><th>Aprobada por {{ voc.termino_organo }}</th><td>{{ multa.fecha_aprobacion|date:"d-m-Y H:i" }}</td></tr>
+    {% if multa.es_reincidencia %}
+    <tr><th>Reincidencia</th><td>{{ multa.agravante_sugerido }}</td></tr>
+    {% endif %}
+  </table>
+
+  <p><strong>Descripcion del reporte:</strong></p>
+  <p>{{ multa.ticket.descripcion }}</p>
+
+  <div class="aviso">{{ voc.aviso_descargo }}</div>
+
+  <p class="footer">
+    {{ marco_legal }} Emitido por Debido. Este correo y su adjunto constituyen el
+    canal legal de notificacion del sistema.
+  </p>
+</body>
+</html>

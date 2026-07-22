@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8" />
+<style>
+  body { font-family: Helvetica, Arial, sans-serif; font-size: 9.5px; color: #16233a; }
+  h1 { font-size: 15px; margin: 0; color: #ffffff; }
+  h2 { font-size: 11px; margin: 18px 0 6px; color: #1a2b45; border-bottom: 1px solid #c7ced9; padding-bottom: 3px; }
+  .encabezado { background-color: #1a2b45; color: #ffffff; padding: 14px 16px; }
+  .encabezado .sub { color: #b7c3d6; font-size: 9px; margin-top: 4px; }
+  table { width: 100%; border-collapse: collapse; margin-top: 4px; }
+  th { background-color: #eef1f6; border: 1px solid #c7ced9; padding: 4px 5px; font-size: 8px; text-align: left; }
+  td { border: 1px solid #d3d8e0; padding: 4px 5px; font-size: 8.5px; vertical-align: top; }
+  .mono { font-family: Courier; font-size: 7.5px; }
+  .ok { background-color: #e6f4ea; color: #1e6b3a; font-weight: bold; text-align: center; }
+  .fail { background-color: #fdecea; color: #b3261e; font-weight: bold; text-align: center; }
+  .neutro { background-color: #f4f6f8; color: #5c6c85; text-align: center; }
+  .sello-ok {
+    border: 3px solid #1e6b3a; color: #1e6b3a; padding: 12px; text-align: center;
+    font-size: 15px; font-weight: bold; margin: 14px 0; background-color: #f2faf4;
+  }
+  .sello-fail {
+    border: 3px solid #b3261e; color: #b3261e; padding: 12px; text-align: center;
+    font-size: 15px; font-weight: bold; margin: 14px 0; background-color: #fdf3f2;
+  }
+  .caja { border: 1px solid #c7ced9; background-color: #f8f9fb; padding: 8px 10px; font-size: 8.5px; margin-top: 8px; }
+  .footer { margin-top: 20px; font-size: 7.5px; color: #5c6c85; border-top: 1px solid #c7ced9; padding-top: 6px; }
+  .raiz { font-family: Courier; font-size: 9px; font-weight: bold; }
+</style>
+</head>
+<body>
+
+  <div class="encabezado">
+    <h1>CERTIFICADO DE INTEGRIDAD DEL EXPEDIENTE — AUDIT TRAIL</h1>
+    <div class="sub">
+      Expediente #{{ multa.id }} · {{ multa.condominio.nombre }} · Marco normativo: {{ marco_legal_nombre }}<br/>
+      Generado el {{ generado_en|date:"d-m-Y H:i:s e" }} a solicitud de {{ solicitante }} · Documento determinista, reproducible desde el expediente en cualquier momento.
+    </div>
+  </div>
+
+  {% if integra %}
+  <div class="sello-ok">INMUTABILIDAD VERIFICADA<br/>
+    <span style="font-size:9px; font-weight:normal;">La cadena criptografica de {{ total_actas }} acto(s) y los archivos de evidencia fueron recalculados al momento de emitir este certificado y coinciden con los sellos originales.</span>
+  </div>
+  {% else %}
+  <div class="sello-fail">ALERTA: INTEGRIDAD COMPROMETIDA<br/>
+    <span style="font-size:9px; font-weight:normal;">El recalculo detecto discrepancias respecto de los sellos originales. Ver columnas de verificacion para identificar el punto exacto de la alteracion.</span>
+  </div>
+  {% endif %}
+
+  <h2>1. Identificacion del expediente</h2>
+  <table>
+    <tr><th style="width:22%">Unidad / sujeto</th><td>{{ multa.unidad.identificador }}</td>
+        <th style="width:22%">Estado actual</th><td>{{ multa.get_estado_display }}</td></tr>
+    <tr><th>Persona</th><td>{% if multa.persona_infractor %}{{ multa.persona_infractor.nombre_completo }} ({{ multa.persona_infractor.cedula_identidad }}){% else %}Sin identificar{% endif %}</td>
+        <th>Norma aplicada</th><td>{% if multa.infraccion %}{{ multa.infraccion.codigo }} · {{ multa.infraccion.articulo_referencia }}{% else %}—{% endif %}</td></tr>
+    <tr><th>Hash raiz de la cadena</th><td colspan="3" class="raiz">{{ hash_raiz }}</td></tr>
+  </table>
+
+  <h2>2. Cadena de actos sellados ({{ total_actas }})</h2>
+  <table>
+    <tr>
+      <th style="width:3%">#</th>
+      <th style="width:20%">Acto</th>
+      <th style="width:11%">Actor</th>
+      <th style="width:9%">Rol</th>
+      <th style="width:14%">Fecha / hora (UTC)</th>
+      <th style="width:13%">Metodo de autenticacion</th>
+      <th style="width:11%">Hash del acto</th>
+      <th style="width:10%">Verificacion criptografica</th>
+    </tr>
+    {% for f in filas %}
+    <tr>
+      <td>{{ f.indice }}</td>
+      <td>{{ f.tipo }}{% if f.tipo_manifiesto == 'CONTENCION' %} <span style="color:#b3261e;">[CONTENCION]</span>{% endif %}</td>
+      <td>{{ f.actor }}</td>
+      <td>{{ f.rol }}</td>
+      <td>{{ f.ts|date:"d-m-Y H:i:s" }}</td>
+      <td>{{ f.auth }}</td>
+      <td class="mono">{{ f.hash_previo }}&#8230;<br/>&#8595; {{ f.hash_acto }}&#8230;</td>
+      {% if f.ok %}<td class="ok">VERIFICADO</td>{% else %}<td class="fail">ALTERADO</td>{% endif %}
+    </tr>
+    {% endfor %}
+  </table>
+  <div class="caja">
+    <strong>Metodo de verificacion.</strong> Cada acto sella un manifiesto canonico de lo que el actor tenia a la vista
+    (evidencias con su huella SHA-256, texto integro de la norma aplicada, estado del expediente) y se encadena al acto
+    anterior mediante <span class="mono">hash_acto = SHA-256(hash_previo &#8214; SHA-256(manifiesto))</span>, partiendo de un
+    genesis de 64 ceros. Alterar, eliminar o reordenar cualquier acto pasado rompe la verificacion de todos los actos
+    posteriores. Este certificado recalculo la cadena completa en el momento de su emision.
+  </div>
+
+  <h2>3. Evidencia material ({{ evidencias|length }})</h2>
+  {% if evidencias %}
+  <table>
+    <tr>
+      <th style="width:5%">ID</th>
+      <th style="width:38%">Archivo</th>
+      <th style="width:15%">Subida</th>
+      <th style="width:22%">Huella SHA-256</th>
+      <th style="width:10%">Anclaje fisico (EXIF)</th>
+      <th style="width:10%">Verificacion</th>
+    </tr>
+    {% for e in evidencias %}
+    <tr>
+      <td>{{ e.id }}</td>
+      <td class="mono">{{ e.archivo }}</td>
+      <td>{{ e.subida|date:"d-m-Y H:i" }}</td>
+      <td class="mono">{{ e.sha256_corto }}</td>
+      <td class="{% if e.anclaje %}ok{% else %}neutro{% endif %}">{% if e.anclaje %}SI{% else %}NO{% endif %}</td>
+      {% if e.ok is None %}<td class="neutro">PRE-EPOCA</td>{% elif e.ok %}<td class="ok">VERIFICADO</td>{% else %}<td class="fail">ALTERADO</td>{% endif %}
+    </tr>
+    {% endfor %}
+  </table>
+  {% else %}
+  <p>El expediente no registra archivos de evidencia.</p>
+  {% endif %}
+
+  <h2>4. Proteccion ante negligencias</h2>
+  <div class="caja">
+    <strong>Blindaje juridico:</strong> este certificado demuestra que cada etapa del protocolo se cumplio (o se omitio)
+    por el actor facultado, con la evidencia y la norma que tuvo a la vista.
+    <strong>Trazabilidad absoluta:</strong> cada decision Y cada omision quedaron selladas criptograficamente; la
+    inaccion tambien es un acto atribuible con nombre y hora.
+    <strong>Sin negacion posible:</strong> el metodo de autenticacion de cada acto quedo registrado en el sello; el
+    repudio de autoria debe explicar como se rompio SHA-256 antes de negar el clic.
+  </div>
+
+  <div class="footer">
+    {{ marco_legal_texto }} Este certificado fue generado de forma 100% determinista por el sistema Debido a partir de los
+    registros sellados del expediente #{{ multa.id }}; no interviene inteligencia artificial en su emision. La verificacion es
+    reproducible: cualquier parte con acceso al expediente puede recalcular la cadena y obtener el mismo resultado. Los actos
+    marcados PRE-EPOCA corresponden a registros anteriores a la activacion del sellado criptografico (V1) y se declaran como
+    tales sin afirmarse garantias retroactivas.
+  </div>
+
+</body>
+</html>
