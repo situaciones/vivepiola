@@ -33,6 +33,9 @@ EsAdministrador = permiso_por_rol(Rol.ADMINISTRADOR)
 EsResidente = permiso_por_rol(Rol.RESIDENTE)
 EsComiteOAdministrador = permiso_por_rol(Rol.COMITE, Rol.ADMINISTRADOR)
 EsFiscalizadorOComiteOAdministrador = permiso_por_rol(Rol.FISCALIZADOR, Rol.COMITE, Rol.ADMINISTRADOR)
+# Denunciante: quien puede levantar un reporte. La Ley habilita a conserje,
+# comite y a cualquier copropietario/residente (con opcion de anonimato).
+EsDenunciante = permiso_por_rol(Rol.FISCALIZADOR, Rol.COMITE, Rol.RESIDENTE)
 
 
 class MismoCondominio(BasePermission):

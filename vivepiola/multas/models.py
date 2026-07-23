@@ -30,6 +30,10 @@ class Ticket(models.Model):
     fecha_hecho = models.DateTimeField(help_text='Fecha/hora en que ocurrio la presunta infraccion.')
     ubicacion = models.CharField(max_length=255, blank=True)
     estado = models.CharField(max_length=20, choices=EstadoTicket.choices, default=EstadoTicket.PENDIENTE)
+    # Anonimato del denunciante: se conserva creado_por en la base para la
+    # auditoria interna, pero se omite en las vistas del expediente para no
+    # exponer a quien reporta (Art. de proteccion al denunciante).
+    anonimo = models.BooleanField(default=False)
     fecha_creacion = models.DateTimeField(auto_now_add=True)
 
     class Meta:
@@ -128,6 +132,7 @@ class ResolucionDescargo(models.TextChoices):
     PENDIENTE = 'PENDIENTE', 'Pendiente de resolucion'
     ACEPTADO = 'ACEPTADO', 'Aceptado (multa anulada)'
     RECHAZADO = 'RECHAZADO', 'Rechazado (multa se mantiene firme)'
+    DESCUENTO = 'DESCUENTO', 'Descuento parcial (firme, con el monto rebajado)'
 
 
 class Descargo(models.Model):
@@ -143,6 +148,14 @@ class Descargo(models.Model):
         settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name='descargos_resueltos'
     )
     comentario_resolucion = models.TextField(blank=True)
+    porcentaje_descuento = models.PositiveSmallIntegerField(
+        null=True, blank=True,
+        help_text='Rebaja porcentual aplicada al monto cuando la resolucion es DESCUENTO (ej: 30, 50).',
+    )
+    monto_original = models.DecimalField(
+        max_digits=12, decimal_places=2, null=True, blank=True,
+        help_text='Monto de la multa antes del descuento, congelado al resolver (trazabilidad).',
+    )
     fecha_resolucion = models.DateTimeField(null=True, blank=True)
 
     def __str__(self):

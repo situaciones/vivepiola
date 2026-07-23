@@ -18,7 +18,7 @@ class InfraccionCatalogoSerializer(serializers.ModelSerializer):
         model = InfraccionCatalogo
         fields = (
             'id', 'condominio', 'reglamento', 'codigo', 'descripcion', 'articulo_referencia',
-            'monto', 'unidad_monto', 'gravedad', 'estado', 'generado_por_ia', 'texto_fuente',
+            'monto', 'unidad_monto', 'gravedad', 'factor_reincidencia', 'estado', 'generado_por_ia', 'texto_fuente',
             'conlleva_contencion', 'plazo_ratificacion_horas', 'quorum_ratificacion',
             'creado_por', 'confirmado_por', 'fecha_creacion', 'fecha_confirmacion',
         )

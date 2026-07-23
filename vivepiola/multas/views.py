@@ -1,3 +1,5 @@
+from decimal import Decimal
+
 from django.http import HttpResponse
 from django.utils import timezone
 from rest_framework import viewsets
@@ -9,7 +11,7 @@ from rest_framework.response import Response
 
 from accounts.models import Rol
 from accounts.permissions import (
-    EsAdministrador, EsComite, EsFiscalizador, EsFiscalizadorOComiteOAdministrador, EsResidente,
+    EsAdministrador, EsComite, EsDenunciante, EsFiscalizadorOComiteOAdministrador, EsResidente,
 )
 
 from reglamentos.models import EstadoInfraccion, InfraccionCatalogo
@@ -36,10 +38,11 @@ from .services import (
 
 class TicketViewSet(viewsets.ModelViewSet):
     """
-    El Fiscalizador (conserje) es el UNICO rol que crea tickets con evidencia.
-    No define monto ni aprueba nada: por eso no expone accion de aprobacion aqui.
-    Los tickets no se editan ni eliminan una vez creados: son evidencia del
-    debido proceso (solo GET y POST).
+    El reporte lo puede levantar el conserje (Fiscalizador), el Comite o un
+    vecino (Residente), con opcion de anonimato. Quien reporta NO define monto
+    ni aprueba nada: por eso no expone accion de aprobacion aqui. Los tickets no
+    se editan ni eliminan una vez creados: son evidencia del debido proceso
+    (solo GET y POST).
     """
 
     serializer_class = TicketSerializer
@@ -48,7 +51,7 @@ class TicketViewSet(viewsets.ModelViewSet):
 
     def get_permissions(self):
         if self.action in ('create', 'agregar_evidencia'):
-            return [EsFiscalizador()]
+            return [EsDenunciante()]
         return [IsAuthenticated()]
 
     def get_queryset(self):
@@ -153,8 +156,17 @@ class MultaViewSet(viewsets.ReadOnlyModelViewSet):
         estado_anterior = multa.estado
         es_reincidencia, primera_sancion, agravante = verificar_reincidencia(multa.unidad, infraccion)
 
+        # Monto base (del catalogo o el que ajuste el Comite) con multiplicador
+        # automatico por reincidencia si el catalogo define un factor > 1.
+        monto_base = datos.validated_data.get('monto') or infraccion.monto
+        factor = infraccion.factor_reincidencia or Decimal('1.00')
+        factor_aplicado = Decimal('1.00')
+        if es_reincidencia and factor > Decimal('1.00'):
+            factor_aplicado = factor
+            monto_base = (monto_base * factor).quantize(Decimal('0.01'))
+
         multa.infraccion = infraccion
-        multa.monto = datos.validated_data.get('monto') or infraccion.monto
+        multa.monto = monto_base
         multa.estado = EstadoMulta.APROBADA
         multa.aprobada_por = request.user
         multa.fecha_aprobacion = timezone.now()
@@ -166,6 +178,7 @@ class MultaViewSet(viewsets.ReadOnlyModelViewSet):
         registrar_historial(multa, estado_anterior, multa.estado, request.user, 'Multa aprobada por el Comite.')
         sellar_acto(multa, TipoActo.APROBACION, request.user, extra={
             'monto_aplicado': str(multa.monto),
+            'factor_reincidencia_aplicado': str(factor_aplicado),
             'agravante_sugerido': multa.agravante_sugerido,
             'multa_primera_sancion_id': multa.multa_primera_sancion_id,
         })
@@ -254,6 +267,7 @@ class MultaViewSet(viewsets.ReadOnlyModelViewSet):
         resolver_descargo(
             multa.descargo, datos.validated_data['resolucion'], request.user,
             datos.validated_data.get('comentario', ''),
+            porcentaje_descuento=datos.validated_data.get('porcentaje_descuento'),
         )
         return Response(MultaSerializer(multa).data)
 

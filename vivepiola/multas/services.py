@@ -1,5 +1,6 @@
 import io
 from datetime import timedelta
+from decimal import Decimal
 
 from django.conf import settings
 from django.core.files.base import ContentFile
@@ -266,7 +267,14 @@ def actualizar_multas_vencidas(condominio=None):
         })
 
 
-def resolver_descargo(descargo, resolucion, usuario, comentario=''):
+def resolver_descargo(descargo, resolucion, usuario, comentario='', porcentaje_descuento=None):
+    """
+    El Comite resuelve la apelacion con tres desenlaces posibles (Ley 21.442):
+      - ACEPTADO  -> se anula la multa (monto a cero, expediente ANULADA).
+      - RECHAZADO -> la multa se mantiene firme por su monto original.
+      - DESCUENTO -> la multa queda firme pero con una rebaja porcentual del
+        monto. El monto previo se congela en el descargo para trazabilidad.
+    """
     from .models import ResolucionDescargo
 
     multa = descargo.multa
@@ -276,22 +284,36 @@ def resolver_descargo(descargo, resolucion, usuario, comentario=''):
     descargo.resuelto_por = usuario
     descargo.comentario_resolucion = comentario
     descargo.fecha_resolucion = timezone.now()
-    descargo.save()
 
+    monto_final = multa.monto
     if resolucion == ResolucionDescargo.ACEPTADO:
         multa.estado = EstadoMulta.ANULADA
-    else:
+    elif resolucion == ResolucionDescargo.DESCUENTO:
+        pct = int(porcentaje_descuento or 0)
+        descargo.monto_original = multa.monto
+        descargo.porcentaje_descuento = pct
+        factor = (Decimal(100) - Decimal(pct)) / Decimal(100)
+        monto_final = (multa.monto * factor).quantize(Decimal('0.01'))
+        multa.monto = monto_final
         multa.estado = EstadoMulta.FIRME
         multa.fecha_firme = timezone.now()
+    else:  # RECHAZADO
+        multa.estado = EstadoMulta.FIRME
+        multa.fecha_firme = timezone.now()
+
+    descargo.save()
     multa.save()
 
-    registrar_historial(
-        multa, estado_anterior, multa.estado, usuario,
-        f'Descargo resuelto: {resolucion}. {comentario}'.strip(),
-    )
+    detalle = f'Descargo resuelto: {resolucion}.'
+    if resolucion == ResolucionDescargo.DESCUENTO:
+        detalle = f'Descargo resuelto: DESCUENTO {porcentaje_descuento}% (monto {descargo.monto_original} -> {monto_final}).'
+    registrar_historial(multa, estado_anterior, multa.estado, usuario, f'{detalle} {comentario}'.strip())
     sellar_acto(multa, TipoActo.RESOLUCION_DESCARGO, usuario, extra={
         'resolucion': resolucion,
         'comentario': comentario,
+        'porcentaje_descuento': porcentaje_descuento,
+        'monto_original': str(descargo.monto_original) if descargo.monto_original is not None else None,
+        'monto_final': str(monto_final) if monto_final is not None else None,
         'texto_descargo': descargo.texto,
         'descargo_presentado_en': descargo.fecha_presentacion.isoformat(),
     })

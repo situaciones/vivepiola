@@ -1,3 +1,5 @@
+from decimal import Decimal
+
 from django.conf import settings
 from django.db import models
 
@@ -59,6 +61,10 @@ class InfraccionCatalogo(models.Model):
         default='UF',
     )
     gravedad = models.CharField(max_length=20, choices=Gravedad.choices, default=Gravedad.LEVE)
+    # Multiplicador aplicado automaticamente al monto cuando la unidad reincide
+    # en esta infraccion dentro de la ventana legal (Ley 21.442). 1.00 = sin
+    # agravante automatico (el Comite decide); 2.00 = doble, etc.
+    factor_reincidencia = models.DecimalField(max_digits=4, decimal_places=2, default=Decimal('1.00'))
     estado = models.CharField(max_length=20, choices=EstadoInfraccion.choices, default=EstadoInfraccion.BORRADOR)
     # Contencion: la calificacion juridica se hace EN FRIO al configurar el
     # catalogo, nunca en terreno. Si conlleva_contencion=True, reportar este

@@ -25,7 +25,8 @@ class TicketSerializer(serializers.ModelSerializer):
         model = Ticket
         fields = (
             'id', 'condominio', 'unidad', 'unidad_identificador', 'persona_reportada', 'creado_por',
-            'creado_por_nombre', 'descripcion', 'fecha_hecho', 'ubicacion', 'estado', 'fecha_creacion', 'evidencias',
+            'creado_por_nombre', 'descripcion', 'fecha_hecho', 'ubicacion', 'estado', 'anonimo',
+            'fecha_creacion', 'evidencias',
         )
         read_only_fields = ('condominio', 'creado_por', 'estado', 'fecha_creacion')
 
@@ -35,9 +36,19 @@ class TicketSerializer(serializers.ModelSerializer):
         return value
 
     def get_creado_por_nombre(self, obj):
+        if obj.anonimo:
+            return 'Denuncia anonima'
         if not obj.creado_por:
             return ''
         return obj.creado_por.get_full_name() or obj.creado_por.username
+
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        # No exponer la identidad del denunciante cuando pidio anonimato
+        # (se conserva en la base solo para la auditoria interna).
+        if instance.anonimo:
+            data['creado_por'] = None
+        return data
 
 
 class HistorialMultaSerializer(serializers.ModelSerializer):
@@ -53,11 +64,12 @@ class DescargoSerializer(serializers.ModelSerializer):
         model = Descargo
         fields = (
             'id', 'multa', 'presentado_por', 'texto', 'archivo_adjunto', 'fecha_presentacion',
-            'resolucion', 'resuelto_por', 'comentario_resolucion', 'fecha_resolucion',
+            'resolucion', 'resuelto_por', 'comentario_resolucion',
+            'porcentaje_descuento', 'monto_original', 'fecha_resolucion',
         )
         read_only_fields = (
             'presentado_por', 'fecha_presentacion', 'resolucion', 'resuelto_por',
-            'comentario_resolucion', 'fecha_resolucion',
+            'comentario_resolucion', 'porcentaje_descuento', 'monto_original', 'fecha_resolucion',
         )
 
 
@@ -106,8 +118,16 @@ class PresentarDescargoSerializer(serializers.Serializer):
 
 
 class ResolverDescargoSerializer(serializers.Serializer):
-    resolucion = serializers.ChoiceField(choices=['ACEPTADO', 'RECHAZADO'])
+    resolucion = serializers.ChoiceField(choices=['ACEPTADO', 'RECHAZADO', 'DESCUENTO'])
     comentario = serializers.CharField(required=False, allow_blank=True)
+    porcentaje_descuento = serializers.IntegerField(required=False, min_value=1, max_value=99)
+
+    def validate(self, data):
+        if data['resolucion'] == 'DESCUENTO' and not data.get('porcentaje_descuento'):
+            raise serializers.ValidationError(
+                {'porcentaje_descuento': 'Requerido (1-99) cuando la resolucion es DESCUENTO.'}
+            )
+        return data
 
 
 class VotoRatificacionSerializer(serializers.ModelSerializer):
