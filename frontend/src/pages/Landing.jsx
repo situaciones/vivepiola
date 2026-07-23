@@ -13,6 +13,12 @@ const EXIGENCIAS = [
   'Notificacion con valor legal',
   'Trazabilidad total',
   'Derecho a descargo',
+  'Nada discrecional',
+  'Expediente por unidad',
+  'Reincidencia automatica',
+  'Comite protegido',
+  'Cobro en gastos comunes',
+  'App, WhatsApp y correo',
 ];
 
 const FLUJO = [
@@ -183,10 +189,12 @@ export default function Landing() {
 
         <div className="hero-trust rise d4">
           <div className="lbl">El respaldo legal en el que se apoyan comites y administraciones</div>
-          <div className="items">
-            {EXIGENCIAS.map((c) => (
-              <span key={c}><Check size={15} strokeWidth={3} /> {c}</span>
-            ))}
+          <div className="marquee">
+            <div className="marquee-track">
+              {[...EXIGENCIAS, ...EXIGENCIAS].map((c, i) => (
+                <span className="marquee-item" key={i}><Check size={15} strokeWidth={3} /> {c}</span>
+              ))}
+            </div>
           </div>
         </div>
 
