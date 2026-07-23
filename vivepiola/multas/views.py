@@ -31,8 +31,8 @@ from .serializers import (
     ResolverDescargoSerializer, TicketSerializer,
 )
 from .services import (
-    actualizar_multas_vencidas, generar_audit_trail_pdf, notificar_multa, registrar_historial,
-    resolver_descargo, verificar_reincidencia,
+    actualizar_multas_vencidas, generar_audit_trail_pdf, notificar_multa, proponer_infraccion,
+    registrar_historial, resolver_descargo, verificar_reincidencia,
 )
 
 
@@ -78,12 +78,19 @@ class TicketViewSet(viewsets.ModelViewSet):
         ticket = serializer.save(condominio=condominio, creado_por=self.request.user)
         ticket.estado = EstadoTicket.CONVERTIDO
         ticket.save(update_fields=['estado'])
+
+        # Analisis automatico: pre-cargamos la infraccion del catalogo que mejor
+        # calza como PROPUESTA. El Comite revisa y confirma antes de aprobar;
+        # la multa nace EN_REVISION, nunca aprobada por la sola sugerencia.
+        sugerida = proponer_infraccion(ticket)
         Multa.objects.create(
             condominio=ticket.condominio,
             ticket=ticket,
             unidad=ticket.unidad,
             persona_infractor=ticket.persona_reportada,
             estado=EstadoMulta.EN_REVISION,
+            infraccion=sugerida,
+            monto=sugerida.monto if sugerida else None,
         )
 
     @action(detail=True, methods=['post'], url_path='evidencia', parser_classes=[MultiPartParser])

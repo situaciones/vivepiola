@@ -122,11 +122,35 @@ STATIC_ROOT = BASE_DIR / 'staticfiles'
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
 
-# WhiteNoise: comprime y sirve los archivos estaticos en produccion
+# Almacenamiento de archivos.
+#
+# CRITICO: en PaaS (DigitalOcean App Platform) el disco del contenedor es
+# EFIMERO — todo lo subido a MEDIA_ROOT (evidencias, PDFs de notificacion,
+# reglamentos, descargos) se PIERDE en cada deploy/reinicio. Para un producto
+# de prueba legal eso rompe la integridad del expediente. Por eso, si hay un
+# bucket S3-compatible configurado (DigitalOcean Spaces), los archivos de media
+# se guardan alli de forma persistente. Los estaticos los sigue sirviendo
+# WhiteNoise desde el contenedor.
+
+AWS_STORAGE_BUCKET_NAME = config('AWS_STORAGE_BUCKET_NAME', default='')
+AWS_S3_ENDPOINT_URL = config('AWS_S3_ENDPOINT_URL', default='')  # ej: https://nyc3.digitaloceanspaces.com
+AWS_S3_REGION_NAME = config('AWS_S3_REGION_NAME', default='')
+AWS_ACCESS_KEY_ID = config('AWS_ACCESS_KEY_ID', default='')
+AWS_SECRET_ACCESS_KEY = config('AWS_SECRET_ACCESS_KEY', default='')
+AWS_S3_CUSTOM_DOMAIN = config('AWS_S3_CUSTOM_DOMAIN', default='')  # ej: cdn.vivepiola.cl o <bucket>.<region>.cdn.digitaloceanspaces.com
+AWS_DEFAULT_ACL = None
+AWS_QUERYSTRING_AUTH = config('AWS_QUERYSTRING_AUTH', default=True, cast=bool)  # URLs firmadas: evidencias privadas por defecto
+
+_USA_SPACES = bool(AWS_STORAGE_BUCKET_NAME)
+
+_default_storage = (
+    {'BACKEND': 'storages.backends.s3.S3Storage'}
+    if _USA_SPACES
+    else {'BACKEND': 'django.core.files.storage.FileSystemStorage'}
+)
+
 STORAGES = {
-    'default': {
-        'BACKEND': 'django.core.files.storage.FileSystemStorage',
-    },
+    'default': _default_storage,
     'staticfiles': {
         'BACKEND': 'whitenoise.storage.CompressedStaticFilesStorage',
     },
@@ -180,6 +204,15 @@ DEFAULT_FROM_EMAIL = config('DEFAULT_FROM_EMAIL', default='notificaciones@vivepi
 # Integracion IA (extraccion de infracciones desde reglamento en PDF)
 
 ANTHROPIC_API_KEY = config('ANTHROPIC_API_KEY', default='')
+
+
+# WhatsApp (Twilio) — canal COMPLEMENTARIO de aviso. El canal legal de la
+# notificacion sigue siendo el correo; el WhatsApp nunca lo reemplaza y su
+# fallo jamas bloquea el flujo. Vacio = canal deshabilitado.
+
+TWILIO_ACCOUNT_SID = config('TWILIO_ACCOUNT_SID', default='')
+TWILIO_AUTH_TOKEN = config('TWILIO_AUTH_TOKEN', default='')
+TWILIO_WHATSAPP_FROM = config('TWILIO_WHATSAPP_FROM', default='')  # ej: whatsapp:+14155238886
 
 
 # Parametros legales del negocio (Ley 21.442 - Chile)

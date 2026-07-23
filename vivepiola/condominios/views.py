@@ -8,7 +8,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from accounts.models import Rol
-from accounts.permissions import EsAdministrador
+from accounts.permissions import EsAdministrador, EsSuperadmin
 
 from .models import Condominio, Persona, RegistroImportacion, Unidad
 from .serializers import (
@@ -17,9 +17,19 @@ from .serializers import (
 from .utils import generar_plantilla_excel, importar_registro_copropietarios
 
 
-class CondominioViewSet(viewsets.ReadOnlyModelViewSet):
+class CondominioViewSet(viewsets.ModelViewSet):
+    """
+    Alta y consulta de organizaciones (comunidades). Crear/editar/eliminar
+    queda reservado al administrador del sistema (SUPERADMIN), que provisiona
+    la comunidad nueva; el resto de los roles solo consulta la suya.
+    """
+
     serializer_class = CondominioSerializer
-    permission_classes = [IsAuthenticated]
+
+    def get_permissions(self):
+        if self.action in ('create', 'update', 'partial_update', 'destroy'):
+            return [EsSuperadmin()]
+        return [IsAuthenticated()]
 
     def get_queryset(self):
         user = self.request.user

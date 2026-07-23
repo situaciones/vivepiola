@@ -2,6 +2,7 @@ import io
 from datetime import timedelta
 from decimal import Decimal
 
+import requests
 from django.conf import settings
 from django.core.files.base import ContentFile
 from django.core.mail import EmailMessage
@@ -216,8 +217,68 @@ def enviar_notificacion_email(multa, pdf_bytes):
     email.send(fail_silently=False)
 
 
+def enviar_notificacion_whatsapp(multa):
+    """
+    Aviso COMPLEMENTARIO por WhatsApp (Twilio). El canal legal de la
+    notificacion sigue siendo el correo; este solo avisa que hay una multa que
+    revisar. Best-effort: si el canal no esta configurado o falla, se omite sin
+    interrumpir el debido proceso. Devuelve True solo si el mensaje se envio.
+    """
+    sid = settings.TWILIO_ACCOUNT_SID
+    token = settings.TWILIO_AUTH_TOKEN
+    emisor = settings.TWILIO_WHATSAPP_FROM
+    if not (sid and token and emisor):
+        return False
+
+    persona = multa.persona_infractor
+    telefono = ((getattr(persona, 'telefono', '') or '').strip()) if persona else ''
+    if not telefono:
+        return False
+
+    c = multa.condominio
+    dias = multa.plazo_descargo_dias or c.plazo_descargo_dias
+    cuerpo = (
+        f'{c.nombre}: se registro una multa (#{multa.id}) para la unidad '
+        f'{multa.unidad.identificador}. El detalle formal esta en su correo. '
+        f'Tiene {dias} dias corridos para presentar su descargo.'
+    )
+    destino = telefono if telefono.startswith('whatsapp:') else f'whatsapp:{telefono}'
+    resp = requests.post(
+        f'https://api.twilio.com/2010-04-01/Accounts/{sid}/Messages.json',
+        auth=(sid, token),
+        data={'From': emisor, 'To': destino, 'Body': cuerpo},
+        timeout=10,
+    )
+    return resp.status_code in (200, 201)
+
+
+def proponer_infraccion(ticket):
+    """
+    Analisis automatico del reporte: sugiere la infraccion del catalogo ACTIVO
+    que mejor calza con la descripcion (coincidencia por palabras clave del
+    codigo y la descripcion de cada infraccion). Es una PROPUESTA — el Comite
+    siempre confirma o cambia antes de aprobar; nunca sanciona sola.
+    """
+    from reglamentos.models import EstadoInfraccion, InfraccionCatalogo
+
+    activos = list(InfraccionCatalogo.objects.filter(
+        condominio=ticket.condominio, estado=EstadoInfraccion.ACTIVA,
+    ))
+    if not activos:
+        return None
+
+    texto = (ticket.descripcion or '').lower()
+    mejor, mejor_score = None, 0
+    for inf in activos:
+        tokens = {t for t in f'{inf.codigo} {inf.descripcion}'.lower().replace('-', ' ').split() if len(t) >= 4}
+        score = sum(1 for t in tokens if t in texto)
+        if score > mejor_score:
+            mejor, mejor_score = inf, score
+    return mejor if mejor_score > 0 else None
+
+
 def notificar_multa(multa, usuario):
-    """Orquesta: genera PDF, calcula plazo de descargo, envia correo y actualiza estado."""
+    """Orquesta: genera PDF, calcula plazo de descargo, envia correo (+WhatsApp) y actualiza estado."""
     estado_anterior = multa.estado
     pdf_bytes = generar_pdf_notificacion(multa)
 
@@ -232,9 +293,16 @@ def notificar_multa(multa, usuario):
     multa.fecha_notificacion = timezone.now()
     multa.save()
 
+    # Aviso complementario por WhatsApp: nunca bloquea el flujo legal.
+    try:
+        whatsapp_enviado = enviar_notificacion_whatsapp(multa)
+    except Exception:
+        whatsapp_enviado = False
+
     registrar_historial(multa, estado_anterior, multa.estado, usuario, 'Notificacion enviada al correo registrado.')
     sellar_acto(multa, TipoActo.NOTIFICACION, usuario, extra={
         'correo_destino': multa.persona_infractor.correo_electronico,
+        'whatsapp_enviado': whatsapp_enviado,
         'plazo_descargo_dias': multa.plazo_descargo_dias,
         'fecha_limite_descargo': multa.fecha_limite_descargo.isoformat(),
         'pdf_notificacion': multa.pdf_notificacion.name,
