@@ -20,10 +20,10 @@ const FLUJO = [
     desc: 'Se carga la nomina de residentes (planilla tipo Excel) junto con todos los reglamentos aplicables: copropiedad, estacionamientos, uso de espacios comunes y mas.' },
   { Icon: Flag, actor: 'Denunciante', corto: 'Ingreso de la denuncia', titulo: 'Ingreso de la denuncia',
     desc: 'Un conserje, un miembro del comite o un vecino —con opcion de mantener el anonimato— ingresa el reporte de la infraccion al sistema.' },
-  { Icon: Sparkles, actor: 'Inteligencia Artificial', corto: 'Analisis con IA', titulo: 'Analisis con IA',
-    desc: 'La IA cruza los datos de la denuncia con los reglamentos: identifica los articulos infringidos, tipifica la falta, calcula el monto y redacta una propuesta formal de multa.' },
+  { Icon: Sparkles, actor: 'Nosotros', corto: 'Analizamos y proponemos', titulo: 'Analizamos y proponemos',
+    desc: 'Cruzamos los datos de la denuncia con los reglamentos: identificamos los articulos infringidos, tipificamos la falta, calculamos el monto y redactamos una propuesta formal de multa.' },
   { Icon: Gavel, actor: 'Comite', corto: 'Primer filtro: el comite', titulo: 'Primer filtro: el comite revisa',
-    desc: 'El comite revisa la propuesta de la IA. Puede rechazarla (el proceso termina) o aprobarla. Si la aprueba, el sistema emite la notificacion al residente.' },
+    desc: 'El comite revisa la propuesta que preparamos. Puede rechazarla (el proceso termina) o aprobarla. Si la aprueba, emitimos la notificacion al residente.' },
   { Icon: MessageSquareText, actor: 'Residente', corto: 'Derecho a apelacion', titulo: 'Derecho a apelacion',
     desc: 'El residente recibe la notificacion y tiene un plazo de 5 dias para presentar su apelacion a traves de los canales integrados: app, correo o WhatsApp.' },
   { Icon: Scale, actor: 'Comite', corto: 'Resolucion del comite', titulo: 'Resolucion del comite',
@@ -31,11 +31,11 @@ const FLUJO = [
   { Icon: Wallet, actor: 'Administrador', corto: 'Traspaso a cobro', titulo: 'Traspaso a cobro',
     desc: 'Si la resolucion determina que hay un monto a pagar, la instruccion pasa a la administracion para cargarla en la proxima boleta de gastos comunes.' },
   { Icon: FileText, actor: 'Sistema', corto: 'Trazabilidad e historial', titulo: 'Trazabilidad e historial',
-    desc: 'Todo el proceso —fechas, actores, apelaciones y resoluciones— queda en un informe dentro de la carpeta digital del residente. El sistema aplica multiplicadores automaticos si hay reincidencia.' },
+    desc: 'Todo el proceso —fechas, actores, apelaciones y resoluciones— queda en un informe dentro de la carpeta digital del residente. Aplicamos multiplicadores automaticos si hay reincidencia.' },
 ];
 
 const ACTORES = [
-  { Icon: Sparkles, nombre: 'Inteligencia Artificial', rol: 'Analiza los hechos, cruza con los reglamentos, calcula montos y redacta.' },
+  { Icon: Sparkles, nombre: 'Nosotros (VIVEPIOLA)', rol: 'Analizamos los hechos, cruzamos los reglamentos, calculamos los montos y redactamos.' },
   { Icon: Flag, nombre: 'Denunciante', rol: 'Ingresa el reporte inicial de la infraccion.' },
   { Icon: Gavel, nombre: 'Comite de administracion', rol: 'Aprueba las multas y resuelve las apelaciones.' },
   { Icon: Users, nombre: 'Residente', rol: 'Recibe notificaciones, ejerce su defensa y asume el pago.' },
@@ -66,9 +66,9 @@ const BENEFICIOS = [
 
 const SALVAGUARDAS = [
   { Icon: CheckCircle2, titulo: 'Nada es discrecional',
-    texto: 'No hay multas porque si: la IA valida cada caso contra la Ley 21.442 y el reglamento de tu comunidad.' },
-  { Icon: Bot, titulo: 'Un bot filtra lo que no corresponde',
-    texto: 'Antes de llegar a quien decide, un bot descarta lo que claramente no es una infraccion.' },
+    texto: 'No hay multas porque si: validamos cada caso contra la Ley 21.442 y el reglamento de tu comunidad.' },
+  { Icon: Bot, titulo: 'Filtramos lo que no corresponde',
+    texto: 'Antes de llegar a quien decide, descartamos lo que claramente no es una infraccion.' },
   { Icon: AlertTriangle, titulo: 'Sin contacto, no hay multa',
     texto: 'Si el residente no tiene contacto registrado, el caso queda en pausa hasta poder notificar de verdad.' },
   { Icon: ShieldCheck, titulo: 'Comite, administracion y residente protegidos',
@@ -252,8 +252,8 @@ export default function Landing() {
           <span className="h-eyebrow rise d1">● Ley 21.442, su reglamento y el de tu condominio</span>
           <h1 className="rise d2">Trazabilidad de multas, <span className="hl">notificaciones y reclamos.</span></h1>
           <p className="hero-lead rise d2">
-            Sube, clasifica y cobra con certeza. IA alineada a la Ley 21.442, al reglamento
-            de la ley y a los reglamentos de tu condominio.
+            Sube, clasifica y cobra con certeza. Analizamos cada caso alineados a la Ley 21.442,
+            al reglamento de la ley y a los reglamentos de tu condominio.
           </p>
           <p className="hero-kicker rise d3">Sin rodeos, sin favoritismos, sin demoras.</p>
           <div className="hero-ctas rise d3">
