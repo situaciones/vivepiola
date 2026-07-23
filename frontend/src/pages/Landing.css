@@ -28,7 +28,7 @@
 .vp nav{position:sticky;top:0;z-index:40;background:rgba(10,10,15,.86);backdrop-filter:saturate(1.3) blur(10px);border-bottom:1px solid var(--h-border)}
 .nav-in{display:flex;align-items:center;justify-content:space-between;height:68px;max-width:1160px;margin:0 auto;padding:0 24px}
 .brand{display:flex;align-items:center;gap:11px;color:var(--h-ink)}
-.brand .mk{width:36px;height:36px;border-radius:10px;display:grid;place-items:center;color:#fff;background:var(--grad);box-shadow:0 6px 20px -4px rgba(120,90,247,.6)}
+.brand .mk{flex-shrink:0;display:block;border-radius:11px;box-shadow:0 6px 20px -6px rgba(120,90,247,.5)}
 .wordmark{display:flex;flex-direction:column;line-height:.9;letter-spacing:.04em}
 .wordmark b{font-size:.9rem;font-weight:500;color:var(--h-ink)}
 .wordmark b + b{font-weight:900}

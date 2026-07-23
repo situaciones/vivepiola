@@ -144,8 +144,15 @@ function drawTerrain(canvas) {
   }
 }
 
-function BrandMark({ size = 17 }) {
-  return <span className="mk"><ShieldCheck size={size} strokeWidth={2.4} /></span>;
+function BrandMark({ size = 36 }) {
+  return (
+    <svg className="mk" width={size} height={size} viewBox="0 0 100 100" aria-hidden="true">
+      <rect width="100" height="100" rx="24" fill="#131320" stroke="rgba(150,140,235,.18)" strokeWidth="1.5" />
+      <path d="M32 40 L48 66 L74 26" fill="none" stroke="#3B82F6" strokeWidth="10" strokeLinecap="round" strokeLinejoin="round" />
+      <circle cx="32" cy="40" r="6.5" fill="#A855F7" />
+      <circle cx="74" cy="26" r="6.5" fill="#10B981" />
+    </svg>
+  );
 }
 
 function FlujoInteractivo() {
@@ -230,7 +237,7 @@ export default function Landing() {
     <div className="vp">
       <nav>
         <div className="nav-in">
-          <Link to="/" className="brand"><BrandMark size={19} /><span className="wordmark"><b>VIVE</b><b>PIOLA</b></span></Link>
+          <Link to="/" className="brand"><BrandMark size={38} /><span className="wordmark"><b>VIVE</b><b>PIOLA</b></span></Link>
           <div className="nav-links">
             <a href="#flujo">El ciclo</a>
             <a href="#roles">Trazabilidad</a>
@@ -404,7 +411,7 @@ export default function Landing() {
 
       <footer>
         <div className="wrap foot-in">
-          <span className="brand"><BrandMark size={16} /><span className="wordmark"><b>VIVE</b><b>PIOLA</b></span></span>
+          <span className="brand"><BrandMark size={30} /><span className="wordmark"><b>VIVE</b><b>PIOLA</b></span></span>
           <span>© 2026 VIVEPIOLA · Al dia con la Ley 21.442</span>
           <Link to={rutaApp}>Entrar a la plataforma →</Link>
         </div>
