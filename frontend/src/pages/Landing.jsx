@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
   Activity, AlertTriangle, ArrowRight, Bot, Camera, Check, CheckCircle2, Database,
@@ -75,75 +75,6 @@ const SALVAGUARDAS = [
     texto: 'Cada decision y cada paso queda documentado. Todos los involucrados quedan respaldados.' },
 ];
 
-function nz(x, y) {
-  const n = Math.sin(x * 127.1 + y * 311.7) * 43758.5453;
-  return n - Math.floor(n);
-}
-
-// Gradiente de marca a lo ancho: morado -> azul -> verde
-function brandColor(t) {
-  const stops = [[168, 85, 247], [59, 130, 246], [16, 185, 129]];
-  const seg = t * 2;
-  const i = Math.min(1, Math.floor(seg));
-  const f = seg - i;
-  const a = stops[i];
-  const b = stops[i + 1];
-  return [
-    Math.round(a[0] + (b[0] - a[0]) * f),
-    Math.round(a[1] + (b[1] - a[1]) * f),
-    Math.round(a[2] + (b[2] - a[2]) * f),
-  ];
-}
-
-function drawTerrain(canvas) {
-  const ctx = canvas.getContext('2d');
-  const dpr = Math.min(window.devicePixelRatio || 1, 2);
-  const W = canvas.clientWidth;
-  const H = canvas.clientHeight;
-  if (!W || !H) return;
-  canvas.width = W * dpr;
-  canvas.height = H * dpr;
-  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-  ctx.clearRect(0, 0, W, H);
-  const cols = Math.max(26, Math.floor(W / 26));
-  const rows = 13;
-  const horizon = H * 0.18;
-  const pts = [];
-  for (let j = 0; j < rows; j++) {
-    const row = [];
-    const persp = j / (rows - 1);
-    const yBase = horizon + persp * persp * (H - horizon);
-    for (let i = 0; i <= cols; i++) {
-      const t = i / cols;
-      let h = Math.sin(t * 6.283 * 1.7 + 0.6) * 0.5 + Math.sin(t * 6.283 * 3.1 + 1.3) * 0.28 + Math.sin(t * 6.283 * 0.9 + 0.4) * 0.34;
-      h += (nz(i, j) * 2 - 1) * 0.4;
-      h = h * 0.6 + 0.5;
-      const amp = 62 * (0.25 + persp);
-      row.push({ x: t * W, y: yBase - h * amp, h, p: persp });
-    }
-    pts.push(row);
-  }
-  for (let j = 0; j < rows; j++) {
-    for (let i = 0; i <= cols; i++) {
-      const pt = pts[j][i];
-      const b = Math.min(1, 0.12 + pt.h * 0.42) * (0.28 + 0.72 * pt.p);
-      const [cr, cg, cb] = brandColor(i / cols);
-      if (i < cols) {
-        const q = pts[j][i + 1];
-        ctx.strokeStyle = `rgba(${cr},${cg},${cb},${0.08 + b * 0.4})`;
-        ctx.lineWidth = 1;
-        ctx.beginPath(); ctx.moveTo(pt.x, pt.y); ctx.lineTo(q.x, q.y); ctx.stroke();
-      }
-      if (j < rows - 1) {
-        const q2 = pts[j + 1][i];
-        ctx.strokeStyle = `rgba(${cr},${cg},${cb},${0.05 + b * 0.24})`;
-        ctx.lineWidth = 1;
-        ctx.beginPath(); ctx.moveTo(pt.x, pt.y); ctx.lineTo(q2.x, q2.y); ctx.stroke();
-      }
-    }
-  }
-}
-
 function BrandMark({ size = 36 }) {
   return (
     <svg className="mk" width={size} height={size} viewBox="0 0 100 100" aria-hidden="true">
@@ -206,27 +137,8 @@ function FlujoInteractivo() {
 export default function Landing() {
   const { usuario } = useAuth();
   const rutaApp = usuario ? '/app' : '/login';
-  const terrainRef = useRef(null);
   const [form, setForm] = useState({ nombre: '', correo: '', empresa: '' });
   const [enviado, setEnviado] = useState(false);
-
-  useEffect(() => {
-    const canvas = terrainRef.current;
-    if (!canvas) return undefined;
-    let t;
-    const build = () => drawTerrain(canvas);
-    const schedule = () => { clearTimeout(t); t = setTimeout(build, 80); };
-    build();
-    // El canvas mide 0 en el primer render: el observer redibuja apenas tiene tamaño real.
-    const ro = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(schedule) : null;
-    if (ro) ro.observe(canvas);
-    window.addEventListener('resize', schedule);
-    return () => {
-      window.removeEventListener('resize', schedule);
-      if (ro) ro.disconnect();
-      clearTimeout(t);
-    };
-  }, []);
 
   const enviarLead = (e) => {
     e.preventDefault();
@@ -283,7 +195,7 @@ export default function Landing() {
           <div className="stat"><div className="n">3<em> canales</em></div><div className="t">Notificacion por app, WhatsApp y correo</div></div>
         </div>
         <div className="hero-foot" />
-        <canvas id="terrain" ref={terrainRef} aria-hidden="true" />
+        <div className="hero-photo" aria-hidden="true" />
       </header>
 
       {/* ---------- FLUJO INTERACTIVO ---------- */}
