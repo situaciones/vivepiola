@@ -45,15 +45,15 @@
 /* HERO */
 .hero{position:relative;background:var(--h-bg);color:var(--h-ink);overflow:hidden;isolation:isolate}
 .hero::before{content:"";position:absolute;top:-140px;left:50%;transform:translateX(-50%);width:900px;height:520px;border-radius:50%;z-index:0;background:radial-gradient(closest-side,rgba(139,120,255,.34),rgba(59,130,246,.14),transparent 72%);filter:blur(12px)}
-.hero-photo{position:absolute;left:0;right:0;bottom:0;top:26%;z-index:0;pointer-events:none;
+.hero-photo{position:absolute;left:0;right:0;bottom:0;top:20%;z-index:0;pointer-events:none;
   background-image:linear-gradient(to bottom,rgba(10,10,15,0) 26%,rgba(10,10,15,.6) 100%),url(/hero-mountains.webp);
-  background-size:cover,cover;background-position:center,center 42%;background-repeat:no-repeat;
+  background-size:cover,cover;background-position:center,center 38%;background-repeat:no-repeat;
   opacity:.9;filter:brightness(.6) saturate(1.08);
   -webkit-mask-image:linear-gradient(to bottom,transparent 0,#000 24%,#000 100%);
   mask-image:linear-gradient(to bottom,transparent 0,#000 24%,#000 100%)}
-.hero-inner{position:relative;z-index:2;text-align:center;padding:66px 24px 0;max-width:820px;margin:0 auto}
+.hero-inner{position:relative;z-index:2;text-align:center;padding:40px 24px 0;max-width:820px;margin:0 auto}
 .h-eyebrow{display:inline-flex;align-items:center;gap:8px;font-size:.76rem;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--h-cyan);background:rgba(139,157,255,.1);border:1px solid rgba(139,157,255,.28);padding:6px 14px;border-radius:999px}
-.hero h1{font-size:clamp(2rem,4.4vw,3.2rem);font-weight:800;line-height:1.16;margin:28px auto 26px;max-width:22ch;color:#fff}
+.hero h1{font-size:clamp(2rem,4.4vw,3.2rem);font-weight:800;line-height:1.16;margin:6px auto 24px;max-width:22ch;color:#fff}
 .hero h1 .hl{background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent}
 .vp .hero-lead{font-size:1.14rem;line-height:1.62;color:#c2c6e0;max-width:640px;margin:0 auto 22px;text-wrap:balance;text-shadow:0 1px 10px rgba(0,0,0,.6)}
 .vp .hero-kicker{font-size:.98rem;font-weight:700;color:var(--h-cyan);letter-spacing:.01em;margin:0 auto 44px;text-wrap:balance}

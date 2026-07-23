@@ -174,8 +174,7 @@ export default function Landing() {
           <span>20d</span><span>15d</span><span>10d</span><span>5d</span><span>0</span>
         </div>
         <div className="hero-inner">
-          <span className="h-eyebrow rise d1">● Ley 21.442, su reglamento y el de tu condominio</span>
-          <h1 className="rise d2">Trazabilidad de multas, <span className="hl">notificaciones y reclamos.</span></h1>
+          <h1 className="rise d1">Trazabilidad de multas, <span className="hl">notificaciones y reclamos.</span></h1>
           <p className="hero-lead rise d2">
             Sube, clasifica y cobra con certeza. Analizamos cada caso alineados a la Ley 21.442,
             al reglamento de la ley y a los reglamentos de tu condominio.
@@ -188,7 +187,7 @@ export default function Landing() {
         </div>
 
         <div className="hero-trust rise d4">
-          <div className="lbl">El respaldo legal en el que se apoyan comites y administraciones</div>
+          <div className="lbl">Proceso trazable de las multas, notificaciones y reclamos en los condominios</div>
           <div className="marquee">
             <div className="marquee-track">
               {[...EXIGENCIAS, ...EXIGENCIAS].map((c, i) => (
