@@ -80,6 +80,21 @@ function nz(x, y) {
   return n - Math.floor(n);
 }
 
+// Gradiente de marca a lo ancho: morado -> azul -> verde
+function brandColor(t) {
+  const stops = [[168, 85, 247], [59, 130, 246], [16, 185, 129]];
+  const seg = t * 2;
+  const i = Math.min(1, Math.floor(seg));
+  const f = seg - i;
+  const a = stops[i];
+  const b = stops[i + 1];
+  return [
+    Math.round(a[0] + (b[0] - a[0]) * f),
+    Math.round(a[1] + (b[1] - a[1]) * f),
+    Math.round(a[2] + (b[2] - a[2]) * f),
+  ];
+}
+
 function drawTerrain(canvas) {
   const ctx = canvas.getContext('2d');
   const dpr = Math.min(window.devicePixelRatio || 1, 2);
@@ -112,15 +127,16 @@ function drawTerrain(canvas) {
     for (let i = 0; i <= cols; i++) {
       const pt = pts[j][i];
       const b = Math.min(1, 0.12 + pt.h * 0.42) * (0.28 + 0.72 * pt.p);
+      const [cr, cg, cb] = brandColor(i / cols);
       if (i < cols) {
         const q = pts[j][i + 1];
-        ctx.strokeStyle = `rgba(90,236,222,${0.06 + b * 0.34})`;
+        ctx.strokeStyle = `rgba(${cr},${cg},${cb},${0.08 + b * 0.4})`;
         ctx.lineWidth = 1;
         ctx.beginPath(); ctx.moveTo(pt.x, pt.y); ctx.lineTo(q.x, q.y); ctx.stroke();
       }
       if (j < rows - 1) {
         const q2 = pts[j + 1][i];
-        ctx.strokeStyle = `rgba(66,206,200,${0.05 + b * 0.22})`;
+        ctx.strokeStyle = `rgba(${cr},${cg},${cb},${0.05 + b * 0.24})`;
         ctx.lineWidth = 1;
         ctx.beginPath(); ctx.moveTo(pt.x, pt.y); ctx.lineTo(q2.x, q2.y); ctx.stroke();
       }
@@ -214,7 +230,7 @@ export default function Landing() {
     <div className="vp">
       <nav>
         <div className="nav-in">
-          <Link to="/" className="brand"><BrandMark />VIVEPIOLA</Link>
+          <Link to="/" className="brand"><BrandMark size={19} /><span className="wordmark"><b>VIVE</b><b>PIOLA</b></span></Link>
           <div className="nav-links">
             <a href="#flujo">El ciclo</a>
             <a href="#roles">Trazabilidad</a>
@@ -388,7 +404,7 @@ export default function Landing() {
 
       <footer>
         <div className="wrap foot-in">
-          <span className="brand"><BrandMark size={15} />VIVEPIOLA</span>
+          <span className="brand"><BrandMark size={16} /><span className="wordmark"><b>VIVE</b><b>PIOLA</b></span></span>
           <span>© 2026 VIVEPIOLA · Al dia con la Ley 21.442</span>
           <Link to={rutaApp}>Entrar a la plataforma →</Link>
         </div>
