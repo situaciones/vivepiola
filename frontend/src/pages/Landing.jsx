@@ -192,7 +192,7 @@ export default function Landing() {
           <div className="marquee">
             <div className="marquee-track">
               {[...EXIGENCIAS, ...EXIGENCIAS].map((c, i) => (
-                <span className="marquee-item" key={i}><Check size={15} strokeWidth={3} /> {c}</span>
+                <span className="marquee-item" key={i}>{c}</span>
               ))}
             </div>
           </div>
