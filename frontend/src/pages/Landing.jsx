@@ -187,7 +187,7 @@ export default function Landing() {
         </div>
 
         <div className="hero-trust rise d4">
-          <div className="lbl">Proceso trazable de las multas, notificaciones y reclamos en los condominios</div>
+          <div className="lbl">Proceso trazable de las <span className="hl">multas, notificaciones y reclamos</span> en los condominios</div>
           <div className="marquee">
             <div className="marquee-track">
               {[...EXIGENCIAS, ...EXIGENCIAS].map((c, i) => (
