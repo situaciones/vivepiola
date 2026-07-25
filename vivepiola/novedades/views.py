@@ -5,7 +5,7 @@ from django.utils import timezone
 from rest_framework import viewsets
 from rest_framework.decorators import action
 from rest_framework.exceptions import ValidationError
-from rest_framework.permissions import IsAuthenticated
+from accounts.permissions import UsuarioAsignado
 from rest_framework.response import Response
 
 from accounts.models import Rol
@@ -34,7 +34,7 @@ class NovedadLibroViewSet(viewsets.ModelViewSet):
     def get_permissions(self):
         if self.action == 'responder':
             return [EsAdministrador()]
-        return [IsAuthenticated()]
+        return [UsuarioAsignado()]
 
     def get_queryset(self):
         user = self.request.user

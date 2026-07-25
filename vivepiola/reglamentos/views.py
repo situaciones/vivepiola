@@ -1,7 +1,7 @@
 from django.utils import timezone
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
-from rest_framework.permissions import IsAuthenticated
+from accounts.permissions import UsuarioAsignado
 from rest_framework.response import Response
 
 from accounts.models import Rol
@@ -96,7 +96,7 @@ class ReglamentoViewSet(viewsets.ModelViewSet):
 
 class InfraccionCatalogoViewSet(viewsets.ModelViewSet):
     serializer_class = InfraccionCatalogoSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [UsuarioAsignado]
     filterset_fields = ['estado', 'gravedad', 'generado_por_ia']
 
     def get_queryset(self):
@@ -112,7 +112,7 @@ class InfraccionCatalogoViewSet(viewsets.ModelViewSet):
     def get_permissions(self):
         if self.action in ('create', 'update', 'partial_update', 'destroy', 'confirmar', 'rechazar'):
             return [EsComiteOAdministrador()]
-        return [IsAuthenticated()]
+        return [UsuarioAsignado()]
 
     def perform_create(self, serializer):
         serializer.save(condominio=self.request.user.condominio, creado_por=self.request.user)

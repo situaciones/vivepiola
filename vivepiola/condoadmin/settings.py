@@ -215,6 +215,19 @@ TWILIO_AUTH_TOKEN = config('TWILIO_AUTH_TOKEN', default='')
 TWILIO_WHATSAPP_FROM = config('TWILIO_WHATSAPP_FROM', default='')  # ej: whatsapp:+14155238886
 
 
+# Ingreso con Google (Google Identity Services).
+# Sin CLIENT_ID y con GOOGLE_OAUTH_MOCK=True (default en DEBUG), el endpoint
+# /api/auth/google/ acepta credenciales "mock:correo[:Nombre]" para probar el
+# flujo de invitaciones sin claves reales. En produccion (DEBUG=False) el modo
+# simulado queda apagado salvo que se habilite explicitamente.
+
+GOOGLE_OAUTH_CLIENT_ID = config('GOOGLE_OAUTH_CLIENT_ID', default='')
+GOOGLE_OAUTH_MOCK = config('GOOGLE_OAUTH_MOCK', default=DEBUG, cast=bool)
+
+# URL publica del frontend, usada en los correos de invitacion.
+FRONTEND_URL = config('FRONTEND_URL', default='https://vivepiola-p3oup.ondigitalocean.app')
+
+
 # Parametros legales del negocio (Ley 21.442 - Chile)
 
 NOVEDADES_PLAZO_RESPUESTA_DIAS = config('NOVEDADES_PLAZO_RESPUESTA_DIAS', default=20, cast=int)

@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react';
-import { BellRing, FileText, KeyRound, MessageSquareText, Users, Wallet } from 'lucide-react';
+import { BellRing, FileText, KeyRound, MessageSquareText, UserPlus, Users, Wallet } from 'lucide-react';
 import client, { MEDIA_BASE } from '../../api/client';
 import { useAuth } from '../../context/AuthContext';
 import EstadoBadge from '../../components/EstadoBadge';
 import EmptyState from '../../components/EmptyState';
 import PageHeader from '../../components/PageHeader';
 import AppShell from '../../components/AppShell';
+import PanelEquipo from '../../components/PanelEquipo';
 import PanelFirmasDelegadas from '../../components/PanelFirmasDelegadas';
 import { useVocab } from '../../vocab';
 
@@ -140,6 +141,7 @@ export default function AdministradorDashboard() {
       tabs={[
         { id: 'notificar', label: `Notificar ${t('multa_plural').toLowerCase()}`, icon: BellRing, badge: aprobadas.length },
         ...(tieneDelegacion ? [{ id: 'firmas', label: 'Firmas por delegacion', icon: KeyRound, badge: firmasPendientes }] : []),
+        { id: 'equipo', label: 'Equipo y accesos', icon: UserPlus },
         { id: 'registro', label: t('registro_titulo'), icon: Users },
         { id: 'reglamento', label: `${t('infraccion')} y reglamento`, icon: FileText },
         { id: 'novedades', label: 'Libro de Novedades', icon: MessageSquareText, badge: novedadesPendientes.length },
@@ -185,6 +187,18 @@ export default function AdministradorDashboard() {
             />
             <div style={{ marginTop: 24 }}>
               <PanelFirmasDelegadas />
+            </div>
+          </>
+        )}
+
+        {tab === 'equipo' && (
+          <>
+            <PageHeader
+              titulo="Equipo y accesos"
+              subtitulo="Invita por correo con rol sugerido, comparte el Codigo Unico de Comunidad y confirma el rol de quienes entraron con Google."
+            />
+            <div style={{ marginTop: 24 }}>
+              <PanelEquipo />
             </div>
           </>
         )}

@@ -1,5 +1,9 @@
+import secrets
+from datetime import timedelta
+
 from django.contrib.auth.models import AbstractUser
 from django.db import models
+from django.utils import timezone
 
 
 class Rol(models.TextChoices):
@@ -10,6 +14,14 @@ class Rol(models.TextChoices):
     ADMINISTRADOR = 'ADMINISTRADOR', 'Administrador'
     RESIDENTE = 'RESIDENTE', 'Residente'
     SUPERADMIN = 'SUPERADMIN', 'Administrador del sistema'
+    # Registro self-serve (Google) sin invitacion: la cuenta existe pero no
+    # accede a ningun modulo hasta que un Administrador le asigne rol final.
+    PENDIENTE = 'PENDIENTE', 'Pendiente de asignacion'
+
+
+# Roles que un Administrador de condominio puede asignar/invitar. El rol
+# ADMINISTRADOR y SUPERADMIN quedan fuera: solo el Django admin los otorga.
+ROLES_ASIGNABLES = (Rol.FISCALIZADOR, Rol.COMITE, Rol.RESIDENTE)
 
 
 class Usuario(AbstractUser):
@@ -41,3 +53,54 @@ class Usuario(AbstractUser):
 
     def __str__(self):
         return f'{self.get_full_name() or self.username} ({self.get_rol_display()})'
+
+
+class EstadoInvitacion(models.TextChoices):
+    PENDIENTE = 'PENDIENTE', 'Pendiente'
+    ACEPTADA = 'ACEPTADA', 'Aceptada'
+    REVOCADA = 'REVOCADA', 'Revocada'
+
+
+def _generar_codigo_invitacion():
+    return secrets.token_urlsafe(9)  # 12 chars URL-safe
+
+
+class Invitacion(models.Model):
+    """
+    Invitacion delegada: el Administrador del condominio (no el Superadmin)
+    invita por correo indicando unidad y rol sugerido. Al aceptar via Google,
+    la cuenta nace ya asociada a la comunidad con ese rol.
+    """
+
+    condominio = models.ForeignKey('condominios.Condominio', on_delete=models.CASCADE, related_name='invitaciones')
+    correo = models.EmailField()
+    unidad = models.ForeignKey(
+        'condominios.Unidad', on_delete=models.SET_NULL, null=True, blank=True, related_name='invitaciones'
+    )
+    rol_sugerido = models.CharField(max_length=20, choices=Rol.choices)
+    codigo = models.CharField(max_length=32, unique=True, default=_generar_codigo_invitacion)
+    estado = models.CharField(max_length=20, choices=EstadoInvitacion.choices, default=EstadoInvitacion.PENDIENTE)
+    creada_por = models.ForeignKey(
+        'accounts.Usuario', on_delete=models.SET_NULL, null=True, related_name='invitaciones_enviadas'
+    )
+    creada_en = models.DateTimeField(auto_now_add=True)
+    expira_en = models.DateTimeField()
+    aceptada_por = models.ForeignKey(
+        'accounts.Usuario', on_delete=models.SET_NULL, null=True, blank=True, related_name='invitaciones_aceptadas'
+    )
+    aceptada_en = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        ordering = ['-creada_en']
+
+    def save(self, *args, **kwargs):
+        if not self.expira_en:
+            self.expira_en = timezone.now() + timedelta(days=14)
+        super().save(*args, **kwargs)
+
+    @property
+    def vigente(self):
+        return self.estado == EstadoInvitacion.PENDIENTE and timezone.now() <= self.expira_en
+
+    def __str__(self):
+        return f'Invitacion a {self.correo} ({self.rol_sugerido}) - {self.condominio.nombre}'

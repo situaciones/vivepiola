@@ -40,6 +40,22 @@ EsDenunciante = permiso_por_rol(Rol.FISCALIZADOR, Rol.COMITE, Rol.RESIDENTE)
 EsSuperadmin = permiso_por_rol()
 
 
+class UsuarioAsignado(BasePermission):
+    """
+    Autenticado Y con rol asignado. Las cuentas PENDIENTE (registro Google sin
+    invitacion) solo pueden ver su perfil (/auth/me); ningun modulo del flujo.
+    """
+
+    message = 'Su cuenta esta pendiente de asignacion de rol por el Administrador de su comunidad.'
+
+    def has_permission(self, request, view):
+        return bool(
+            request.user
+            and request.user.is_authenticated
+            and request.user.rol != Rol.PENDIENTE
+        )
+
+
 class MismoCondominio(BasePermission):
     """Restringe el acceso a objetos del mismo condominio que el usuario autenticado."""
 

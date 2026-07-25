@@ -38,6 +38,15 @@ export function AuthProvider({ children }) {
     await cargarUsuario();
   };
 
+  // Ingreso con Google: credential = ID token de GIS (o "mock:correo" en dev).
+  // codigo = codigo de invitacion o Codigo Unico de Comunidad (opcional).
+  const loginGoogle = async (credential, codigo = '') => {
+    const { data } = await client.post('/auth/google/', { credential, codigo });
+    localStorage.setItem('access', data.access);
+    localStorage.setItem('refresh', data.refresh);
+    await cargarUsuario();
+  };
+
   const logout = () => {
     localStorage.removeItem('access');
     localStorage.removeItem('refresh');
@@ -45,7 +54,7 @@ export function AuthProvider({ children }) {
   };
 
   return (
-    <AuthContext.Provider value={{ usuario, login, logout, cargando }}>
+    <AuthContext.Provider value={{ usuario, login, loginGoogle, logout, cargando }}>
       {children}
     </AuthContext.Provider>
   );

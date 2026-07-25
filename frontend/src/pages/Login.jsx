@@ -1,15 +1,64 @@
-import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { AlertCircle, Scale, ShieldCheck } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import { AlertCircle, KeyRound, Scale, ShieldCheck } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+
+const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || '';
 
 export default function Login() {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [enviando, setEnviando] = useState(false);
-  const { login } = useAuth();
+  const { login, loginGoogle } = useAuth();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  // Codigo de invitacion o Codigo Unico de Comunidad (viene en el link del correo).
+  const [codigo, setCodigo] = useState(() => searchParams.get('codigo') || '');
+  const codigoRef = useRef(codigo);
+  codigoRef.current = codigo;
+  const botonGoogleRef = useRef(null);
+
+  const entrarConCredencial = async (credential) => {
+    setError('');
+    setEnviando(true);
+    try {
+      await loginGoogle(credential, codigoRef.current.trim());
+      navigate('/app');
+    } catch (err) {
+      setError(err.response?.data?.detail || 'No se pudo iniciar sesion con Google.');
+    } finally {
+      setEnviando(false);
+    }
+  };
+
+  // Google Identity Services: solo si hay CLIENT_ID configurado.
+  useEffect(() => {
+    if (!GOOGLE_CLIENT_ID) return undefined;
+    const script = document.createElement('script');
+    script.src = 'https://accounts.google.com/gsi/client';
+    script.async = true;
+    script.onload = () => {
+      if (!window.google || !botonGoogleRef.current) return;
+      window.google.accounts.id.initialize({
+        client_id: GOOGLE_CLIENT_ID,
+        callback: (resp) => entrarConCredencial(resp.credential),
+      });
+      window.google.accounts.id.renderButton(botonGoogleRef.current, {
+        theme: 'outline', size: 'large', width: 320, text: 'continue_with',
+      });
+    };
+    document.head.appendChild(script);
+    return () => { document.head.removeChild(script); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Modo simulado (sin CLIENT_ID): pide el correo y usa la credencial mock del backend.
+  const googleSimulado = async () => {
+    const correo = window.prompt('Modo prueba - correo de Google:');
+    if (!correo) return;
+    await entrarConCredencial(`mock:${correo.trim()}`);
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -51,12 +100,35 @@ export default function Login() {
         <form className="login-tarjeta" onSubmit={handleSubmit}>
           <div>
             <h1>Iniciar sesion</h1>
-            <p className="texto-secundario">Ingresa con tu cuenta del condominio.</p>
+            <p className="texto-secundario">Entra con Google o con tu cuenta del condominio.</p>
+          </div>
+
+          <label>
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+              <KeyRound size={13} /> Codigo de invitacion o comunidad (opcional)
+            </span>
+            <input
+              value={codigo}
+              onChange={(e) => setCodigo(e.target.value)}
+              placeholder="Solo la primera vez, si te lo compartieron"
+            />
+          </label>
+
+          {GOOGLE_CLIENT_ID ? (
+            <div ref={botonGoogleRef} style={{ display: 'flex', justifyContent: 'center' }} />
+          ) : (
+            <button type="button" className="btn btn-secundario" onClick={googleSimulado} disabled={enviando}>
+              Continuar con Google (modo prueba)
+            </button>
+          )}
+
+          <div className="texto-secundario" style={{ textAlign: 'center', fontSize: '0.8rem' }}>
+            — o con usuario y contrasena —
           </div>
 
           <label>
             Usuario
-            <input value={username} onChange={(e) => setUsername(e.target.value)} required autoFocus />
+            <input value={username} onChange={(e) => setUsername(e.target.value)} required />
           </label>
           <label>
             Contrasena

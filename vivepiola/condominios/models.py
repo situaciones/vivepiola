@@ -1,3 +1,5 @@
+import secrets
+
 from django.conf import settings
 from django.db import models
 
@@ -54,10 +56,22 @@ class Condominio(models.Model):
         default=5,
         help_text='Dias corridos que tiene el residente para presentar descargos tras la notificacion.',
     )
+    # Codigo Unico de Comunidad: cualquier vecino puede registrarse via Google
+    # con este codigo y queda PENDIENTE de que el Administrador le asigne rol.
+    codigo_comunidad = models.CharField(max_length=12, unique=True, null=True, blank=True, db_index=True)
     creado_en = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         ordering = ['nombre']
+
+    def save(self, *args, **kwargs):
+        if not self.codigo_comunidad:
+            for _ in range(20):
+                candidato = secrets.token_hex(4).upper()  # 8 chars hex
+                if not Condominio.objects.filter(codigo_comunidad=candidato).exists():
+                    self.codigo_comunidad = candidato
+                    break
+        super().save(*args, **kwargs)
 
     def __str__(self):
         return self.nombre

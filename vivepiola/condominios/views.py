@@ -3,7 +3,7 @@ from rest_framework import viewsets
 from rest_framework.decorators import action
 from rest_framework.exceptions import ValidationError
 from rest_framework.parsers import MultiPartParser
-from rest_framework.permissions import IsAuthenticated
+from accounts.permissions import UsuarioAsignado
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
@@ -29,7 +29,7 @@ class CondominioViewSet(viewsets.ModelViewSet):
     def get_permissions(self):
         if self.action in ('create', 'update', 'partial_update', 'destroy'):
             return [EsSuperadmin()]
-        return [IsAuthenticated()]
+        return [UsuarioAsignado()]
 
     def get_queryset(self):
         user = self.request.user
@@ -47,7 +47,7 @@ class _CondominioScopedMixin:
     def get_permissions(self):
         if self.action in ('create', 'update', 'partial_update', 'destroy'):
             return [EsAdministrador()]
-        return [IsAuthenticated()]
+        return [UsuarioAsignado()]
 
     def get_queryset(self):
         user = self.request.user
@@ -81,7 +81,7 @@ class PersonaViewSet(_CondominioScopedMixin, viewsets.ModelViewSet):
 class PlantillaRegistroView(APIView):
     """Descarga la plantilla Excel obligatoria para la carga del registro de copropietarios."""
 
-    permission_classes = [IsAuthenticated]
+    permission_classes = [UsuarioAsignado]
 
     def get(self, request):
         buffer = generar_plantilla_excel()

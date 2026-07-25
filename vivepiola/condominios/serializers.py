@@ -4,9 +4,18 @@ from .models import Condominio, Persona, RegistroImportacion, Unidad
 
 
 class CondominioSerializer(serializers.ModelSerializer):
+    codigo_comunidad = serializers.SerializerMethodField()
+
     class Meta:
         model = Condominio
-        fields = ('id', 'nombre', 'direccion', 'rut', 'plazo_descargo_dias')
+        fields = ('id', 'nombre', 'direccion', 'rut', 'plazo_descargo_dias', 'codigo_comunidad')
+
+    def get_codigo_comunidad(self, obj):
+        """El Codigo Unico de Comunidad solo lo ve quien puede repartirlo."""
+        request = self.context.get('request')
+        if request and getattr(request.user, 'rol', None) in ('ADMINISTRADOR', 'SUPERADMIN'):
+            return obj.codigo_comunidad
+        return None
 
 
 class UnidadSerializer(serializers.ModelSerializer):

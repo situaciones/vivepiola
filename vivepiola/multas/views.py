@@ -6,7 +6,7 @@ from rest_framework import viewsets
 from rest_framework.decorators import action
 from rest_framework.exceptions import ValidationError
 from rest_framework.parsers import MultiPartParser
-from rest_framework.permissions import IsAuthenticated
+from accounts.permissions import UsuarioAsignado
 from rest_framework.response import Response
 
 from accounts.models import Rol
@@ -46,13 +46,13 @@ class TicketViewSet(viewsets.ModelViewSet):
     """
 
     serializer_class = TicketSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [UsuarioAsignado]
     http_method_names = ['get', 'post', 'head', 'options']
 
     def get_permissions(self):
         if self.action in ('create', 'agregar_evidencia'):
             return [EsDenunciante()]
-        return [IsAuthenticated()]
+        return [UsuarioAsignado()]
 
     def get_queryset(self):
         user = self.request.user
@@ -124,7 +124,7 @@ class MultaViewSet(viewsets.ReadOnlyModelViewSet):
             return [EsAdministrador()]
         if self.action == 'presentar_descargo':
             return [EsResidente()]
-        return [IsAuthenticated()]
+        return [UsuarioAsignado()]
 
     def get_queryset(self):
         user = self.request.user
@@ -325,10 +325,10 @@ class MedidaInmediataViewSet(viewsets.ModelViewSet):
         # habilita a otros roles, y la unica autoridad autoritativa es
         # _resolver_autoridad (que responde 403 SinAutoridad si nada respalda).
         if self.action == 'ratificar':
-            return [IsAuthenticated()]
+            return [UsuarioAsignado()]
         if self.action == 'levantar':
             return [EsComite()]  # levantar no es delegable en esta fase
-        return [IsAuthenticated()]
+        return [UsuarioAsignado()]
 
     def get_queryset(self):
         user = self.request.user
@@ -424,7 +424,7 @@ class DelegacionViewSet(viewsets.ModelViewSet):
     def get_permissions(self):
         if self.action in ('create', 'revocar'):
             return [EsComite()]
-        return [IsAuthenticated()]
+        return [UsuarioAsignado()]
 
     def get_queryset(self):
         user = self.request.user
