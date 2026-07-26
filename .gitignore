@@ -8,3 +8,9 @@ backend/__pycache__/
 backend/db.sqlite3
 node_modules/
 frontend/dist/
+
+# Entorno local y artefactos del backend desplegado
+vivepiola/.env
+vivepiola/media/
+vivepiola/staticfiles/
+*.sqlite3

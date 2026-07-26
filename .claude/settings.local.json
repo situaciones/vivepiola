@@ -59,7 +59,28 @@
       "Bash(printf '<!doctype html><html lang=\"es\"><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"></head><body>\\\\n')",
       "Bash(cat vivepiola_landing_concepto.html)",
       "Bash(printf '\\\\n</body></html>')",
-      "Bash(\"/c/Users/esali/APLICACION DE MULTAS/venv/Scripts/python.exe\" -m http.server 8890)"
+      "Bash(\"/c/Users/esali/APLICACION DE MULTAS/venv/Scripts/python.exe\" -m http.server 8890)",
+      "Bash(\"/c/Users/esali/APLICACION DE MULTAS/venv/Scripts/python.exe\" -m http.server 8891)",
+      "mcp__visualize__read_me",
+      "mcp__visualize__show_widget",
+      "Bash(git rev-list *)",
+      "Bash(\"../venv/Scripts/python.exe\" -c \"import django; print\\('django', django.get_version\\(\\)\\)\")",
+      "Bash(\"../venv/Scripts/python.exe\" manage.py makemigrations --dry-run)",
+      "Bash(\"../venv/Scripts/python.exe\" manage.py makemigrations multas reglamentos)",
+      "Bash(\"../venv/Scripts/python.exe\" manage.py check)",
+      "Skill(claude-api)",
+      "Skill(claude-api:*)",
+      "WebSearch",
+      "Bash(\"../venv/Scripts/python.exe\" manage.py makemigrations accounts condominios)",
+      "Bash(\"../venv/Scripts/python.exe\" manage.py makemigrations condominios --empty -n backfill_codigo_comunidad)",
+      "Bash(\"../venv/Scripts/python.exe\" manage.py test --settings=condoadmin.settings_test)",
+      "Bash(\"../venv/Scripts/python.exe\" manage.py test multas.tests_capacidades --settings=condoadmin.settings_test)",
+      "Bash(\"../venv/Scripts/python.exe\" manage.py test accounts --settings=condoadmin.settings_test)",
+      "Bash(export DB_ENGINE=sqlite)",
+      "Bash(rm -f db_local.sqlite3)",
+      "Bash(\"../venv/Scripts/python.exe\" manage.py migrate)",
+      "Bash(\"../venv/Scripts/python.exe\" manage.py seed_demo)",
+      "Bash(awk -F= '/^[A-Z_]+=/ {clave=$1; valor=substr\\($0, index\\($0,\"=\"\\)+1\\); gsub\\(/[[:space:]]/,\"\",valor\\); print clave \": \" \\(length\\(valor\\)>0 ? \"TIENE VALOR \\(\" length\\(valor\\) \" chars\\)\" : \"vacio\"\\)}' vivepiola/.env)"
     ]
   }
 }

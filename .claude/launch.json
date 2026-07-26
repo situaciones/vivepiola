@@ -5,7 +5,7 @@
       "name": "django-backend",
       "runtimeExecutable": "C:\\Users\\esali\\APLICACION DE MULTAS\\venv\\Scripts\\python.exe",
       "runtimeArgs": [
-        "C:\\Users\\esali\\APLICACION DE MULTAS\\backend\\manage.py",
+        "C:\\Users\\esali\\APLICACION DE MULTAS\\vivepiola\\manage.py",
         "runserver",
         "127.0.0.1:8000"
       ],

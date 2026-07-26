@@ -178,15 +178,37 @@ class FlujoLegalTestCase(APITestCase):
             respuesta = self.client.post(f'/api/multas/{multa.id}/notificar/')
             self.assertEqual(respuesta.status_code, 403)
 
-    def test_solo_el_fiscalizador_crea_tickets(self):
-        for usuario in (self.comite, self.administrador, self.residente):
+    def test_quien_puede_denunciar(self):
+        """
+        La denuncia la puede levantar el conserje, el Comite o un vecino. El
+        Administrador NO: su rol es ejecutar (notificar y cobrar), no reportar.
+        """
+        def intentar(usuario):
             self.client.force_authenticate(usuario)
-            respuesta = self.client.post('/api/tickets/', {
+            return self.client.post('/api/tickets/', {
                 'unidad': self.unidad.id,
                 'descripcion': 'x',
                 'fecha_hecho': timezone.now().isoformat(),
-            })
-            self.assertEqual(respuesta.status_code, 403)
+            }).status_code
+
+        for usuario in (self.conserje, self.comite, self.residente):
+            self.assertEqual(intentar(usuario), 201, f'{usuario.rol} deberia poder denunciar')
+        self.assertEqual(intentar(self.administrador), 403)
+
+    def test_denuncia_anonima_no_expone_al_denunciante(self):
+        self.client.force_authenticate(self.residente)
+        respuesta = self.client.post('/api/tickets/', {
+            'unidad': self.unidad.id,
+            'persona_reportada': self.otra_persona.id,
+            'descripcion': 'Vecino reporta de forma anonima',
+            'fecha_hecho': (timezone.now() - timedelta(hours=1)).isoformat(),
+            'anonimo': True,
+        })
+        self.assertEqual(respuesta.status_code, 201, respuesta.data)
+        self.assertIsNone(respuesta.data['creado_por'])
+        self.assertEqual(respuesta.data['creado_por_nombre'], 'Denuncia anonima')
+        # La identidad se conserva en la base para la auditoria interna.
+        self.assertEqual(Ticket.objects.get(id=respuesta.data['id']).creado_por_id, self.residente.id)
 
     def test_multas_no_se_crean_ni_editan_directamente(self):
         multa = self.crear_ticket()
@@ -431,16 +453,19 @@ class SelladoCriptograficoTestCase(APITestCase):
 
     def test_actas_inmutables_a_nivel_de_base_de_datos(self):
         from django.db import transaction
-        from django.db.utils import OperationalError
+        from django.db.utils import DatabaseError
 
         multa = self._crear_caso_con_evidencia()
         self._aprobar(multa)
 
+        # DatabaseError cubre el abort de cada motor (MySQL SIGNAL ->
+        # OperationalError; SQLite RAISE -> IntegrityError): lo que se afirma
+        # es que el motor lo rechaza, no como se llama su excepcion.
         acta = multa.actas_selladas.first()
-        with self.assertRaises(OperationalError):
+        with self.assertRaises(DatabaseError):
             with transaction.atomic():
                 ActaSellada.objects.filter(id=acta.id).update(auth_metodo='falsificado')
-        with self.assertRaises(OperationalError):
+        with self.assertRaises(DatabaseError):
             with transaction.atomic():
                 ActaSellada.objects.filter(id=acta.id).delete()
 

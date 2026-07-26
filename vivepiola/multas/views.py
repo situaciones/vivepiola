@@ -5,7 +5,7 @@ from django.utils import timezone
 from rest_framework import viewsets
 from rest_framework.decorators import action
 from rest_framework.exceptions import ValidationError
-from rest_framework.parsers import MultiPartParser
+from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
 from accounts.permissions import UsuarioAsignado
 from rest_framework.response import Response
 
@@ -225,7 +225,13 @@ class MultaViewSet(viewsets.ReadOnlyModelViewSet):
 
         return Response(MultaSerializer(multa).data)
 
-    @action(detail=True, methods=['post'], url_path='descargo', parser_classes=[MultiPartParser])
+    # El adjunto es opcional: se aceptan tanto multipart (con archivo) como
+    # JSON (defensa solo de texto), para que un cliente sin archivo no reciba
+    # un 415 por enviar el formato natural de la API.
+    @action(
+        detail=True, methods=['post'], url_path='descargo',
+        parser_classes=[MultiPartParser, FormParser, JSONParser],
+    )
     def presentar_descargo(self, request, pk=None):
         """El residente presenta su defensa dentro del plazo configurado."""
         multa = self.get_object()

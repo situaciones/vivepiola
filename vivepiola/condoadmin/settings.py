@@ -11,7 +11,9 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 SECRET_KEY = config('SECRET_KEY', default='django-insecure-change-me-in-production')
 
-DEBUG = config('DEBUG', default=True, cast=bool)
+# Por defecto FALSE: si una variable falta en el entorno, el sistema debe
+# fallar cerrado (sin trazas ni datos expuestos), nunca abrir el modo debug.
+DEBUG = config('DEBUG', default=False, cast=bool)
 
 ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='localhost,127.0.0.1', cast=Csv())
 
@@ -74,19 +76,29 @@ WSGI_APPLICATION = 'condoadmin.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/6.0/ref/settings/#databases
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.mysql',
-        'NAME': config('DB_NAME', default='condoadmin'),
-        'USER': config('DB_USER', default='root'),
-        'PASSWORD': config('DB_PASSWORD', default=''),
-        'HOST': config('DB_HOST', default='127.0.0.1'),
-        'PORT': config('DB_PORT', default='3306'),
-        'OPTIONS': {
-            'charset': 'utf8mb4',
-        },
+# Produccion usa MySQL. DB_ENGINE=sqlite levanta el sistema completo sobre un
+# archivo local, para probar el flujo end-to-end sin instalar un motor.
+if config('DB_ENGINE', default='mysql') == 'sqlite':
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / 'db_local.sqlite3',
+        }
     }
-}
+else:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.mysql',
+            'NAME': config('DB_NAME', default='condoadmin'),
+            'USER': config('DB_USER', default='root'),
+            'PASSWORD': config('DB_PASSWORD', default=''),
+            'HOST': config('DB_HOST', default='127.0.0.1'),
+            'PORT': config('DB_PORT', default='3306'),
+            'OPTIONS': {
+                'charset': 'utf8mb4',
+            },
+        }
+    }
 
 AUTH_USER_MODEL = 'accounts.Usuario'
 
