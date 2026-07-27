@@ -6,6 +6,7 @@ import {
   Sparkles, TrendingUp, Users, Wallet, X,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { LogoVivePiola } from '../components/Marca';
 import './Landing.css';
 
 const EXIGENCIAS = [
@@ -81,15 +82,9 @@ const SALVAGUARDAS = [
     texto: 'Cada decision y cada paso queda documentado. Todos los involucrados quedan respaldados.' },
 ];
 
+// El simbolo vive en components/Marca: una sola definicion para toda la app.
 function BrandMark({ size = 36 }) {
-  return (
-    <svg className="mk" width={size} height={size} viewBox="0 0 100 100" aria-hidden="true">
-      <rect width="100" height="100" rx="24" fill="#131320" stroke="rgba(150,140,235,.18)" strokeWidth="1.5" />
-      <path d="M32 40 L48 66 L74 26" fill="none" stroke="#3B82F6" strokeWidth="10" strokeLinecap="round" strokeLinejoin="round" />
-      <circle cx="32" cy="40" r="6.5" fill="#A855F7" />
-      <circle cx="74" cy="26" r="6.5" fill="#10B981" />
-    </svg>
-  );
+  return <LogoVivePiola size={size} className="mk" />;
 }
 
 function FlujoInteractivo() {

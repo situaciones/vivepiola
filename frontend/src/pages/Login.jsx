@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
-import { AlertCircle, KeyRound, Scale, ShieldCheck } from 'lucide-react';
+import { AlertCircle, KeyRound, Scale } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import Marca from '../components/Marca';
 
 const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || '';
 
@@ -78,8 +79,7 @@ export default function Login() {
     <div className="pantalla-login">
       <div className="login-panel-marca">
         <Link to="/" className="marca-top" style={{ textDecoration: 'none', color: 'inherit' }}>
-          <span className="logo-mark"><ShieldCheck size={16} strokeWidth={2.4} /></span>
-          VIVEPIOLA
+          <Marca size={34} />
         </Link>
         <div className="marca-claim">
           <h2><strong>VIVEPIOLA</strong> proceso, sin atajos.</h2>

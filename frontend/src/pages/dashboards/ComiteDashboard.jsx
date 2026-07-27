@@ -360,7 +360,7 @@ export default function ComiteDashboard() {
                                   onChange={() => setDatoActiva('infraccion_id', i.id)}
                                 />
                                 <span className="codigo">{i.codigo}</span>
-                                <span className="descripcion">{i.descripcion} · Art. {i.articulo_referencia || 's/n'}</span>
+                                <span className="descripcion">{i.descripcion} · {i.articulo_referencia || 'sin articulo'}</span>
                                 <span className="monto">{i.monto} {i.unidad_monto}</span>
                               </label>
                             ))}
@@ -591,7 +591,7 @@ export default function ComiteDashboard() {
                     <EstadoBadge estado={b.estado} />
                   </div>
                   <p>{b.descripcion}</p>
-                  <p className="texto-secundario">Art. {b.articulo_referencia} · {b.monto} {b.unidad_monto} · {b.gravedad}</p>
+                  <p className="texto-secundario">{b.articulo_referencia || 'sin articulo'} · {b.monto} {b.unidad_monto} · {b.gravedad}</p>
                   {b.texto_fuente && <blockquote className="cita-fuente">"{b.texto_fuente}"</blockquote>}
                   <div className="acciones">
                     <button className="btn btn-exito" onClick={() => confirmarInfraccion(b.id)}>Confirmar</button>

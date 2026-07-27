@@ -32,10 +32,12 @@ TERMINOS_DEFAULT = {
 FRASES_DEFAULT = {
     'notificacion_asunto': 'Notificacion de multa #{numero} - {organizacion_cap}',
     'notificacion_saludo': 'Estimado(a) {nombre},',
+    # El catalogo guarda la referencia completa ("Art. 4"), por eso la frase
+    # NO antepone "Art.": hacerlo producia "(Art. Art. 4)" en la notificacion.
     'notificacion_cuerpo': (
         'Se le notifica que el {organo_sancionador} de {org_nombre} ha aprobado '
         'una multa asociada a la {unidad} {unidad_id} por la infraccion '
-        '"{infraccion}" (Art. {articulo}).'
+        '"{infraccion}" ({articulo}).'
     ),
     'notificacion_monto': 'Monto: {monto} {unidad_monto}',
     'notificacion_plazo': (

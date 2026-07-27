@@ -87,16 +87,24 @@ svg { flex-shrink: 0; }
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
 }
 
+/* El simbolo es un SVG con su propio fondo: aqui solo se le da forma. */
 .logo-mark {
-  width: 30px;
-  height: 30px;
-  border-radius: var(--radio-sm);
-  background: var(--tech);
-  color: var(--navy-950);
-  display: grid;
-  place-items: center;
+  border-radius: 9px;
+  display: block;
   flex-shrink: 0;
+  box-shadow: 0 4px 14px -5px rgba(120, 90, 247, 0.55);
 }
+
+/* Wordmark apilado: VIVE regular sobre PIOLA en negra. */
+.marca-vp { display: inline-flex; align-items: center; gap: 10px; }
+.marca-wordmark {
+  display: flex;
+  flex-direction: column;
+  line-height: 0.92;
+  letter-spacing: 0.05em;
+}
+.marca-wordmark b { font-size: 0.82rem; font-weight: 500; }
+.marca-wordmark b + b { font-weight: 900; }
 
 .sidebar-seccion-label {
   font-size: 0.68rem;

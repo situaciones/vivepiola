@@ -1,6 +1,7 @@
-import { LogOut, ShieldCheck } from 'lucide-react';
+import { LogOut } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useVocab } from '../vocab';
+import Marca from './Marca';
 
 export default function AppShell({ tabs, active, onChange, dark = false, children }) {
   const { usuario, logout } = useAuth();
@@ -11,8 +12,7 @@ export default function AppShell({ tabs, active, onChange, dark = false, childre
     <div className={`app-shell${dark ? ' pagina-oscura' : ''}`}>
       <aside className="sidebar">
         <div className="sidebar-brand">
-          <span className="logo-mark"><ShieldCheck size={16} strokeWidth={2.4} /></span>
-          VIVEPIOLA
+          <Marca size={30} />
         </div>
 
         <p className="sidebar-seccion-label">{usuario?.rol ? t(`rol_${usuario.rol}`) : ''}</p>
