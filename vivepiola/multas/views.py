@@ -79,10 +79,10 @@ class TicketViewSet(viewsets.ModelViewSet):
         ticket.estado = EstadoTicket.CONVERTIDO
         ticket.save(update_fields=['estado'])
 
-        # Analisis automatico: pre-cargamos la infraccion del catalogo que mejor
-        # calza como PROPUESTA. El Comite revisa y confirma antes de aprobar;
-        # la multa nace EN_REVISION, nunca aprobada por la sola sugerencia.
-        sugerida = proponer_infraccion(ticket)
+        # Analisis automatico: se pre-carga la infraccion propuesta junto con su
+        # origen y fundamento, para que el Comite vea de donde salio. La multa
+        # nace EN_REVISION: la sugerencia nunca sanciona por si sola.
+        sugerida, origen, confianza, fundamento = proponer_infraccion(ticket)
         Multa.objects.create(
             condominio=ticket.condominio,
             ticket=ticket,
@@ -91,6 +91,9 @@ class TicketViewSet(viewsets.ModelViewSet):
             estado=EstadoMulta.EN_REVISION,
             infraccion=sugerida,
             monto=sugerida.monto if sugerida else None,
+            propuesta_origen=origen,
+            propuesta_confianza=confianza,
+            propuesta_fundamento=fundamento,
         )
 
     @action(detail=True, methods=['post'], url_path='evidencia', parser_classes=[MultiPartParser])

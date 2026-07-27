@@ -93,12 +93,14 @@ class MultaSerializer(serializers.ModelSerializer):
             'aprobada_por', 'fecha_aprobacion', 'motivo_rechazo',
             'notificada_por', 'fecha_notificacion', 'pdf_notificacion',
             'plazo_descargo_dias', 'fecha_limite_descargo',
+            'propuesta_origen', 'propuesta_confianza', 'propuesta_fundamento',
             'es_reincidencia', 'multa_primera_sancion', 'agravante_sugerido',
             'fecha_creacion', 'fecha_firme', 'historial', 'descargo',
         )
         read_only_fields = (
             'condominio', 'unidad', 'persona_infractor', 'estado', 'aprobada_por', 'fecha_aprobacion',
             'notificada_por', 'fecha_notificacion', 'pdf_notificacion', 'fecha_limite_descargo',
+            'propuesta_origen', 'propuesta_confianza', 'propuesta_fundamento',
             'es_reincidencia', 'multa_primera_sancion', 'agravante_sugerido', 'fecha_creacion', 'fecha_firme',
         )
 

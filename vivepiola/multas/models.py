@@ -103,6 +103,16 @@ class Multa(models.Model):
     plazo_descargo_dias = models.PositiveSmallIntegerField(null=True, blank=True)
     fecha_limite_descargo = models.DateTimeField(null=True, blank=True)
 
+    # Propuesta automatica al ingresar la denuncia. Es un BORRADOR para el
+    # Comite: se guarda con su origen y fundamento para que quien decide sepa
+    # de donde salio y pueda descartarla. Nunca sustituye la decision humana.
+    propuesta_origen = models.CharField(
+        max_length=20, blank=True,
+        help_text='IA = clasificador; COINCIDENCIA = respaldo por terminos; vacio = sin propuesta.',
+    )
+    propuesta_confianza = models.PositiveSmallIntegerField(default=0)
+    propuesta_fundamento = models.TextField(blank=True)
+
     # Reincidencia (Ley 21.442: misma infraccion dentro de 6 meses de la primera sancion)
     es_reincidencia = models.BooleanField(default=False)
     multa_primera_sancion = models.ForeignKey(

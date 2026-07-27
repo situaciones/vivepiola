@@ -275,6 +275,28 @@ export default function ComiteDashboard() {
                         <footer>— {activa.ticket_detalle?.creado_por_nombre || 'Fiscalizador'}, reporte de fiscalizacion</footer>
                       </blockquote>
 
+                      {activa.estado === 'EN_REVISION' && activa.propuesta_fundamento && (
+                        <div className="propuesta-automatica">
+                          <div className="propuesta-cabecera">
+                            <Sparkles size={14} />
+                            <strong>
+                              {activa.propuesta_origen === 'IA'
+                                ? 'Analisis automatico'
+                                : 'Coincidencia de terminos'}
+                            </strong>
+                            {activa.propuesta_confianza > 0 && (
+                              <span className="propuesta-confianza">
+                                {activa.propuesta_confianza}% de confianza
+                              </span>
+                            )}
+                          </div>
+                          <p>{activa.propuesta_fundamento}</p>
+                          <span className="propuesta-nota">
+                            Es una propuesta: la decision es tuya. Puedes cambiar la infraccion o rechazar el reporte.
+                          </span>
+                        </div>
+                      )}
+
                       {activa.estado === 'EN_REVISION' && (
                         <>
                           <div className="panel-comparacion">

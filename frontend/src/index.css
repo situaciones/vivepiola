@@ -484,6 +484,22 @@ textarea { resize: vertical; }
 .panel-comparacion { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 14px 0; }
 @media (max-width: 700px) { .panel-comparacion { grid-template-columns: 1fr; } }
 
+/* Propuesta automatica: se muestra como borrador, nunca como veredicto. */
+.propuesta-automatica {
+  margin: 14px 0; padding: 12px 14px; border-radius: 10px;
+  background: rgba(59, 130, 246, 0.06); border: 1px solid rgba(59, 130, 246, 0.22);
+  border-left: 3px solid #3b82f6;
+}
+.propuesta-cabecera { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+.propuesta-cabecera strong { font-size: 0.82rem; color: #1d4ed8; }
+.propuesta-cabecera svg { color: #3b82f6; flex-shrink: 0; }
+.propuesta-confianza {
+  margin-left: auto; font-size: 0.72rem; font-weight: 700; color: #1d4ed8;
+  background: rgba(59, 130, 246, 0.12); padding: 2px 8px; border-radius: 999px;
+}
+.propuesta-automatica p { font-size: 0.88rem; line-height: 1.5; margin: 0; }
+.propuesta-nota { display: block; margin-top: 8px; font-size: 0.76rem; color: var(--texto-tenue); }
+
 .panel-evidencia, .panel-articulo { border: 1px solid var(--borde); border-radius: var(--radio); padding: 14px 16px; background: #fafbfc; }
 .panel-evidencia h4, .panel-articulo h4 {
   margin: 0 0 8px; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.06em;

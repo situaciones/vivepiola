@@ -254,27 +254,43 @@ def enviar_notificacion_whatsapp(multa):
 
 def proponer_infraccion(ticket):
     """
-    Analisis automatico del reporte: sugiere la infraccion del catalogo ACTIVO
-    que mejor calza con la descripcion (coincidencia por palabras clave del
-    codigo y la descripcion de cada infraccion). Es una PROPUESTA — el Comite
-    siempre confirma o cambia antes de aprobar; nunca sanciona sola.
+    Analiza el reporte y propone la infraccion del catalogo ACTIVO que
+    corresponde, con su fundamento.
+
+    Es una PROPUESTA: la multa nace EN_REVISION y el Comite confirma o cambia
+    antes de aprobar. Intenta primero el clasificador con IA y, si no hay clave
+    o la llamada falla, cae al respaldo determinista por coincidencia de
+    terminos: el debido proceso nunca queda a merced de un servicio externo.
+
+    Devuelve (infraccion|None, origen, confianza, fundamento).
     """
     from reglamentos.models import EstadoInfraccion, InfraccionCatalogo
+
+    from .clasificador import (
+        ORIGEN_COINCIDENCIA, ORIGEN_IA, clasificar_con_ia, clasificar_por_coincidencia,
+    )
 
     activos = list(InfraccionCatalogo.objects.filter(
         condominio=ticket.condominio, estado=EstadoInfraccion.ACTIVA,
     ))
     if not activos:
-        return None
+        return None, '', 0, ''
 
-    texto = (ticket.descripcion or '').lower()
-    mejor, mejor_score = None, 0
-    for inf in activos:
-        tokens = {t for t in f'{inf.codigo} {inf.descripcion}'.lower().replace('-', ' ').split() if len(t) >= 4}
-        score = sum(1 for t in tokens if t in texto)
-        if score > mejor_score:
-            mejor, mejor_score = inf, score
-    return mejor if mejor_score > 0 else None
+    if settings.ANTHROPIC_API_KEY:
+        try:
+            infraccion, confianza, fundamento = clasificar_con_ia(ticket, activos)
+            if infraccion is not None:
+                return infraccion, ORIGEN_IA, confianza, fundamento
+            if fundamento:
+                # La IA respondio que ninguna encaja: se conserva el porque.
+                return None, ORIGEN_IA, confianza, fundamento
+        except Exception:
+            pass  # cualquier fallo del servicio cae al respaldo determinista
+
+    infraccion, confianza, fundamento = clasificar_por_coincidencia(ticket, activos)
+    if infraccion is None:
+        return None, '', 0, ''
+    return infraccion, ORIGEN_COINCIDENCIA, confianza, fundamento
 
 
 def notificar_multa(multa, usuario):

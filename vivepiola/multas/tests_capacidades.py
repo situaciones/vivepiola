@@ -81,6 +81,8 @@ class CapacidadesNuevasTestCase(APITestCase):
         self.assertEqual(multa.estado, EstadoMulta.EN_REVISION)
         self.assertEqual(multa.infraccion_id, self.infraccion.id)
         self.assertEqual(multa.monto, Decimal('10.00'))
+        self.assertEqual(multa.propuesta_origen, 'COINCIDENCIA')  # sin clave de IA
+        self.assertTrue(multa.propuesta_fundamento)
 
     def test_denuncia_sin_coincidencia_queda_sin_propuesta(self):
         multa = self._denunciar('Situacion atipica fuera del catalogo vigente')
