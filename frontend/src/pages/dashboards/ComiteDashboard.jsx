@@ -163,12 +163,30 @@ export default function ComiteDashboard() {
     cargarTodo();
   };
 
-  const resolverDescargo = async (resolucion) => {
+  const resolverDescargo = async (resolucion, porcentaje_descuento = null) => {
     const comentario = prompt(`Comentario de la resolucion (${resolucion}):`) || '';
-    await client.post(`/multas/${activa.id}/resolver-descargo/`, { resolucion, comentario });
-    setMensaje(`Descargo de multa #${activa.id} resuelto: ${resolucion}.`);
+    const cuerpo = { resolucion, comentario };
+    if (porcentaje_descuento) cuerpo.porcentaje_descuento = porcentaje_descuento;
+    await client.post(`/multas/${activa.id}/resolver-descargo/`, cuerpo);
+    setMensaje(
+      porcentaje_descuento
+        ? `Descargo de multa #${activa.id} resuelto con ${porcentaje_descuento}% de descuento.`
+        : `Descargo de multa #${activa.id} resuelto: ${resolucion}.`,
+    );
     setSeleccionId(null);
     cargarTodo();
+  };
+
+  // Descuento parcial: la multa queda firme, pero con el monto rebajado.
+  const resolverConDescuento = async () => {
+    const ingresado = prompt('Porcentaje de descuento a aplicar (1-99):', '30');
+    if (!ingresado) return;
+    const porcentaje = parseInt(ingresado, 10);
+    if (Number.isNaN(porcentaje) || porcentaje < 1 || porcentaje > 99) {
+      setMensaje('El descuento debe ser un numero entre 1 y 99.');
+      return;
+    }
+    await resolverDescargo('DESCUENTO', porcentaje);
   };
 
   const confirmarInfraccion = async (id) => {
@@ -421,6 +439,9 @@ export default function ComiteDashboard() {
                           <div className="acciones">
                             <button className="btn btn-exito" onClick={() => resolverDescargo('ACEPTADO')}>
                               Aceptar descargo (anula la multa)
+                            </button>
+                            <button className="btn btn-secundario" onClick={resolverConDescuento}>
+                              Aplicar descuento (multa firme, monto rebajado)
                             </button>
                             <button className="btn btn-peligro" onClick={() => resolverDescargo('RECHAZADO')}>
                               Rechazar descargo (multa firme)
