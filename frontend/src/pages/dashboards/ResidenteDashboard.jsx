@@ -44,6 +44,18 @@ export default function ResidenteDashboard() {
 
   // Refresca cada minuto para que la cuenta regresiva del plazo sea dinamica.
   const [, setTick] = useState(0);
+  // /app?multa=12 llega desde el link del aviso de WhatsApp.
+  const [multaDestacada] = useState(() => {
+    const pedida = new URLSearchParams(window.location.search).get('multa');
+    return pedida ? Number(pedida) : null;
+  });
+
+  // Cuando la lista ya esta en pantalla, se lleva la vista a esa multa.
+  useEffect(() => {
+    if (!multaDestacada || multas.length === 0) return;
+    document.getElementById(`multa-${multaDestacada}`)
+      ?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }, [multaDestacada, multas]);
   useEffect(() => {
     const id = setInterval(() => setTick((t) => t + 1), 60000);
     return () => clearInterval(id);
@@ -110,7 +122,11 @@ export default function ResidenteDashboard() {
 
             <div className="lista-tarjetas">
               {multas.map((m) => (
-                <div key={m.id} className="tarjeta">
+                <div
+                  key={m.id}
+                  id={`multa-${m.id}`}
+                  className={`tarjeta${m.id === multaDestacada ? ' tarjeta-destacada' : ''}`}
+                >
                   <div className="tarjeta-header">
                     <strong>{t('multa')} #{m.id} - {m.unidad_identificador}</strong>
                     <EstadoBadge estado={m.estado} />

@@ -95,6 +95,12 @@ svg { flex-shrink: 0; }
   box-shadow: 0 4px 14px -5px rgba(120, 90, 247, 0.55);
 }
 
+/* Expediente abierto desde el link del aviso: se destaca para no perderlo. */
+.tarjeta-destacada {
+  border-color: var(--tech);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.18);
+}
+
 /* Wordmark apilado: VIVE regular sobre PIOLA en negra. */
 .marca-vp { display: inline-flex; align-items: center; gap: 10px; }
 .marca-wordmark {
@@ -195,13 +201,38 @@ svg { flex-shrink: 0; }
 .contenedor { max-width: 1080px; margin: 0 auto; padding: 32px 32px 80px; text-align: left; }
 
 @media (max-width: 860px) {
-  .app-shell { flex-direction: column; }
-  .sidebar { width: 100%; height: auto; position: static; flex-direction: row; align-items: center; padding: 0; }
+  .app-shell { flex-direction: column; min-height: 100dvh; }
+  .sidebar {
+    width: 100%; height: auto; position: sticky; top: 0; z-index: 30;
+    flex-direction: row; align-items: center; padding: 0;
+    padding-top: env(safe-area-inset-top);
+  }
   .sidebar-brand { border-bottom: none; padding: 12px 14px; }
-  .sidebar-nav { flex-direction: row; overflow-x: auto; padding: 8px; }
+  .sidebar-nav { flex-direction: row; overflow-x: auto; padding: 8px; scrollbar-width: none; }
+  .sidebar-nav::-webkit-scrollbar { display: none; }
+  /* En terreno se navega con el pulgar: cada pestaña necesita area de toque. */
+  .sidebar-link { white-space: nowrap; min-height: 44px; }
   .sidebar-seccion-label { display: none; }
   .sidebar-footer { border-top: none; }
-  .contenedor { padding: 20px 16px 60px; }
+  .app-content { flex: 1; display: flex; flex-direction: column; }
+  .contenedor {
+    padding: 20px 16px 60px;
+    padding-bottom: calc(60px + env(safe-area-inset-bottom));
+    flex: 1;
+  }
+}
+
+/* Telefono: una sola columna y controles comodos para el pulgar. */
+@media (max-width: 560px) {
+  .fila-formulario { grid-template-columns: 1fr; }
+  .acciones { flex-direction: column; align-items: stretch; }
+  .acciones .btn { width: 100%; justify-content: center; }
+  /* 16px evita que iOS haga zoom al enfocar un campo. */
+  .formulario input,
+  .formulario select,
+  .formulario textarea { font-size: 16px; min-height: 44px; }
+  .btn { min-height: 44px; }
+  .evidencias-grid { grid-template-columns: repeat(2, 1fr); }
 }
 
 /* ---------- Encabezado de pagina ---------- */

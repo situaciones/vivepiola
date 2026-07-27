@@ -16,6 +16,10 @@ export default function Login() {
   const [searchParams] = useSearchParams();
   // Codigo de invitacion o Codigo Unico de Comunidad (viene en el link del correo).
   const [codigo, setCodigo] = useState(() => searchParams.get('codigo') || '');
+  // A donde volver despues de entrar: los avisos de WhatsApp llegan con ?next=/m/12
+  // Solo se aceptan rutas internas, para que un link externo no pueda redirigir fuera.
+  const solicitado = searchParams.get('next') || '';
+  const destino = solicitado.startsWith('/') && !solicitado.startsWith('//') ? solicitado : '/app';
   const codigoRef = useRef(codigo);
   codigoRef.current = codigo;
   const botonGoogleRef = useRef(null);
@@ -25,7 +29,7 @@ export default function Login() {
     setEnviando(true);
     try {
       await loginGoogle(credential, codigoRef.current.trim());
-      navigate('/app');
+      navigate(destino);
     } catch (err) {
       setError(err.response?.data?.detail || 'No se pudo iniciar sesion con Google.');
     } finally {
@@ -67,7 +71,7 @@ export default function Login() {
     setEnviando(true);
     try {
       await login(username, password);
-      navigate('/app');
+      navigate(destino);
     } catch {
       setError('Usuario o contrasena incorrectos.');
     } finally {

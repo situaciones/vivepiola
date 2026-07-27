@@ -1,6 +1,7 @@
 import { Navigate, Route, BrowserRouter, Routes } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import ProtectedRoute from './components/ProtectedRoute';
+import AtajoMulta from './pages/AtajoMulta';
 import Landing from './pages/Landing';
 import Login from './pages/Login';
 import FiscalizadorDashboard from './pages/dashboards/FiscalizadorDashboard';
@@ -55,6 +56,8 @@ export default function App() {
         <Routes>
           <Route path="/" element={<Landing />} />
           <Route path="/login" element={<Login />} />
+          {/* Atajo de los avisos de WhatsApp: /m/12 abre ese expediente. */}
+          <Route path="/m/:id" element={<AtajoMulta />} />
           <Route
             path="/app"
             element={

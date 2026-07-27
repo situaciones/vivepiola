@@ -171,3 +171,20 @@ class CapacidadesNuevasTestCase(APITestCase):
         self.assertEqual(mock_post.call_args.kwargs['data']['To'], 'whatsapp:+56911112222')
         acta = multa.actas_selladas.filter(tipo_acto=TipoActo.NOTIFICACION).first()
         self.assertTrue(acta.manifiesto['extra']['whatsapp_enviado'])
+
+    @override_settings(
+        TWILIO_ACCOUNT_SID='ACtest',
+        TWILIO_AUTH_TOKEN='token',
+        TWILIO_WHATSAPP_FROM='whatsapp:+14155238886',
+        FRONTEND_URL='https://vivepiola.cl',
+    )
+    def test_whatsapp_lleva_link_directo_al_expediente(self):
+        """El aviso sirve para actuar: debe traer el link a esa multa, sin sesion en la URL."""
+        with patch('multas.services.requests.post', return_value=Mock(status_code=201)) as mock_post:
+            multa = self._aprobar_y_notificar(self._denunciar())
+
+        cuerpo = mock_post.call_args.kwargs['data']['Body']
+        self.assertIn(f'https://vivepiola.cl/m/{multa.id}', cuerpo)
+        # El link no debe cargar credenciales: los mensajes se reenvian.
+        for filtracion in ('token', 'access', 'jwt', 'Bearer'):
+            self.assertNotIn(filtracion, cuerpo)

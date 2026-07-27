@@ -45,7 +45,11 @@ export default function ComiteDashboard() {
   const [multas, setMultas] = useState([]);
   const [infracciones, setInfracciones] = useState([]);
   const [borradores, setBorradores] = useState([]);
-  const [seleccionId, setSeleccionId] = useState(null);
+  // /app?multa=12 llega desde el link del aviso: se abre ese expediente.
+  const [seleccionId, setSeleccionId] = useState(() => {
+    const pedida = new URLSearchParams(window.location.search).get('multa');
+    return pedida ? Number(pedida) : null;
+  });
   const [decision, setDecision] = useState({}); // { [multaId]: { infraccion_id, monto, revisado } }
   const [verificacion, setVerificacion] = useState(null); // { multaId, data }
   const [mensaje, setMensaje] = useState('');
