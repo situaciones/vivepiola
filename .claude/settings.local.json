@@ -85,7 +85,12 @@
       "Bash(\"../venv/Scripts/python.exe\" manage.py test multas.tests_clasificador --settings=condoadmin.settings_test)",
       "Bash(\"../venv/Scripts/python.exe\" manage.py probar_clasificador --sembrar)",
       "Bash(\"../venv/Scripts/python.exe\" manage.py makemigrations multas condominios)",
-      "Bash(\"../venv/Scripts/python.exe\" manage.py test multas.tests_duplicados --settings=condoadmin.settings_test)"
+      "Bash(\"../venv/Scripts/python.exe\" manage.py test multas.tests_duplicados --settings=condoadmin.settings_test)",
+      "Bash(\"../venv/Scripts/python.exe\" manage.py makemigrations condominios)",
+      "Bash(\"../venv/Scripts/python.exe\" manage.py test multas.tests_resumenes --settings=condoadmin.settings_test)",
+      "Bash(../venv/Scripts/python.exe -c ' *)",
+      "Bash(\"../venv/Scripts/python.exe\" manage.py enviar_resumenes --simular)",
+      "Bash(\"../venv/Scripts/python.exe\" manage.py enviar_resumenes --simular --forzar)"
     ]
   }
 }

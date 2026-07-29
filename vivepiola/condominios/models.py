@@ -59,6 +59,9 @@ class Condominio(models.Model):
     # Codigo Unico de Comunidad: cualquier vecino puede registrarse via Google
     # con este codigo y queda PENDIENTE de que el Administrador le asigne rol.
     codigo_comunidad = models.CharField(max_length=12, unique=True, null=True, blank=True, db_index=True)
+    # Ultimo resumen de pendientes enviado: evita repetir el aviso si el
+    # comando corre varias veces al dia.
+    ultimo_resumen_enviado = models.DateTimeField(null=True, blank=True, editable=False)
     ventana_duplicados_horas = models.PositiveSmallIntegerField(
         default=24,
         help_text=(
