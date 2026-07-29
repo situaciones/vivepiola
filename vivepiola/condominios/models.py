@@ -59,6 +59,14 @@ class Condominio(models.Model):
     # Codigo Unico de Comunidad: cualquier vecino puede registrarse via Google
     # con este codigo y queda PENDIENTE de que el Administrador le asigne rol.
     codigo_comunidad = models.CharField(max_length=12, unique=True, null=True, blank=True, db_index=True)
+    ventana_duplicados_horas = models.PositiveSmallIntegerField(
+        default=24,
+        help_text=(
+            'Horas dentro de las cuales un nuevo reporte sobre la misma unidad se '
+            'entiende referido al mismo hecho y se suma como corroboracion, en vez '
+            'de abrir otro expediente (evita sancionar dos veces lo mismo).'
+        ),
+    )
     creado_en = models.DateTimeField(auto_now_add=True)
 
     class Meta:

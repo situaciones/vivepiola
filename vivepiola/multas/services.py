@@ -301,6 +301,62 @@ def proponer_infraccion(ticket):
     return infraccion, ORIGEN_COINCIDENCIA, confianza, fundamento
 
 
+# Estados en los que el expediente sigue vivo: un reporte nuevo sobre el mismo
+# hecho debe sumarse a el. Si fue RECHAZADA o ANULADA, el hecho quedo sin
+# sancion y un reporte posterior si merece expediente propio.
+ESTADOS_EXPEDIENTE_ABIERTO = (
+    EstadoMulta.EN_REVISION, EstadoMulta.APROBADA, EstadoMulta.NOTIFICADA,
+    EstadoMulta.CON_DESCARGO, EstadoMulta.FIRME, EstadoMulta.EXPORTADA,
+)
+
+# Como se le explica el estado a quien reporta. Se describe la ETAPA, nunca el
+# monto, la infraccion ni la persona: el vecino que reporta no tiene por que
+# conocer la sancion de otra unidad.
+ETAPA_PARA_DENUNCIANTE = {
+    EstadoMulta.EN_REVISION: 'Ya fue reportado y esta en revision del comite.',
+    EstadoMulta.APROBADA: 'Ya fue reportado, el comite lo resolvio y esta por notificarse.',
+    EstadoMulta.NOTIFICADA: 'Ya fue reportado y el residente ya fue notificado.',
+    EstadoMulta.CON_DESCARGO: 'Ya fue reportado y el residente presento su descargo.',
+    EstadoMulta.FIRME: 'Ya fue reportado y el caso quedo cerrado.',
+    EstadoMulta.EXPORTADA: 'Ya fue reportado y el caso quedo cerrado.',
+}
+
+
+def buscar_expediente_abierto(condominio, unidad, fecha_hecho, infraccion_propuesta=None):
+    """
+    Busca un expediente vivo sobre la misma unidad referido al mismo hecho.
+
+    Criterio: misma unidad + el hecho ocurrio dentro de la ventana que definio
+    la comunidad. Si ambos reportes traen una infraccion propuesta y son
+    distintas, se entienden hechos distintos (ruido y mascota suelta la misma
+    noche son dos cosas) y cada uno abre su expediente.
+    """
+    from .models import Multa
+
+    horas = condominio.ventana_duplicados_horas or 0
+    if not horas:
+        return None
+
+    ventana = timedelta(hours=horas)
+    candidatas = Multa.objects.filter(
+        condominio=condominio,
+        unidad=unidad,
+        estado__in=ESTADOS_EXPEDIENTE_ABIERTO,
+        ticket__fecha_hecho__gte=fecha_hecho - ventana,
+        ticket__fecha_hecho__lte=fecha_hecho + ventana,
+    ).order_by('fecha_creacion')
+
+    for candidata in candidatas:
+        if (
+            infraccion_propuesta is not None
+            and candidata.infraccion_id is not None
+            and candidata.infraccion_id != infraccion_propuesta.id
+        ):
+            continue  # otro tipo de hecho: merece expediente propio
+        return candidata
+    return None
+
+
 def notificar_multa(multa, usuario):
     """Orquesta: genera PDF, calcula plazo de descargo, envia correo (+WhatsApp) y actualiza estado."""
     estado_anterior = multa.estado

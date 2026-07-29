@@ -26,9 +26,9 @@ class TicketSerializer(serializers.ModelSerializer):
         fields = (
             'id', 'condominio', 'unidad', 'unidad_identificador', 'persona_reportada', 'creado_por',
             'creado_por_nombre', 'descripcion', 'fecha_hecho', 'ubicacion', 'estado', 'anonimo',
-            'fecha_creacion', 'evidencias',
+            'corrobora', 'fecha_creacion', 'evidencias',
         )
-        read_only_fields = ('condominio', 'creado_por', 'estado', 'fecha_creacion')
+        read_only_fields = ('condominio', 'creado_por', 'estado', 'corrobora', 'fecha_creacion')
 
     def validate_fecha_hecho(self, value):
         if value > timezone.now():
@@ -83,6 +83,7 @@ class MultaSerializer(serializers.ModelSerializer):
     persona_nombre = serializers.CharField(source='persona_infractor.nombre_completo', read_only=True)
     historial = HistorialMultaSerializer(many=True, read_only=True)
     descargo = DescargoSerializer(read_only=True)
+    corroboraciones = serializers.SerializerMethodField()
 
     class Meta:
         model = Multa
@@ -95,7 +96,7 @@ class MultaSerializer(serializers.ModelSerializer):
             'plazo_descargo_dias', 'fecha_limite_descargo',
             'propuesta_origen', 'propuesta_confianza', 'propuesta_fundamento',
             'es_reincidencia', 'multa_primera_sancion', 'agravante_sugerido',
-            'fecha_creacion', 'fecha_firme', 'historial', 'descargo',
+            'fecha_creacion', 'fecha_firme', 'historial', 'descargo', 'corroboraciones',
         )
         read_only_fields = (
             'condominio', 'unidad', 'persona_infractor', 'estado', 'aprobada_por', 'fecha_aprobacion',
@@ -103,6 +104,22 @@ class MultaSerializer(serializers.ModelSerializer):
             'propuesta_origen', 'propuesta_confianza', 'propuesta_fundamento',
             'es_reincidencia', 'multa_primera_sancion', 'agravante_sugerido', 'fecha_creacion', 'fecha_firme',
         )
+
+
+    def get_corroboraciones(self, obj):
+        """Otros vecinos que reportaron el mismo hecho: testigos del expediente."""
+        return [
+            {
+                'ticket_id': t.id,
+                'descripcion': t.descripcion,
+                'fecha_hecho': t.fecha_hecho,
+                'reportado_por': 'Denuncia anonima' if t.anonimo else (
+                    (t.creado_por.get_full_name() or t.creado_por.username) if t.creado_por_id else ''
+                ),
+                'evidencias': EvidenciaFotoSerializer(t.evidencias.all(), many=True).data,
+            }
+            for t in obj.corroboraciones.all().order_by('id')
+        ]
 
 
 class AprobarMultaSerializer(serializers.Serializer):

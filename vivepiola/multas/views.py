@@ -31,8 +31,9 @@ from .serializers import (
     ResolverDescargoSerializer, TicketSerializer,
 )
 from .services import (
-    actualizar_multas_vencidas, generar_audit_trail_pdf, notificar_multa, proponer_infraccion,
-    registrar_historial, resolver_descargo, verificar_reincidencia,
+    ETAPA_PARA_DENUNCIANTE, actualizar_multas_vencidas, buscar_expediente_abierto,
+    generar_audit_trail_pdf, notificar_multa, proponer_infraccion, registrar_historial,
+    resolver_descargo, verificar_reincidencia,
 )
 
 
@@ -83,6 +84,23 @@ class TicketViewSet(viewsets.ModelViewSet):
         # origen y fundamento, para que el Comite vea de donde salio. La multa
         # nace EN_REVISION: la sugerencia nunca sanciona por si sola.
         sugerida, origen, confianza, fundamento = proponer_infraccion(ticket)
+
+        # Varios vecinos suelen reportar el mismo hecho. Abrir un expediente por
+        # cada reporte permitiria sancionar dos veces lo mismo, asi que el
+        # segundo y siguientes se suman al expediente ya abierto: en vez de
+        # duplicar la sancion, la respaldan con mas testigos.
+        existente = buscar_expediente_abierto(
+            condominio, ticket.unidad, ticket.fecha_hecho, sugerida,
+        )
+        if existente is not None:
+            ticket.corrobora = existente
+            ticket.save(update_fields=['corrobora'])
+            registrar_historial(
+                existente, existente.estado, existente.estado, self.request.user,
+                f'Reporte #{ticket.id} sumado como corroboracion del mismo hecho.',
+            )
+            return
+
         Multa.objects.create(
             condominio=ticket.condominio,
             ticket=ticket,
@@ -95,6 +113,29 @@ class TicketViewSet(viewsets.ModelViewSet):
             propuesta_confianza=confianza,
             propuesta_fundamento=fundamento,
         )
+
+    def create(self, request, *args, **kwargs):
+        """
+        Igual que el create estandar, pero si el reporte se sumo a un expediente
+        ya abierto se le explica a quien reporta en que va. Se informa la ETAPA,
+        nunca el monto, la infraccion ni la persona: quien denuncia no tiene por
+        que conocer la sancion de otra unidad.
+        """
+        respuesta = super().create(request, *args, **kwargs)
+        ticket = Ticket.objects.filter(id=respuesta.data.get('id')).first()
+        if ticket and ticket.corrobora_id:
+            expediente = ticket.corrobora
+            respuesta.data['duplicado'] = True
+            respuesta.data['expediente_id'] = expediente.id
+            respuesta.data['expediente_estado'] = expediente.estado
+            respuesta.data['reportes_del_hecho'] = expediente.corroboraciones.count() + 1
+            respuesta.data['mensaje'] = (
+                f'{ETAPA_PARA_DENUNCIANTE.get(expediente.estado, "Ya fue reportado.")} '
+                'Tu reporte se sumo como respaldo del caso.'
+            )
+        else:
+            respuesta.data['duplicado'] = False
+        return respuesta
 
     @action(detail=True, methods=['post'], url_path='evidencia', parser_classes=[MultiPartParser])
     def agregar_evidencia(self, request, pk=None):

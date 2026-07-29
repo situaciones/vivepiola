@@ -34,6 +34,13 @@ class Ticket(models.Model):
     # auditoria interna, pero se omite en las vistas del expediente para no
     # exponer a quien reporta (Art. de proteccion al denunciante).
     anonimo = models.BooleanField(default=False)
+    # Cuando varios vecinos reportan el MISMO hecho, el segundo y siguientes no
+    # abren un expediente nuevo (nadie puede ser sancionado dos veces por lo
+    # mismo): quedan aqui como corroboracion del expediente ya abierto, lo que
+    # ademas lo refuerza como prueba.
+    corrobora = models.ForeignKey(
+        'multas.Multa', on_delete=models.CASCADE, null=True, blank=True, related_name='corroboraciones',
+    )
     fecha_creacion = models.DateTimeField(auto_now_add=True)
 
     class Meta:

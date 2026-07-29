@@ -65,14 +65,20 @@ class FlujoLegalTestCase(APITestCase):
             monto=Decimal('2.00'), estado=EstadoInfraccion.BORRADOR, generado_por_ia=True,
         )
 
-    def crear_ticket(self, persona=None):
-        """Helper: el conserje crea un ticket valido y devuelve la multa generada."""
+    def crear_ticket(self, persona=None, dias_atras=0):
+        """
+        Helper: el conserje crea un ticket valido y devuelve la multa generada.
+
+        `dias_atras` separa el hecho en el tiempo. Importa porque dos reportes
+        cercanos sobre la misma unidad se entienden como el MISMO hecho (y se
+        agrupan); para simular hechos distintos hay que espaciarlos.
+        """
         self.client.force_authenticate(self.conserje)
         respuesta = self.client.post('/api/tickets/', {
             'unidad': self.unidad.id,
             'persona_reportada': (persona or self.persona).id,
             'descripcion': 'Hecho de prueba',
-            'fecha_hecho': (timezone.now() - timedelta(hours=1)).isoformat(),
+            'fecha_hecho': (timezone.now() - timedelta(days=dias_atras, hours=1)).isoformat(),
         })
         self.assertEqual(respuesta.status_code, 201, respuesta.data)
         return Multa.objects.get(ticket_id=respuesta.data['id'])
@@ -261,7 +267,8 @@ class FlujoLegalTestCase(APITestCase):
 
     def test_residente_solo_ve_sus_multas(self):
         multa_propia = self.crear_ticket(persona=self.persona)
-        self.crear_ticket(persona=self.otra_persona)
+        # Otro dia: si fuera el mismo, se agruparia como corroboracion.
+        self.crear_ticket(persona=self.otra_persona, dias_atras=3)
 
         self.client.force_authenticate(self.residente)
         respuesta = self.client.get('/api/multas/')
@@ -303,9 +310,11 @@ class FlujoLegalTestCase(APITestCase):
         self.assertEqual(multa.estado, EstadoMulta.FIRME)
 
     def test_reincidencia_detectada(self):
-        primera = self.crear_ticket()
+        primera = self.crear_ticket(dias_atras=3)
         self.aprobar(primera)
 
+        # La reincidencia es volver a incurrir DESPUES: si el segundo hecho
+        # fuera del mismo dia, seria el mismo hecho reportado dos veces.
         segunda = self.crear_ticket(persona=self.otra_persona)
         self.aprobar(segunda)
         self.assertTrue(segunda.es_reincidencia)

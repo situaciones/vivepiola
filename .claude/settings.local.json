@@ -83,7 +83,9 @@
       "Bash(awk -F= '/^[A-Z_]+=/ {clave=$1; valor=substr\\($0, index\\($0,\"=\"\\)+1\\); gsub\\(/[[:space:]]/,\"\",valor\\); print clave \": \" \\(length\\(valor\\)>0 ? \"TIENE VALOR \\(\" length\\(valor\\) \" chars\\)\" : \"vacio\"\\)}' vivepiola/.env)",
       "Bash(\"../venv/Scripts/python.exe\" manage.py makemigrations multas)",
       "Bash(\"../venv/Scripts/python.exe\" manage.py test multas.tests_clasificador --settings=condoadmin.settings_test)",
-      "Bash(\"../venv/Scripts/python.exe\" manage.py probar_clasificador --sembrar)"
+      "Bash(\"../venv/Scripts/python.exe\" manage.py probar_clasificador --sembrar)",
+      "Bash(\"../venv/Scripts/python.exe\" manage.py makemigrations multas condominios)",
+      "Bash(\"../venv/Scripts/python.exe\" manage.py test multas.tests_duplicados --settings=condoadmin.settings_test)"
     ]
   }
 }

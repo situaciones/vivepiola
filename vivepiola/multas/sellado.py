@@ -124,6 +124,29 @@ def _manifiesto_norma(multa):
     }
 
 
+def _manifiesto_corroboraciones(multa):
+    """
+    Reportes de otros vecinos sobre el MISMO hecho, congelados con su hora y su
+    autor. Son testigos independientes: refuerzan el expediente sin abrir otra
+    sancion. Se identifica a quien reporto salvo que haya pedido anonimato.
+    """
+    return [
+        {
+            'ticket_id': t.id,
+            'descripcion': t.descripcion,
+            'fecha_hecho': t.fecha_hecho.isoformat(),
+            'reportado_en': t.fecha_creacion.isoformat(),
+            'reportado_por': None if t.anonimo else (t.creado_por.username if t.creado_por_id else None),
+            'anonimo': t.anonimo,
+            'evidencias': [
+                {'id': ev.id, 'sha256': ev.sha256 or None, 'archivo': ev.imagen.name}
+                for ev in t.evidencias.all().order_by('id')
+            ],
+        }
+        for t in multa.corroboraciones.all().order_by('id')
+    ]
+
+
 def construir_manifiesto(multa, tipo_acto, actor, ts, auth_metodo, extra=None):
     ticket = multa.ticket
     return {
@@ -166,6 +189,7 @@ def construir_manifiesto(multa, tipo_acto, actor, ts, auth_metodo, extra=None):
             'reportado_por': ticket.creado_por.username if ticket.creado_por_id else None,
         },
         'evidencias_visibles': _manifiesto_evidencias(multa),
+        'corroboraciones': _manifiesto_corroboraciones(multa),
         'norma_aplicada': _manifiesto_norma(multa),
         'extra': extra or {},
     }

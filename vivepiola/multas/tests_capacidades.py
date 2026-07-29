@@ -50,13 +50,17 @@ class CapacidadesNuevasTestCase(APITestCase):
             estado=EstadoInfraccion.ACTIVA, factor_reincidencia=Decimal('2.00'),
         )
 
-    def _denunciar(self, descripcion='Ruidos molestos a las 23:00'):
+    def _denunciar(self, descripcion='Ruidos molestos a las 23:00', dias_atras=0):
+        """
+        `dias_atras` separa el hecho en el tiempo: dos reportes cercanos sobre
+        la misma unidad se entienden como el mismo hecho y se agrupan.
+        """
         self.client.force_authenticate(self.conserje)
         respuesta = self.client.post('/api/tickets/', {
             'unidad': self.unidad.id,
             'persona_reportada': self.persona.id,
             'descripcion': descripcion,
-            'fecha_hecho': (timezone.now() - timedelta(hours=1)).isoformat(),
+            'fecha_hecho': (timezone.now() - timedelta(days=dias_atras, hours=1)).isoformat(),
         })
         self.assertEqual(respuesta.status_code, 201, respuesta.data)
         return Multa.objects.get(ticket_id=respuesta.data['id'])
@@ -137,9 +141,10 @@ class CapacidadesNuevasTestCase(APITestCase):
     # -- Paso 8: multiplicador por reincidencia -----------------------
 
     def test_reincidencia_aplica_multiplicador_del_catalogo(self):
-        primera = self._aprobar_y_notificar(self._denunciar())
+        primera = self._aprobar_y_notificar(self._denunciar(dias_atras=3))
         self.assertEqual(primera.monto, Decimal('10.00'))
 
+        # Otro dia: reincidir es volver a incurrir, no el mismo hecho repetido.
         segunda = self._denunciar()
         self.client.force_authenticate(self.comite)
         self.client.post(f'/api/multas/{segunda.id}/aprobar/', {'infraccion_id': self.infraccion.id})

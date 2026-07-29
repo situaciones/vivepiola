@@ -77,14 +77,20 @@ export default function FiscalizadorDashboard() {
     e.preventDefault();
     setMensaje('');
     try {
-      await client.post('/tickets/', {
+      const { data } = await client.post('/tickets/', {
         unidad: Number(form.unidad),
         persona_reportada: form.persona_reportada ? Number(form.persona_reportada) : null,
         descripcion: form.descripcion,
         fecha_hecho: new Date(form.fecha_hecho).toISOString(),
         ubicacion: form.ubicacion,
       });
-      setMensaje('Ticket creado. El Comite ya puede revisarlo.');
+      // Si otro vecino ya reporto este hecho, el backend lo suma al expediente
+      // abierto en vez de abrir otro: aqui se explica en que va.
+      setMensaje(
+        data.duplicado
+          ? `${data.mensaje} Van ${data.reportes_del_hecho} reportes de este hecho.`
+          : 'Ticket creado. El Comite ya puede revisarlo.',
+      );
       setForm({ unidad: '', persona_reportada: '', descripcion: '', fecha_hecho: ahoraLocal(), ubicacion: '' });
       cargarTickets();
     } catch (err) {
