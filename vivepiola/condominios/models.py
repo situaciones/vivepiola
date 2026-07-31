@@ -152,11 +152,60 @@ class Unidad(models.Model):
     def __str__(self):
         return f'{self.identificador} ({self.condominio.nombre})'
 
+    @property
+    def propietario(self):
+        """
+        Quien responde por las obligaciones economicas de la unidad.
+
+        La Ley 21.442 hace al copropietario el obligado principal al pago: una
+        multa aplicada al arrendatario igual se cobra en el gasto comun de la
+        unidad, y quien responde ante la comunidad es su dueño. Por eso el
+        cobro se emite a nombre del propietario, no del infractor.
+        """
+        return self.personas.filter(
+            rol_ocupacion=RolOcupacion.PROPIETARIO, activo=True,
+        ).order_by('id').first()
+
 
 class RolOcupacion(models.TextChoices):
+    """
+    Titulo juridico con que la persona ocupa la unidad (Ley 21.442).
+
+    El PROPIETARIO es el obligado principal al pago: la multa se cobra en el
+    gasto comun de la unidad y responde su dueño, aunque el infractor haya
+    sido quien la ocupa. Los demas titulos ocupan y pueden ser sancionados,
+    pero no son los deudores frente a la comunidad.
+    """
+
     PROPIETARIO = 'PROPIETARIO', 'Propietario'
     ARRENDATARIO = 'ARRENDATARIO', 'Arrendatario'
-    OCUPANTE = 'OCUPANTE', 'Ocupante'
+    USUFRUCTUARIO = 'USUFRUCTUARIO', 'Usufructuario'
+    COMODATARIO = 'COMODATARIO', 'Comodatario (uso gratuito)'
+    OCUPANTE = 'OCUPANTE', 'Ocupante a otro titulo'
+
+
+class Permanencia(models.TextChoices):
+    """
+    Cuanto tiempo permanece, con independencia del titulo: un arrendatario
+    puede ser permanente (contrato anual) o transitorio (hospedaje turistico).
+    El reglamento suele restringir a los transitorios el uso de bienes comunes
+    como piscina o gimnasio, y de ahi salen infracciones reales.
+    """
+
+    PERMANENTE = 'PERMANENTE', 'Permanente (reside 30 dias corridos o mas)'
+    TRANSITORIO = 'TRANSITORIO', 'Transitorio (alojamiento temporal)'
+
+
+class VinculoCopropietario(models.TextChoices):
+    """
+    Relacion con el copropietario. Importa porque el conyuge o conviviente
+    civil puede integrar el Comite de Administracion aunque no sea dueño.
+    """
+
+    NINGUNO = '', 'Sin vinculo declarado'
+    CONYUGE = 'CONYUGE', 'Conyuge'
+    CONVIVIENTE_CIVIL = 'CONVIVIENTE_CIVIL', 'Conviviente civil'
+    FAMILIAR = 'FAMILIAR', 'Otro familiar'
 
 
 class Persona(models.Model):
@@ -169,6 +218,14 @@ class Persona(models.Model):
     condominio = models.ForeignKey(Condominio, on_delete=models.CASCADE, related_name='personas')
     unidad = models.ForeignKey(Unidad, on_delete=models.CASCADE, related_name='personas')
     rol_ocupacion = models.CharField(max_length=20, choices=RolOcupacion.choices)
+    permanencia = models.CharField(
+        max_length=20, choices=Permanencia.choices, default=Permanencia.PERMANENTE,
+        help_text='Independiente del titulo: define si le aplican las restricciones a transitorios.',
+    )
+    vinculo_copropietario = models.CharField(
+        max_length=20, choices=VinculoCopropietario.choices, blank=True, default='',
+        help_text='Conyuge o conviviente civil pueden integrar el Comite aunque no sean dueños.',
+    )
     nombre_completo = models.CharField(max_length=255)
     cedula_identidad = models.CharField(max_length=20)
     domicilio = models.CharField(max_length=255)

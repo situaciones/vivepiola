@@ -38,14 +38,23 @@ def exportar_multas_firmes(condominio, periodo, usuario):
     cargos = lote.cargos.select_related('unidad', 'multa__persona_infractor').all()
     buffer = io.StringIO()
     escritor = csv.writer(buffer)
-    escritor.writerow(['unidad', 'persona', 'cedula', 'concepto', 'monto', 'multa_id'])
+    # El cobro va a nombre del PROPIETARIO: la Ley 21.442 lo hace obligado
+    # principal al pago aunque el infractor haya sido quien ocupa la unidad.
+    # El infractor se conserva aparte para que el cargo sea explicable.
+    escritor.writerow([
+        'unidad', 'obligado_al_pago', 'cedula_obligado',
+        'infractor', 'cedula_infractor', 'concepto', 'monto', 'multa_id',
+    ])
     total = 0
     for cargo in cargos:
-        persona = cargo.multa.persona_infractor
+        infractor = cargo.multa.persona_infractor
+        obligado = cargo.unidad.propietario or infractor  # sin dueño en el registro, responde el infractor
         escritor.writerow([
             cargo.unidad.identificador,
-            persona.nombre_completo if persona else '',
-            persona.cedula_identidad if persona else '',
+            obligado.nombre_completo if obligado else '',
+            obligado.cedula_identidad if obligado else '',
+            infractor.nombre_completo if infractor else '',
+            infractor.cedula_identidad if infractor else '',
             cargo.descripcion,
             cargo.monto,
             cargo.multa_id,

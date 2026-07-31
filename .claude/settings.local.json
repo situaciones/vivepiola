@@ -90,7 +90,9 @@
       "Bash(\"../venv/Scripts/python.exe\" manage.py test multas.tests_resumenes --settings=condoadmin.settings_test)",
       "Bash(../venv/Scripts/python.exe -c ' *)",
       "Bash(\"../venv/Scripts/python.exe\" manage.py enviar_resumenes --simular)",
-      "Bash(\"../venv/Scripts/python.exe\" manage.py enviar_resumenes --simular --forzar)"
+      "Bash(\"../venv/Scripts/python.exe\" manage.py enviar_resumenes --simular --forzar)",
+      "Bash(./venv/Scripts/python.exe \"C:/Users/esali/AppData/Local/Temp/claude/C--Users-esali-APLICACION-DE-MULTAS/66d1b3a7-eae7-466c-872b-fbcca0470336/scratchpad/generar_instructivo_pdf.py\")",
+      "Bash(\"../venv/Scripts/python.exe\" manage.py test condominios --settings=condoadmin.settings_test)"
     ]
   }
 }

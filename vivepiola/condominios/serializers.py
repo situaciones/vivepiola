@@ -32,6 +32,7 @@ class PersonaSerializer(serializers.ModelSerializer):
         model = Persona
         fields = (
             'id', 'condominio', 'unidad', 'unidad_identificador', 'rol_ocupacion',
+            'permanencia', 'vinculo_copropietario',
             'nombre_completo', 'cedula_identidad', 'domicilio', 'correo_electronico',
             'telefono', 'activo', 'creado_en', 'actualizado_en',
         )
