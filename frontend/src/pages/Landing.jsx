@@ -9,19 +9,6 @@ import { useAuth } from '../context/AuthContext';
 import { LogoVivePiola } from '../components/Marca';
 import './Landing.css';
 
-const EXIGENCIAS = [
-  'Alineado a la Ley 21.442',
-  'Notificacion con valor legal',
-  'Trazabilidad total',
-  'Derecho a descargo',
-  'Nada discrecional',
-  'Expediente por unidad',
-  'Reincidencia automatica',
-  'Comite protegido',
-  'Cobro en gastos comunes',
-  'App, WhatsApp y correo',
-];
-
 const FLUJO = [
   { Icon: Database, actor: 'Configuracion', corto: 'Configuracion inicial', titulo: 'Configuracion inicial',
     desc: 'Se carga la nomina de residentes (planilla tipo Excel) junto con todos los reglamentos aplicables: copropiedad, estacionamientos, uso de espacios comunes y mas.' },
@@ -165,37 +152,17 @@ export default function Landing() {
 
       {/* ---------- HERO ---------- */}
       <header className="hero">
-        <div className="axis">
-          <span>20d</span><span>15d</span><span>10d</span><span>5d</span><span>0</span>
-        </div>
+        {/* Una sola frase, sin nada mas: el video de abajo cuenta el resto. */}
         <div className="hero-inner">
-          <h1 className="rise d1">Trazabilidad de multas, <span className="hl">notificaciones y reclamos.</span></h1>
-          <p className="hero-lead rise d2">
-            Sube, clasifica y cobra con certeza. Analizamos cada caso alineados a la Ley 21.442,
-            al reglamento de la ley y a los reglamentos de tu condominio.
-          </p>
-          <p className="hero-kicker rise d3">Sin rodeos, sin favoritismos, sin demoras.</p>
-          <div className="hero-ctas rise d3">
+          <h1 className="rise d1">
+            Mejorando la convivencia de las personas <span className="hl">en las comunidades</span>
+          </h1>
+          <div className="hero-ctas rise d2">
             <a href="#demo" className="btn btn-cyan">Quiero verlo funcionando</a>
             <a href="#flujo" className="btn btn-outline-l">Ver el ciclo de la multa</a>
           </div>
         </div>
 
-        <div className="hero-trust rise d4">
-          <div className="lbl">Proceso trazable de las <span className="hl">multas, notificaciones y reclamos</span> en los condominios</div>
-          <div className="marquee">
-            <div className="marquee-track">
-              {[...EXIGENCIAS, ...EXIGENCIAS].map((c, i) => (
-                <span className="marquee-item" key={i}>{c}</span>
-              ))}
-            </div>
-          </div>
-        </div>
-
-        <div className="stats rise d4">
-          <div className="stat"><div className="n">100<em>%</em></div><div className="t">Trazable · todos ven el estado en tiempo real</div></div>
-          <div className="stat"><div className="n">3<em> canales</em></div><div className="t">Notificacion por app, WhatsApp y correo</div></div>
-        </div>
         <div className="hero-foot" />
         <div className="hero-photo" aria-hidden="true" />
       </header>

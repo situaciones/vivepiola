@@ -16,6 +16,18 @@
       "runtimeExecutable": "C:\\Users\\esali\\APLICACION DE MULTAS\\frontend\\dev.bat",
       "runtimeArgs": [],
       "port": 5173
+    },
+    {
+      "name": "situaciones-static",
+      "runtimeExecutable": "C:\\Users\\esali\\APLICACION DE MULTAS\\venv\\Scripts\\python.exe",
+      "runtimeArgs": [
+        "-m",
+        "http.server",
+        "8899",
+        "--directory",
+        "C:\\Users\\esali\\OneDrive\\Escritorio\\Pagina Situaciones\\public_html"
+      ],
+      "port": 8899
     }
   ]
 }
