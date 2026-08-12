@@ -51,12 +51,14 @@
   opacity:.9;filter:brightness(.6) saturate(1.08);
   -webkit-mask-image:linear-gradient(to bottom,transparent 0,#000 24%,#000 100%);
   mask-image:linear-gradient(to bottom,transparent 0,#000 24%,#000 100%)}
-.hero-inner{position:relative;z-index:2;text-align:center;padding:96px 24px 110px;max-width:940px;margin:0 auto}
+.hero-inner{position:relative;z-index:2;text-align:center;padding:96px 24px 110px;max-width:1240px;margin:0 auto}
 .h-eyebrow{display:inline-flex;align-items:center;gap:8px;font-size:.76rem;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--h-cyan);background:rgba(139,157,255,.1);border:1px solid rgba(139,157,255,.28);padding:6px 14px;border-radius:999px}
-/* Unico texto del hero: se le da todo el tamaño disponible. */
-.hero h1{font-size:clamp(2.4rem,6.2vw,4.6rem);font-weight:800;line-height:1.06;letter-spacing:-.03em;
-  margin:0 auto 44px;max-width:17ch;color:#fff;text-wrap:balance}
-.hero h1 .hl{background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent}
+/* Unico texto del hero: ocupa el ancho y se corta en DOS lineas.
+   El corte se fuerza haciendo bloque el tramo en gradiente, para que caiga
+   siempre donde la frase respira y no donde alcance el ancho. */
+.hero h1{font-size:clamp(2rem,4.6vw,3.5rem);font-weight:800;line-height:1.08;letter-spacing:-.03em;
+  margin:0 auto 44px;max-width:none;color:#fff}
+.hero h1 .hl{display:block;background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent}
 .hero-ctas{display:flex;gap:14px;justify-content:center;flex-wrap:wrap}
 .btn-outline-l{background:transparent;color:var(--h-ink);border-color:rgba(180,180,220,.4)}
 .btn-outline-l:hover{border-color:var(--h-cyan);color:var(--h-cyan)}
