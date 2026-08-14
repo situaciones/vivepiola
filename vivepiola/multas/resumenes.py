@@ -17,7 +17,7 @@ from django.utils import timezone
 
 from accounts.models import Rol
 
-from .models import EstadoMedida, EstadoMulta, MedidaInmediata, Multa
+from .models import EstadoMedida, EstadoMulta, MedidaInmediata, Multa, ResolucionDescargo
 
 # Un plazo que vence dentro de estos dias se marca como urgente en el resumen.
 DIAS_URGENCIA = 3
@@ -32,8 +32,16 @@ def resumen_para_comite(condominio):
     en_revision = Multa.objects.filter(
         condominio=condominio, estado=EstadoMulta.EN_REVISION,
     ).count()
-    descargos = Multa.objects.filter(
-        condominio=condominio, estado=EstadoMulta.CON_DESCARGO,
+    descargos_qs = Multa.objects.filter(condominio=condominio, estado=EstadoMulta.CON_DESCARGO)
+    descargos = descargos_qs.count()
+    # El plazo tambien obliga al Comite: una apelacion sin responder deja al
+    # residente sin saber en que esta su caso.
+    vencidos = descargos_qs.filter(
+        descargo__resolucion=ResolucionDescargo.PENDIENTE,
+        descargo__fecha_limite_resolucion__lt=timezone.now(),
+    ).count()
+    por_confirmar = Multa.objects.filter(
+        condominio=condominio, estado=EstadoMulta.POR_CONFIRMAR,
     ).count()
     contenciones = MedidaInmediata.objects.filter(
         multa__condominio=condominio,
@@ -44,16 +52,24 @@ def resumen_para_comite(condominio):
     if contenciones:
         # Va primero: una contencion sin ratificar sigue activa sobre alguien.
         puntos.append(f'{_linea(contenciones, "paralizacion", "paralizaciones")} esperando tu ratificacion')
+    if vencidos:
+        puntos.append(
+            f'{_linea(vencidos, "apelacion", "apelaciones")} con el plazo de respuesta VENCIDO'
+        )
     if en_revision:
         puntos.append(f'{_linea(en_revision, "caso", "casos")} por revisar')
     if descargos:
-        puntos.append(f'{_linea(descargos, "descargo", "descargos")} por resolver')
+        puntos.append(f'{_linea(descargos, "apelacion", "apelaciones")} por resolver')
+    if por_confirmar:
+        puntos.append(
+            f'{_linea(por_confirmar, "cobro detenido", "cobros detenidos")} esperando tu confirmacion'
+        )
 
     return {
         'rol': Rol.COMITE,
         'puntos': puntos,
-        'urgente': bool(contenciones),
-        'total': en_revision + descargos + contenciones,
+        'urgente': bool(contenciones or vencidos),
+        'total': en_revision + descargos + contenciones + por_confirmar,
     }
 
 

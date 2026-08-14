@@ -1,3 +1,4 @@
+from datetime import timedelta
 from decimal import Decimal
 
 from django.http import HttpResponse
@@ -21,12 +22,13 @@ from .contencion import (
     levantar_contencion, otorgar_delegacion, ratificar_contencion, revocar_delegacion,
 )
 from .models import (
-    CanalNotificacion, Delegacion, Descargo, EstadoMulta, EstadoTicket, EvidenciaFoto,
-    MedidaInmediata, Multa, Ticket, TipoActo,
+    AntecedenteDescargo, CanalNotificacion, Delegacion, Descargo, EstadoMulta, EstadoTicket,
+    EvidenciaFoto, MedidaInmediata, Multa, ResolucionDescargo, Ticket, TipoActo,
 )
 from .sellado import procesar_evidencia, sellar_acto, verificar_expediente
 from .serializers import (
-    AprobarMultaSerializer, DelegacionSerializer, DescargoSerializer, EjecutarMedidaSerializer,
+    AntecedenteDescargoSerializer, AportarAntecedenteSerializer, AprobarMultaSerializer,
+    DelegacionSerializer, DescargoSerializer, EjecutarMedidaSerializer,
     EvidenciaFotoSerializer, LevantarMedidaSerializer, MedidaInmediataSerializer, MultaSerializer,
     OtorgarDelegacionSerializer, PresentarDescargoSerializer, RechazarMultaSerializer,
     ResolverDescargoSerializer, TicketSerializer,
@@ -180,7 +182,7 @@ class MultaViewSet(viewsets.ReadOnlyModelViewSet):
             return [EsComite()]
         if self.action in ('notificar', 'constancia_buzon'):
             return [EsAdministrador()]
-        if self.action == 'presentar_descargo':
+        if self.action in ('presentar_descargo', 'aportar_antecedente'):
             return [EsResidente()]
         return [UsuarioAsignado()]
 
@@ -299,6 +301,50 @@ class MultaViewSet(viewsets.ReadOnlyModelViewSet):
             return Response(MultaSerializer(multa).data)
         return respuesta
 
+    @action(
+        detail=True, methods=['post'], url_path='antecedente',
+        parser_classes=[MultiPartParser, FormParser, JSONParser],
+    )
+    def aportar_antecedente(self, request, pk=None):
+        """
+        El residente suma prueba a una apelacion ya presentada.
+
+        La defensa no se agota en el formulario inicial: una boleta o un
+        certificado pueden llegar dias despues. Solo se acepta mientras la
+        apelacion siga sin resolver; despues el expediente esta cerrado.
+        """
+        multa = self.get_object()
+        if multa.persona_infractor_id != request.user.persona_id:
+            return Response({'detail': 'Este expediente no corresponde a su ficha.'}, status=403)
+
+        descargo = getattr(multa, 'descargo', None)
+        if descargo is None:
+            return Response({'detail': 'Todavia no hay una apelacion presentada.'}, status=400)
+        if descargo.resolucion != ResolucionDescargo.PENDIENTE:
+            return Response(
+                {'detail': 'La apelacion ya fue resuelta: el expediente esta cerrado.'}, status=400,
+            )
+
+        datos = AportarAntecedenteSerializer(data=request.data)
+        datos.is_valid(raise_exception=True)
+
+        antecedente = AntecedenteDescargo.objects.create(
+            descargo=descargo,
+            texto=datos.validated_data['texto'],
+            archivo_adjunto=datos.validated_data.get('archivo_adjunto'),
+            aportado_por=request.user,
+        )
+        registrar_historial(
+            multa, multa.estado, multa.estado, request.user,
+            'El residente sumo un antecedente a su apelacion.',
+        )
+        sellar_acto(multa, TipoActo.ANTECEDENTE_APORTADO, request.user, extra={
+            'texto': antecedente.texto,
+            'archivo_adjunto': antecedente.archivo_adjunto.name if antecedente.archivo_adjunto else None,
+            'origen': antecedente.origen,
+        })
+        return Response(AntecedenteDescargoSerializer(antecedente).data, status=201)
+
     @action(detail=True, methods=['post'], url_path='confirmar-cobro')
     def confirmar_cobro(self, request, pk=None):
         """
@@ -386,11 +432,15 @@ class MultaViewSet(viewsets.ReadOnlyModelViewSet):
         datos = PresentarDescargoSerializer(data=request.data)
         datos.is_valid(raise_exception=True)
 
+        # El plazo obliga a las dos partes: al presentarse la apelacion arranca
+        # el que tiene el Comite para responder.
+        dias = multa.condominio.plazo_resolucion_dias
         descargo = Descargo.objects.create(
             multa=multa,
             presentado_por=request.user,
             texto=datos.validated_data['texto'],
             archivo_adjunto=datos.validated_data.get('archivo_adjunto'),
+            fecha_limite_resolucion=timezone.now() + timedelta(days=dias),
         )
 
         estado_anterior = multa.estado

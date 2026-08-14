@@ -4,8 +4,8 @@ from django.utils import timezone
 from rest_framework import serializers
 
 from .models import (
-    CausalLevantamiento, Delegacion, Descargo, EvidenciaFoto, HistorialMulta,
-    MedidaInmediata, Multa, Ticket,
+    AntecedenteDescargo, CausalLevantamiento, Delegacion, Descargo, EvidenciaFoto,
+    HistorialMulta, MedidaInmediata, Multa, Ticket,
 )
 
 
@@ -59,17 +59,39 @@ class HistorialMultaSerializer(serializers.ModelSerializer):
         fields = ('id', 'estado_anterior', 'estado_nuevo', 'usuario', 'usuario_nombre', 'comentario', 'fecha')
 
 
+class AntecedenteDescargoSerializer(serializers.ModelSerializer):
+    aportado_por_nombre = serializers.CharField(source='aportado_por.get_full_name', read_only=True)
+
+    class Meta:
+        model = AntecedenteDescargo
+        fields = (
+            'id', 'descargo', 'texto', 'archivo_adjunto', 'origen',
+            'aportado_por', 'aportado_por_nombre', 'fecha',
+        )
+        read_only_fields = ('descargo', 'origen', 'aportado_por', 'fecha')
+
+
+class AportarAntecedenteSerializer(serializers.Serializer):
+    texto = serializers.CharField()
+    archivo_adjunto = serializers.FileField(required=False)
+
+
 class DescargoSerializer(serializers.ModelSerializer):
+    antecedentes = AntecedenteDescargoSerializer(many=True, read_only=True)
+    resolucion_vencida = serializers.BooleanField(read_only=True)
+
     class Meta:
         model = Descargo
         fields = (
             'id', 'multa', 'presentado_por', 'texto', 'archivo_adjunto', 'fecha_presentacion',
             'resolucion', 'resuelto_por', 'comentario_resolucion',
             'porcentaje_descuento', 'monto_original', 'fecha_resolucion',
+            'fecha_limite_resolucion', 'resolucion_vencida', 'antecedentes',
         )
         read_only_fields = (
             'presentado_por', 'fecha_presentacion', 'resolucion', 'resuelto_por',
             'comentario_resolucion', 'porcentaje_descuento', 'monto_original', 'fecha_resolucion',
+            'fecha_limite_resolucion',
         )
 
 

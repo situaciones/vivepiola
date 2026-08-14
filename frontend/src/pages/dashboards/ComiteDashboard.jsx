@@ -13,7 +13,11 @@ import DrawerDelegacion from '../../components/DrawerDelegacion';
 import { useVocab } from '../../vocab';
 
 const REINCIDENCIA_MESES = 6;
-const ESTADOS_SANCIONADOS = ['APROBADA', 'NOTIFICADA', 'CON_DESCARGO', 'FIRME', 'EXPORTADA'];
+// Un parte de cortesia tambien cuenta: su sentido es avisar que la proxima vez
+// se cobra. Debe coincidir con verificar_reincidencia del backend.
+const ESTADOS_SANCIONADOS = [
+  'APROBADA', 'NOTIFICADA', 'CON_DESCARGO', 'FIRME', 'EXPORTADA', 'CORTESIA',
+];
 
 /**
  * Vista previa de reincidencia en el cliente, calculada al vuelo mientras el
@@ -29,11 +33,14 @@ function buscarReincidenciaPreview(multaActiva, infraccionId, todasLasMultas) {
     m.unidad === multaActiva.unidad &&
     m.infraccion === Number(infraccionId) &&
     ESTADOS_SANCIONADOS.includes(m.estado) &&
-    m.fecha_aprobacion &&
-    new Date(m.fecha_aprobacion).getTime() >= limite,
+    // Las multas que se cursan solas no tienen fecha_aprobacion, porque nadie
+    // las aprobo. Mirar solo esa fecha las dejaba fuera del conteo.
+    (m.fecha_aprobacion || m.fecha_notificacion) &&
+    new Date(m.fecha_aprobacion || m.fecha_notificacion).getTime() >= limite,
   );
   if (candidatas.length === 0) return null;
-  candidatas.sort((a, b) => new Date(a.fecha_aprobacion) - new Date(b.fecha_aprobacion));
+  const cuando = (m) => new Date(m.fecha_aprobacion || m.fecha_notificacion);
+  candidatas.sort((a, b) => cuando(a) - cuando(b));
   return candidatas[0];
 }
 
@@ -464,11 +471,38 @@ export default function ComiteDashboard() {
                           <div className="panel-comparacion">
                             <div className="panel-evidencia">
                               <h4>Descargo del residente</h4>
+                              {activa.descargo?.resolucion_vencida && (
+                                <p className="alerta-reincidencia">
+                                  El plazo para responder esta apelacion ya vencio.
+                                </p>
+                              )}
                               <p>{activa.descargo?.texto}</p>
                               {activa.descargo?.archivo_adjunto && (
                                 <a href={`${MEDIA_BASE}${activa.descargo.archivo_adjunto}`} target="_blank" rel="noreferrer">
                                   Ver documento adjunto
                                 </a>
+                              )}
+                              {activa.descargo?.antecedentes?.length > 0 && (
+                                <>
+                                  <h4 style={{ marginTop: 14 }}>
+                                    Antecedentes sumados despues ({activa.descargo.antecedentes.length})
+                                  </h4>
+                                  <ul className="lista-antecedentes">
+                                    {activa.descargo.antecedentes.map((a) => (
+                                      <li key={a.id}>
+                                        {a.texto}
+                                        {a.archivo_adjunto && (
+                                          <>
+                                            {' '}
+                                            <a href={`${MEDIA_BASE}${a.archivo_adjunto}`} target="_blank" rel="noreferrer">
+                                              (ver adjunto)
+                                            </a>
+                                          </>
+                                        )}
+                                      </li>
+                                    ))}
+                                  </ul>
+                                </>
                               )}
                             </div>
                             <div className="panel-articulo">

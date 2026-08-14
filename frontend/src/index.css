@@ -748,3 +748,7 @@ textarea { resize: vertical; }
 
 .propuestas-resolucion li b { font-size: .92rem; color: #0f172a; }
 .propuestas-resolucion li span { font-size: .85rem; line-height: 1.45; color: #475569; }
+
+/* Antecedentes sumados a una apelacion ya presentada. */
+.lista-antecedentes { margin: 8px 0 0; padding-left: 18px; }
+.lista-antecedentes li { font-size: .88rem; line-height: 1.5; color: #475569; margin-bottom: 4px; }

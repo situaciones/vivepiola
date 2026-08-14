@@ -193,9 +193,57 @@ class Descargo(models.Model):
         help_text='Monto de la multa antes del descuento, congelado al resolver (trazabilidad).',
     )
     fecha_resolucion = models.DateTimeField(null=True, blank=True)
+    # Hasta cuando tiene el Comite para resolver. Se fija al presentarse la
+    # apelacion: el plazo obliga a las dos partes, no solo al residente.
+    fecha_limite_resolucion = models.DateTimeField(null=True, blank=True)
+
+    @property
+    def resolucion_vencida(self):
+        """El Comite se paso del plazo que tenia para responder."""
+        from django.utils import timezone as _tz
+
+        return bool(
+            self.resolucion == ResolucionDescargo.PENDIENTE
+            and self.fecha_limite_resolucion
+            and self.fecha_limite_resolucion < _tz.now()
+        )
 
     def __str__(self):
         return f'Descargo multa #{self.multa_id}'
+
+
+class OrigenAntecedente(models.TextChoices):
+    RESIDENTE = 'RESIDENTE', 'Aportado por el residente'
+    REUNION = 'REUNION', 'Aportado en la reunion'
+
+
+class AntecedenteDescargo(models.Model):
+    """
+    Prueba que se suma a una apelacion ya presentada.
+
+    La defensa no se agota en el formulario inicial: el residente puede
+    conseguir despues una boleta, un certificado o el testimonio de un vecino.
+    Obligarlo a tenerlo todo listo en el primer intento seria recortarle la
+    defensa por un problema de calendario.
+
+    Solo se puede aportar mientras la apelacion siga sin resolver: despues de
+    la resolucion el expediente esta cerrado y agregarle piezas lo falsearia.
+    """
+
+    descargo = models.ForeignKey(Descargo, on_delete=models.CASCADE, related_name='antecedentes')
+    texto = models.TextField()
+    archivo_adjunto = models.FileField(upload_to='antecedentes/%Y/%m/', null=True, blank=True)
+    origen = models.CharField(
+        max_length=20, choices=OrigenAntecedente.choices, default=OrigenAntecedente.RESIDENTE,
+    )
+    aportado_por = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True)
+    fecha = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['fecha']
+
+    def __str__(self):
+        return f'Antecedente de la apelacion #{self.descargo_id} ({self.origen})'
 
 
 class HistorialMulta(models.Model):
@@ -271,6 +319,7 @@ class TipoActo(models.TextChoices):
     NOTIFICACION = 'NOTIFICACION', 'Notificacion al residente'
     DESCARGO_PRESENTADO = 'DESCARGO_PRESENTADO', 'Descargo presentado'
     ACUSE_RECIBO = 'ACUSE_RECIBO', 'Acuse de recibo de la notificacion'
+    ANTECEDENTE_APORTADO = 'ANTECEDENTE_APORTADO', 'Antecedente sumado a la apelacion'
     RESOLUCION_DESCARGO = 'RESOLUCION_DESCARGO', 'Resolucion del descargo'
     FIRMEZA_AUTOMATICA = 'FIRMEZA_AUTOMATICA', 'Firmeza automatica por vencimiento de plazo'
     CONFIRMACION_PREVIA_COBRO = 'CONFIRMACION_PREVIA_COBRO', 'Confirmacion antes del cobro'

@@ -56,6 +56,12 @@ class Condominio(models.Model):
         default=5,
         help_text='Dias corridos que tiene el residente para presentar descargos tras la notificacion.',
     )
+    # El plazo tambien corre para el organo que resuelve. Sin el, una apelacion
+    # puede quedar meses sin respuesta y el residente sin saber en que esta.
+    plazo_resolucion_dias = models.PositiveSmallIntegerField(
+        default=15,
+        help_text='Dias corridos que tiene el Comite para resolver una apelacion presentada.',
+    )
     # Codigo Unico de Comunidad: cualquier vecino puede registrarse via Google
     # con este codigo y queda PENDIENTE de que el Administrador le asigne rol.
     codigo_comunidad = models.CharField(max_length=12, unique=True, null=True, blank=True, db_index=True)

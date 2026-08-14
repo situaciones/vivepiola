@@ -32,6 +32,7 @@ export default function ResidenteDashboard() {
   const [multas, setMultas] = useState([]);
   const [novedades, setNovedades] = useState([]);
   const [textoDescargo, setTextoDescargo] = useState({});
+  const [textoAntecedente, setTextoAntecedente] = useState({});
   const [mensaje, setMensaje] = useState('');
   const [nuevaNovedad, setNuevaNovedad] = useState({ tipo: 'RECLAMO', texto: '' });
 
@@ -75,6 +76,24 @@ export default function ResidenteDashboard() {
       cargarTodo();
     } catch (err) {
       setMensaje(err.response?.data?.detail || `No se pudo presentar el ${t('descargo_min')}.`);
+    }
+  };
+
+  // La defensa no se agota en el primer formulario: una boleta o un certificado
+  // pueden llegar dias despues de haber apelado.
+  const aportarAntecedente = async (multaId) => {
+    const texto = textoAntecedente[multaId];
+    if (!texto) {
+      setMensaje('Escribe el antecedente antes de enviarlo.');
+      return;
+    }
+    try {
+      await client.post(`/multas/${multaId}/antecedente/`, { texto });
+      setTextoAntecedente((prev) => ({ ...prev, [multaId]: '' }));
+      setMensaje('Antecedente sumado a tu apelacion.');
+      cargarTodo();
+    } catch (err) {
+      setMensaje(err.response?.data?.detail || 'No se pudo sumar el antecedente.');
     }
   };
 
@@ -177,6 +196,32 @@ export default function ResidenteDashboard() {
                     <div className="resultado-importacion" style={{ marginTop: 12 }}>
                       <p><strong>{t('tu_descargo')}</strong> {m.descargo.texto}</p>
                       <p><strong>Resolucion:</strong> <EstadoBadge estado={m.descargo.resolucion} /> {m.descargo.comentario_resolucion}</p>
+
+                      {m.descargo.antecedentes?.length > 0 && (
+                        <ul className="lista-antecedentes">
+                          {m.descargo.antecedentes.map((a) => (
+                            <li key={a.id}>{a.texto}</li>
+                          ))}
+                        </ul>
+                      )}
+
+                      {m.descargo.resolucion === 'PENDIENTE' && (
+                        <div style={{ marginTop: 10 }}>
+                          <p className="texto-secundario">
+                            Tu apelacion esta en revision. Si consigues un antecedente nuevo
+                            —una boleta, un certificado— puedes sumarlo mientras no se resuelva.
+                          </p>
+                          <textarea
+                            rows={2}
+                            placeholder="Antecedente que quieras sumar a tu apelacion"
+                            value={textoAntecedente[m.id] || ''}
+                            onChange={(e) => setTextoAntecedente((prev) => ({ ...prev, [m.id]: e.target.value }))}
+                          />
+                          <button className="btn btn-secundario" onClick={() => aportarAntecedente(m.id)}>
+                            Sumar antecedente
+                          </button>
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>
