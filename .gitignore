@@ -1,16 +1,15 @@
 venv/
-backend/.env
-backend/media/
-backend/staticfiles/
-backend/__pycache__/
-**/__pycache__/
-*.pyc
-backend/db.sqlite3
 node_modules/
 frontend/dist/
+**/__pycache__/
+*.pyc
+*.sqlite3
 
 # Entorno local y artefactos del backend desplegado
 vivepiola/.env
 vivepiola/media/
 vivepiola/staticfiles/
-*.sqlite3
+
+# Repo de GitHub vacio que quedo clonado dentro del proyecto: no es codigo
+# de VIVEPIOLA y no debe volver a entrar al indice como submodulo fantasma.
+aplicacion multas/

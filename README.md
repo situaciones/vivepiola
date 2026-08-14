@@ -19,7 +19,7 @@ sancionatorio:
 ## Estructura
 
 ```
-backend/        Proyecto Django (apps: accounts, condominios, reglamentos, multas, novedades, gastos_comunes)
+vivepiola/      Proyecto Django (apps: accounts, condominios, reglamentos, multas, novedades, gastos_comunes)
 frontend/       SPA React (Vite)
 venv/           Entorno virtual Python
 ```
@@ -37,7 +37,7 @@ Se instalo MySQL Server 8.4 localmente (Windows) sin registrarlo como servicio
 
 Root sin contrasena (`--initialize-insecure`). Para produccion, instala MySQL
 como servicio de Windows con permisos de administrador y define una
-contrasena de root, actualizando `backend/.env`.
+contrasena de root, actualizando `vivepiola/.env`.
 
 Base de datos: `condoadmin` (ya creada). Es solo el identificador interno de
 conexion (nadie lo ve en la app); se mantuvo para no perder los datos de
@@ -46,13 +46,13 @@ prueba ya cargados al renombrar el producto a "Debido".
 ### Backend
 
 ```
-cd backend
+cd vivepiola
 ..\venv\Scripts\activate
 python manage.py migrate
 python manage.py runserver
 ```
 
-Variables de entorno en `backend/.env` (copiar de `.env.example`):
+Variables de entorno en `vivepiola/.env` (copiar de `.env.example`):
 - `DB_*`: credenciales MySQL.
 - `EMAIL_BACKEND`: `django.core.mail.backends.console.EmailBackend` en desarrollo (los correos se imprimen en la consola). Cambiar a `...backends.smtp.EmailBackend` con un proveedor transaccional (SendGrid, Mailgun, etc.) en produccion.
 - `ANTHROPIC_API_KEY`: necesaria solo para el boton "Generar borradores de infracciones con IA".
@@ -147,7 +147,7 @@ La piel no vive solo en la UI: los **canales legales de salida** hablan el
 idioma del vertical, para que el Audit Trail y la notificacion no muestren
 "multa de su condominio" en una auditoria de "paralizacion de faena".
 
-- **Motor de vocabulario** ([backend/condominios/vocab.py](backend/condominios/vocab.py)):
+- **Motor de vocabulario** ([vivepiola/condominios/vocab.py](vivepiola/condominios/vocab.py)):
   `termino(condominio, clave)` para sustantivos y `frase(condominio, clave, **datos)`
   para bloques de texto completos con placeholders (i18n **clave-por-frase**,
   nunca concatenacion de palabras sueltas — respeta genero/numero). Defaults
@@ -259,7 +259,7 @@ trazabilidad (el prevencionista ratifica en terreno cuando el titular no esta).
 ## Tests
 
 ```
-cd backend
+cd vivepiola
 ..\venv\Scripts\activate
 python manage.py test
 ```
