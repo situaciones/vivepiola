@@ -93,13 +93,18 @@ def clasificar_con_ia(ticket, infracciones):
         f'REPORTE A CLASIFICAR:\n{json.dumps(reporte, ensure_ascii=False)}'
     )
 
-    # Aqui la normativa general va con presupuesto corto: el catalogo ya la
-    # tiene encarnada (nacio de ella), asi que mandar la ley entera en cada
-    # denuncia costaria mucho y aportaria poco. Sirve para el encuadre general.
+    # Se busca en el corpus lo pertinente a ESTE hecho. Aqui es donde mas se
+    # nota la diferencia con mandar la ley entera: clasificar "el perro andaba
+    # suelto" trae los articulos sobre mascotas y espacios comunes, no cuatro
+    # mil lineas donde eso queda enterrado.
     from reglamentos.normativa import contexto_normativo
 
+    consulta = ' '.join(filtro for filtro in [
+        ticket.descripcion or '', ticket.ubicacion or '', ticket.analisis_evidencia or '',
+    ] if filtro)
+
     sistema = PROMPT_SISTEMA
-    marco = contexto_normativo(settings.NORMATIVA_PRESUPUESTO_CLASIFICACION)
+    marco = contexto_normativo(consulta)
     if marco:
         sistema = f'{PROMPT_SISTEMA}\n\n{marco}'
 

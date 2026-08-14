@@ -284,15 +284,29 @@ CURSE_CONFIANZA_MINIMA_LEVE = config('CURSE_CONFIANZA_MINIMA_LEVE', default=65, 
 CURSE_CONFIANZA_MINIMA_GRAVE = config('CURSE_CONFIANZA_MINIMA_GRAVE', default=80, cast=int)
 CURSE_CONFIANZA_MINIMA_GRAVISIMA = config('CURSE_CONFIANZA_MINIMA_GRAVISIMA', default=90, cast=int)
 
-# Cuanta normativa transversal se le entrega a la IA por llamada. Mandar la ley
-# completa en cada clasificacion es caro y casi siempre innecesario, porque el
-# catalogo ya la tiene encarnada; al leer un reglamento nuevo, en cambio, es
-# justo donde mas sirve. Por eso el presupuesto es distinto en cada caso.
-NORMATIVA_PRESUPUESTO_CARACTERES = config(
-    'NORMATIVA_PRESUPUESTO_CARACTERES', default=40000, cast=int,
+# Base normativa transversal: no se le manda la ley entera al modelo, se busca
+# el pasaje pertinente y se le mandan solo esos fragmentos. Asi el corpus puede
+# crecer sin limite: agregar la circular de este mes no encarece ninguna
+# consulta, solo la hace encontrable.
+#
+# Los embeddings usan la misma clave de Gemini que el analisis de evidencia.
+
+NORMATIVA_MODELO_EMBEDDING = config(
+    'NORMATIVA_MODELO_EMBEDDING', default='gemini-embedding-001',
 )
-NORMATIVA_PRESUPUESTO_CLASIFICACION = config(
-    'NORMATIVA_PRESUPUESTO_CLASIFICACION', default=6000, cast=int,
+# 768 alcanza de sobra para buscar articulos y ocupa 3 KB por fragmento; el
+# corpus completo se lee en memoria en cada busqueda.
+NORMATIVA_DIMENSIONES = config('NORMATIVA_DIMENSIONES', default=768, cast=int)
+NORMATIVA_LOTE_EMBEDDING = config('NORMATIVA_LOTE_EMBEDDING', default=32, cast=int)
+
+# Cuantos pasajes se recuperan por consulta y desde que pertinencia. Traer
+# fragmentos poco pertinentes es peor que no traer ninguno: distraen al modelo
+# y le dan de donde agarrarse para fundamentar cualquier cosa.
+NORMATIVA_FRAGMENTOS_POR_CONSULTA = config(
+    'NORMATIVA_FRAGMENTOS_POR_CONSULTA', default=6, cast=int,
+)
+NORMATIVA_PERTINENCIA_MINIMA = config(
+    'NORMATIVA_PERTINENCIA_MINIMA', default=0.55, cast=float,
 )
 
 CURSE_CONFIANZA_MINIMA = {

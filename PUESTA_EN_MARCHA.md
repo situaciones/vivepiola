@@ -409,42 +409,71 @@ mismo día.
 
 ---
 
-### Cargar la base normativa de Chile
+### La base normativa de Chile
 
-El sistema trae **declaradas** las normas generales que rigen a todos los
-condominios, pero **el texto hay que cargarlo una vez**. No viene escrito en el
-código a propósito: lo que se cargue aquí termina citado en notificaciones que
-le llegan a residentes, y un articulado escrito de memoria es la forma más
-rápida de fundar una sanción en un artículo que no existe.
+El sistema mantiene un **corpus normativo transversal** que rige a todos los
+condominios: la Ley 21.442, su reglamento, circulares del MINVU o de la SEC,
+folletos, dictámenes. Lo decide un abogado con experiencia en copropiedad, no
+cada administrador.
 
-Ver qué falta:
+**Cómo funciona.** No se le manda la ley entera a la IA. Cada fuente se trocea
+por artículo, se indexa, y cuando hace falta se busca **el pasaje preciso** y se
+le entregan solo esos fragmentos, con su cita. Es la diferencia entre pedirle a
+alguien que se aprenda el código de memoria y darle el artículo que necesita.
+
+La consecuencia práctica: **el corpus puede crecer sin límite**. Agregar la
+circular de este mes no encarece ni empeora ninguna consulta, solo la hace
+encontrable.
+
+#### Quién carga las fuentes
+
+Un único perfil: el **superadministrador de la plataforma**, desde el panel de
+Django en **Fuentes normativas (Chile)**. No es una función de ningún
+condominio — es mantención de la plataforma.
+
+Al guardar una fuente se extrae su texto y se indexa sola. Se admite:
+
+| Formato | Ejemplo |
+|---|---|
+| PDF | la ley bajada de bcn.cl |
+| Word (.docx) | un instructivo interno |
+| URL | la página de leychile o una circular publicada |
+
+El campo **identificador** es lo que se cita en el fundamento de una sanción.
+Escríbelo como se cita: `Ley 21.442`, `Circular MINVU 15/2026`.
+
+#### Por línea de comandos
 
 ```bash
 python manage.py cargar_normativa --estado
 ```
 
-Te va a listar cada norma con **el enlace oficial** de dónde bajarla y el
-nombre de archivo que espera. Baja el texto desde bcn.cl, guárdalo como `.txt`
-en una carpeta, y carga:
-
 ```bash
 python manage.py cargar_normativa --desde normativa/
 ```
 
-| Norma | Para qué sirve |
-|---|---|
-| Ley 21.442 | El marco de toda la copropiedad |
-| D.S. N° 7 (2023) MINVU | Su reglamento |
-| Ley 19.496 | Protección al consumidor |
-| Ley 19.628 | Datos personales |
+Cada archivo se identifica por su nombre, así que conviene nombrarlos como se
+citan: `Ley 21.442.pdf`.
 
-**Sin esto el sistema funciona igual**, solo que la IA analiza únicamente con
-los documentos de cada comunidad. Con la ley cargada puede notar que una
-sanción del reglamento excede un tope legal o que un plazo contradice el que
-fija la ley — y decirlo en el fundamento en vez de reproducir el error.
+```bash
+python manage.py cargar_normativa --url https://www.bcn.cl/... --id "Ley 21.442" --tipo LEY
+```
 
-También se puede administrar desde el panel de Django, en **Normas
-transversales (Chile)**.
+#### Actualizar una norma
+
+Vuelve a subir el documento sobre la misma fuente. Reindexar **reemplaza** lo
+anterior: una norma actualizada no puede convivir con su versión vieja, porque
+la búsqueda devolvería las dos y el modelo no tendría cómo saber cuál rige.
+
+Cuando una norma se deroga, desmárcala como vigente en vez de borrarla: deja de
+consultarse pero se conserva el registro de que estuvo.
+
+> Requiere `GEMINI_API_KEY` (la misma del análisis de evidencia). Sin ella las
+> fuentes se cargan y se trocean, pero no quedan buscables. Configúrala y corre
+> `cargar_normativa --reindexar`.
+
+**Sin corpus el sistema funciona igual**: la IA analiza solo con los documentos
+de cada comunidad. Cargarlo mejora el encuadre, no lo habilita.
 
 ---
 

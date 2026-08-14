@@ -5,8 +5,9 @@ from django.db import models
 
 # La base normativa transversal de Chile vive en su propio modulo porque no
 # pertenece a ningun condominio: la mantiene la plataforma.
-from .normativa import (  # noqa: F401  (se reexporta para que Django registre el modelo)
-    NormaTransversal, TipoNormaTransversal, contexto_normativo, estado_del_corpus,
+from .normativa import (  # noqa: F401  (se reexporta para que Django registre los modelos)
+    FragmentoNormativo, FuenteNormativa, TipoFuente, buscar_normativa,
+    contexto_normativo, estado_del_corpus, indexar_fuente,
 )
 
 

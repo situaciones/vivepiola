@@ -158,11 +158,12 @@ def sugerir_infracciones_desde_texto(texto_reglamento, tipo='REGLAMENTO_COPROPIE
     instruccion = INSTRUCCIONES_POR_TIPO.get(tipo, INSTRUCCIONES_POR_TIPO['OTRO'])
     sistema = f'{PROMPT_SISTEMA}\n\nSOBRE ESTE DOCUMENTO: {instruccion}'
 
-    # La normativa general de Chile va aqui porque es donde mas rinde: al armar
-    # el catalogo se define lo que despues se aplica cientos de veces. Con la
-    # ley a la vista, el modelo puede notar que una sancion excede un tope legal
-    # o que un plazo contradice el que fija la ley.
-    marco = contexto_normativo()
+    # Se busca en el corpus lo pertinente a ESTE reglamento y se manda solo
+    # eso. La consulta es un extracto del documento: alcanza para traer los
+    # articulos que regulan sanciones, plazos y topes, que es lo que hace falta
+    # para detectar que una multa del reglamento se pase de lo que la ley
+    # permite.
+    marco = contexto_normativo(texto_recortado[:4000])
     if marco:
         sistema += (
             f'\n\n{marco}\n\n'
