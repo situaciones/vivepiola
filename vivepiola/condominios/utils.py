@@ -1,6 +1,9 @@
 import io
 
 import openpyxl
+import openpyxl.comments
+import openpyxl.utils
+import openpyxl.worksheet.datavalidation
 from django.core.exceptions import ValidationError
 from django.core.validators import validate_email
 
@@ -16,13 +19,52 @@ PERMANENCIAS_VALIDAS = {choice.value for choice in Permanencia}
 VINCULOS_VALIDOS = {choice.value for choice in VinculoCopropietario}
 
 
+# Ayuda por columna: se muestra al pararse en la celda, sin abrir otra hoja.
+AYUDA_COLUMNAS = {
+    'unidad': ('Obligatorio', 'El departamento, casa o estacionamiento. Ej: Depto 302'),
+    'rol_ocupacion': ('Obligatorio', 'Titulo con que ocupa la unidad. Elija de la lista.'),
+    'nombre_completo': ('Obligatorio', 'Nombre y apellidos de la persona.'),
+    'cedula_identidad': ('Obligatorio', 'RUT con guion. Ej: 12.345.678-9'),
+    'domicilio': ('Obligatorio', 'Direccion de la unidad.'),
+    'correo_electronico': (
+        'Obligatorio',
+        'Es el canal legal de notificacion: sin correo valido la multa no se puede notificar.',
+    ),
+    'telefono': ('Opcional', 'Formato +569XXXXXXXX. Habilita el aviso por WhatsApp.'),
+    'permanencia': (
+        'Opcional',
+        'PERMANENTE si no se indica. TRANSITORIO (estadia corta) hace que la '
+        'notificacion se copie tambien al propietario.',
+    ),
+    'vinculo_copropietario': (
+        'Opcional',
+        'Solo si ocupa por su vinculo con el dueño. En ese caso la notificacion '
+        'tambien se le copia al propietario.',
+    ),
+}
+
+# Columnas con valores cerrados: van como lista desplegable para que no haya
+# que adivinar la ortografia ni acordarse de escribir en mayusculas.
+LISTAS_DESPLEGABLES = {
+    'rol_ocupacion': sorted(ROLES_VALIDOS),
+    'permanencia': sorted(PERMANENCIAS_VALIDAS),
+    'vinculo_copropietario': sorted(v for v in VINCULOS_VALIDOS if v),
+}
+
+OBLIGATORIAS = {c for c, (marca, _) in AYUDA_COLUMNAS.items() if marca == 'Obligatorio'}
+
+
 def generar_plantilla_excel():
     """
     Plantilla .xlsx para el administrador.
 
-    Va sin filas de ejemplo a proposito: una plantilla con datos de muestra
-    termina importando personas ficticias al registro. Los ejemplos y las
-    reglas viven en la hoja de instrucciones.
+    Se abre en la hoja de instrucciones a proposito: quien la descarga por
+    primera vez necesita leer como llenarla antes de ver una grilla vacia.
+    Ademas cada encabezado lleva su ayuda y las columnas de valores cerrados
+    van como lista desplegable, para que la guia este donde se escribe.
+
+    Va sin filas de ejemplo: una plantilla con datos de muestra termina
+    importando personas ficticias al registro.
     """
     wb = openpyxl.Workbook()
     ws = wb.active
@@ -31,9 +73,36 @@ def generar_plantilla_excel():
     ws.freeze_panes = 'A2'
     for i, ancho in enumerate([16, 16, 30, 18, 38, 30, 18, 16, 22], start=1):
         ws.column_dimensions[openpyxl.utils.get_column_letter(i)].width = ancho
-    for celda in ws[1]:
+
+    for i, columna in enumerate(COLUMNAS_PLANTILLA, start=1):
+        letra = openpyxl.utils.get_column_letter(i)
+        celda = ws.cell(row=1, column=i)
         celda.font = openpyxl.styles.Font(bold=True, color='FFFFFF')
-        celda.fill = openpyxl.styles.PatternFill('solid', fgColor='111827')
+        # Obligatorias en oscuro, opcionales en gris: se distingue de un vistazo
+        # cuales no se pueden dejar en blanco.
+        celda.fill = openpyxl.styles.PatternFill(
+            'solid', fgColor='111827' if columna in OBLIGATORIAS else '6B7280',
+        )
+        marca, detalle = AYUDA_COLUMNAS[columna]
+        celda.comment = openpyxl.comments.Comment(f'{marca}. {detalle}', 'VIVEPIOLA')
+
+        rango = f'{letra}2:{letra}1000'
+        if columna in LISTAS_DESPLEGABLES:
+            opciones = LISTAS_DESPLEGABLES[columna]
+            validacion = openpyxl.worksheet.datavalidation.DataValidation(
+                type='list', formula1='"' + ','.join(opciones) + '"', allow_blank=True,
+                showDropDown=False,  # False = SI muestra la flecha (bandera invertida en el formato)
+                errorTitle='Valor no valido',
+                error=f'Use uno de estos valores: {", ".join(opciones)}',
+                promptTitle=columna, prompt=detalle,
+            )
+        else:
+            validacion = openpyxl.worksheet.datavalidation.DataValidation(
+                type=None, allow_blank=True, promptTitle=columna, prompt=f'{marca}. {detalle}',
+            )
+        validacion.showInputMessage = True
+        ws.add_data_validation(validacion)
+        validacion.add(rango)
 
     guia = wb.create_sheet('Instrucciones')
     # Los titulos se marcan con TITULO en vez de por numero de fila: la lista
@@ -43,8 +112,14 @@ def generar_plantilla_excel():
     for fila in [
         (TITULO, 'COMO LLENAR ESTA PLANILLA', ''),
         (None, '', ''),
+        (None, 'Los datos van en la otra hoja, la de abajo: "Registro Copropietarios".', ''),
         (None, 'Una fila por PERSONA, no por departamento.', ''),
         (None, 'Si un depto tiene propietario y arrendatario, van dos filas con la misma unidad.', ''),
+        (None, '', ''),
+        (None, 'Encabezado oscuro = obligatorio. Encabezado gris = opcional.', ''),
+        (None, 'Al pararse en una celda aparece la ayuda de esa columna.', ''),
+        (None, 'rol_ocupacion, permanencia y vinculo_copropietario son listas desplegables:', ''),
+        (None, '   elija el valor y no tendra que acordarse de escribirlo en mayusculas.', ''),
         (None, '', ''),
         (TITULO, 'COLUMNA', 'QUE VA / REGLAS'),
         (None, 'unidad', 'Ej: Depto 302, Estacionamiento 12'),
@@ -89,11 +164,34 @@ def generar_plantilla_excel():
     guia.column_dimensions['A'].width = 62
     guia.column_dimensions['B'].width = 62
 
+    # Se abre en las instrucciones, no en la grilla vacia. El importador busca
+    # la hoja del registro por sus encabezados (ver _hoja_de_datos), asi que
+    # esto no afecta la carga aunque el administrador vuelva a guardar aqui.
+    wb.move_sheet(guia, offset=-1)
     wb.active = 0
     buffer = io.BytesIO()
     wb.save(buffer)
     buffer.seek(0)
     return buffer
+
+
+def _hoja_de_datos(wb):
+    """
+    Busca la hoja que trae el registro, no la que el usuario dejo seleccionada.
+
+    Excel guarda como hoja activa la ultima que estuvo a la vista. Leer wb.active
+    significaba que, si el administrador cerraba el archivo mirando las
+    instrucciones, la importacion intentaba leer las instrucciones como si
+    fueran personas. Se busca por encabezados y solo se cae en la activa si
+    ninguna hoja los tiene (archivo armado a mano).
+    """
+    obligatorios = {'unidad', 'nombre_completo'}
+    for hoja in wb.worksheets:
+        primera = next(hoja.iter_rows(max_row=1, values_only=True), ())
+        encabezados = {str(c).strip().lower() for c in primera if c}
+        if obligatorios <= encabezados:
+            return hoja
+    return wb.active
 
 
 def _leer_filas(archivo):
@@ -110,8 +208,7 @@ def _leer_filas(archivo):
         return filas
 
     wb = openpyxl.load_workbook(archivo, data_only=True)
-    ws = wb.active
-    filas_raw = list(ws.iter_rows(values_only=True))
+    filas_raw = list(_hoja_de_datos(wb).iter_rows(values_only=True))
     if not filas_raw:
         return []
     encabezados = [str(c).strip().lower() if c else '' for c in filas_raw[0]]

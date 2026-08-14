@@ -222,6 +222,85 @@ class ObligadoAlPagoTestCase(APITestCase):
         self.assertIn('Fabian Arrendatario', lote.archivo_csv.read().decode('utf-8-sig'))
 
 
+@override_settings(MEDIA_ROOT=MEDIA_TEMP)
+class PlantillaIdaYVueltaTestCase(APITestCase):
+    """
+    El recorrido real: el administrador descarga la plantilla desde la app,
+    la llena y la vuelve a subir. Si algo se rompe aqui, se rompe el primer
+    dia de cada condominio.
+    """
+
+    @classmethod
+    def setUpTestData(cls):
+        cls.condominio = Condominio.objects.create(nombre='Condominio Ida y Vuelta')
+        cls.admin = Usuario.objects.create_user(
+            username='admin_ida', password='x', rol=Rol.ADMINISTRADOR, condominio=cls.condominio,
+        )
+
+    def _plantilla_llenada(self, hoja_activa=None):
+        import io as _io
+
+        import openpyxl
+
+        self.client.force_authenticate(self.admin)
+        descarga = self.client.get('/api/registro/plantilla/')
+        self.assertEqual(descarga.status_code, 200)
+
+        wb = openpyxl.load_workbook(_io.BytesIO(descarga.content))
+        ws = wb['Registro Copropietarios']
+        ws.append(['Depto 10', 'PROPIETARIO', 'Ana Dueña', '13.111.222-3',
+                   'Depto 10', 'ana@test.cl', '', 'PERMANENTE', ''])
+        ws.append(['Depto 10', 'ARRENDATARIO', 'Beto Arrienda', '14.111.222-4',
+                   'Depto 10', 'beto@test.cl', '', 'TRANSITORIO', ''])
+        if hoja_activa:
+            wb.active = wb.sheetnames.index(hoja_activa)
+
+        buffer = _io.BytesIO()
+        wb.save(buffer)
+        return SimpleUploadedFile(
+            'registro.xlsx', buffer.getvalue(),
+            content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        )
+
+    def _importar(self, archivo):
+        self.client.force_authenticate(self.admin)
+        return self.client.post('/api/registro/importar/', {'archivo': archivo}, format='multipart')
+
+    def test_la_plantilla_descargada_se_llena_y_se_importa(self):
+        respuesta = self._importar(self._plantilla_llenada())
+        self.assertEqual(respuesta.status_code, 201, respuesta.data)
+        self.assertEqual(respuesta.data['filas_ok'], 2, respuesta.data['detalle_errores'])
+        self.assertEqual(Persona.objects.filter(condominio=self.condominio).count(), 2)
+        self.assertEqual(
+            Persona.objects.get(cedula_identidad='14.111.222-4').permanencia, Permanencia.TRANSITORIO,
+        )
+
+    def test_se_importa_aunque_quede_guardada_en_la_hoja_de_instrucciones(self):
+        """
+        Excel recuerda la ultima hoja a la vista. Si el administrador cierra el
+        archivo mirando las instrucciones, la carga tiene que funcionar igual.
+        """
+        respuesta = self._importar(self._plantilla_llenada(hoja_activa='Instrucciones'))
+        self.assertEqual(respuesta.status_code, 201, respuesta.data)
+        self.assertEqual(
+            respuesta.data['filas_ok'], 2,
+            'la carga debe leer la hoja del registro, no la que quedo seleccionada',
+        )
+
+    def test_la_plantilla_vacia_no_importa_a_nadie(self):
+        import io as _io
+
+        self.client.force_authenticate(self.admin)
+        descarga = self.client.get('/api/registro/plantilla/')
+        archivo = SimpleUploadedFile(
+            'vacia.xlsx', _io.BytesIO(descarga.content).getvalue(),
+            content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        )
+        respuesta = self._importar(archivo)
+        self.assertEqual(respuesta.data['filas_totales'], 0)
+        self.assertEqual(Persona.objects.filter(condominio=self.condominio).count(), 0)
+
+
 class PlantillaExcelTestCase(APITestCase):
     """
     La plantilla que descarga el administrador es la unica instruccion que
@@ -251,6 +330,43 @@ class PlantillaExcelTestCase(APITestCase):
         self.assertIn('A QUIEN LE LLEGA LA NOTIFICACION', texto)
         self.assertIn('TRANSITORIO', texto)
         self.assertIn('copie al propietario', texto)
+
+    def test_se_abre_en_las_instrucciones_y_no_en_la_grilla_vacia(self):
+        import openpyxl
+
+        from condominios.utils import generar_plantilla_excel
+
+        wb = openpyxl.load_workbook(generar_plantilla_excel())
+        self.assertEqual(wb.sheetnames[0], 'Instrucciones')
+        self.assertEqual(wb.active.title, 'Instrucciones')
+
+    def test_cada_encabezado_trae_su_ayuda_y_dice_si_es_obligatorio(self):
+        import openpyxl
+
+        from condominios.utils import COLUMNAS_PLANTILLA, OBLIGATORIAS, generar_plantilla_excel
+
+        ws = openpyxl.load_workbook(generar_plantilla_excel())['Registro Copropietarios']
+        for celda in ws[1]:
+            self.assertIsNotNone(celda.comment, f'{celda.value} sin ayuda en el encabezado')
+            esperado = 'Obligatorio' if celda.value in OBLIGATORIAS else 'Opcional'
+            self.assertTrue(celda.comment.text.startswith(esperado), celda.comment.text)
+        self.assertEqual(len(list(ws[1])), len(COLUMNAS_PLANTILLA))
+
+    def test_las_columnas_de_valores_cerrados_son_listas_desplegables(self):
+        """Que no haya que adivinar la ortografia ni acordarse de las mayusculas."""
+        import openpyxl
+
+        from condominios.utils import generar_plantilla_excel
+
+        ws = openpyxl.load_workbook(generar_plantilla_excel())['Registro Copropietarios']
+        listas = {
+            str(dv.sqref).split('2:')[0]: dv.formula1
+            for dv in ws.data_validations.dataValidation if dv.type == 'list'
+        }
+        self.assertIn('PROPIETARIO', listas['B'])        # rol_ocupacion
+        self.assertIn('USUFRUCTUARIO', listas['B'])
+        self.assertIn('TRANSITORIO', listas['H'])        # permanencia
+        self.assertIn('CONVIVIENTE_CIVIL', listas['I'])  # vinculo_copropietario
 
     def test_los_titulos_van_en_negrita_aunque_se_agreguen_renglones(self):
         import openpyxl
