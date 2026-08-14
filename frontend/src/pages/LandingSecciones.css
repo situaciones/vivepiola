@@ -1,0 +1,265 @@
+/* ================================================================
+   VIVEPIOLA — Secciones comerciales de la landing.
+
+   Van en archivo aparte para no engordar Landing.css, y usan las
+   MISMAS variables de marca: la pagina es oscura, no clara.
+   ================================================================ */
+
+.hero-sub{
+  max-width:640px;margin:0 auto 32px;
+  font-size:clamp(1.05rem,1.6vw,1.25rem);line-height:1.55;color:var(--ink-soft);
+}
+
+.hero-nota{margin:20px 0 0;font-size:.88rem;color:var(--muted)}
+
+/* ---------- El caso de ejemplo del hero ---------- */
+/* Cuenta el producto entero de un vistazo: es lo primero que se mira. */
+
+.caso{
+  max-width:920px;margin:48px auto 0;text-align:left;
+  background:var(--card);border:1px solid var(--border);border-radius:16px;
+  box-shadow:var(--shadow-lg);overflow:hidden;
+}
+
+.caso-barra{
+  display:flex;align-items:center;gap:7px;padding:11px 16px;
+  background:rgba(255,255,255,.03);border-bottom:1px solid var(--border);
+}
+.caso-barra span{width:10px;height:10px;border-radius:50%;background:rgba(255,255,255,.16)}
+.caso-barra em{margin-left:auto;font-style:normal;font-size:.78rem;color:var(--muted)}
+
+.caso-cuerpo{display:flex;align-items:center;flex-wrap:wrap;gap:10px;padding:22px 20px}
+.caso-paso{flex:1 1 150px;min-width:0}
+
+.caso-et{
+  display:block;margin-bottom:5px;font-size:.68rem;
+  text-transform:uppercase;letter-spacing:.09em;color:var(--muted);
+}
+.caso-paso b{
+  display:flex;align-items:center;gap:7px;
+  font-size:.92rem;font-weight:600;line-height:1.35;color:var(--ink);
+}
+.caso-flecha{flex:0 0 auto;color:rgba(255,255,255,.2)}
+
+.caso-resultado{
+  flex:1 1 100%;display:flex;align-items:center;gap:12px;margin-top:6px;
+  padding:13px 16px;border-radius:11px;
+  background:var(--green-soft);border:1px solid rgba(16,185,129,.28);color:#6ee7b7;
+}
+.caso-resultado b{display:block;font-size:.95rem;color:var(--ink)}
+.caso-resultado span{font-size:.82rem;color:var(--muted)}
+
+.punto{display:inline-block;width:9px;height:9px;border-radius:50%;flex:0 0 auto}
+.punto.verde{background:var(--green)}
+.punto.ambar{background:var(--amber)}
+.punto.rojo{background:#ef4444}
+
+/* ---------- Matriz comparativa ---------- */
+
+.comparativa{
+  max-width:940px;margin:0 auto;border-radius:14px;overflow:hidden;
+  border:1px solid var(--border);
+}
+
+.comp-cab,.comp-fila{display:grid;grid-template-columns:1fr 1fr}
+
+.comp-cab{font-weight:700;font-size:.8rem;text-transform:uppercase;letter-spacing:.06em}
+.comp-cab span{padding:14px 18px}
+.comp-cab .comp-antes{background:rgba(255,255,255,.03);color:var(--muted)}
+.comp-cab .comp-despues{background:var(--grad);color:#fff}
+
+.comp-fila span{
+  display:flex;align-items:flex-start;gap:9px;padding:13px 18px;
+  font-size:.92rem;line-height:1.45;border-top:1px solid var(--border);
+}
+.comp-fila .comp-antes{color:var(--muted)}
+.comp-fila .comp-antes svg{flex:0 0 auto;margin-top:3px;color:rgba(255,255,255,.2)}
+
+/* La columna que importa se destaca sin gritar. */
+.comp-fila .comp-despues{
+  color:var(--ink);font-weight:500;
+  background:rgba(168,85,247,.06);border-left:3px solid var(--purple);
+}
+.comp-fila .comp-despues svg{flex:0 0 auto;margin-top:3px;color:var(--green)}
+
+/* ---------- Semaforo y escaleras ---------- */
+
+.semaforo{
+  display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));
+  gap:18px;margin-bottom:40px;
+}
+
+.sem{
+  padding:22px;border-radius:14px;
+  background:var(--card);border:1px solid var(--border);border-top:4px solid;
+}
+.sem.verde{border-top-color:var(--green)}
+.sem.ambar{border-top-color:var(--amber)}
+.sem.rojo{border-top-color:#ef4444}
+.sem h3{margin:10px 0 8px;font-size:1.1rem;color:var(--ink)}
+.sem p{margin:0;font-size:.92rem;line-height:1.55;color:var(--ink-soft)}
+
+.escalera,.cadena{
+  display:flex;align-items:center;justify-content:center;flex-wrap:wrap;
+  gap:12px;margin:0 auto 36px;
+}
+
+.esc-paso,.cad-paso{
+  display:flex;flex-direction:column;align-items:center;gap:5px;
+  min-width:136px;padding:18px 16px;border-radius:12px;
+  background:var(--card);border:1px solid var(--border);color:var(--brand);
+}
+.esc-paso b,.cad-paso b{font-size:.95rem;color:var(--ink)}
+.esc-paso span,.cad-paso span{font-size:.8rem;color:var(--muted);text-align:center}
+
+.esc-multa{color:#fca5a5;border-color:rgba(239,68,68,.3);background:rgba(239,68,68,.08)}
+.cad-final{color:#c4b5fd;border-color:rgba(168,85,247,.32);background:rgba(168,85,247,.09)}
+.esc-flecha,.cad-flecha{flex:0 0 auto;color:rgba(255,255,255,.2)}
+
+.frase-grande{
+  max-width:760px;margin:0 auto;text-align:center;
+  font-size:clamp(1.25rem,2.6vw,1.75rem);font-weight:700;line-height:1.3;
+  letter-spacing:-.02em;
+  background:var(--grad);-webkit-background-clip:text;background-clip:text;
+  -webkit-text-fill-color:transparent;
+}
+
+/* ---------- Caja de confianza sobre la IA ---------- */
+
+.caja-confianza{
+  display:flex;gap:26px;max-width:940px;margin:0 auto;padding:34px;
+  background:var(--card);border:1px solid var(--border);
+  border-left:5px solid var(--purple);border-radius:0 16px 16px 0;
+}
+
+.cc-icono{
+  flex:0 0 auto;width:56px;height:56px;display:grid;place-items:center;
+  border-radius:14px;background:rgba(168,85,247,.12);color:var(--purple);
+}
+
+.caja-confianza h2{
+  margin:0 0 10px;font-size:clamp(1.2rem,2.2vw,1.6rem);line-height:1.25;color:var(--ink);
+}
+.caja-confianza>div>p{margin:0 0 20px;font-size:1rem;line-height:1.6;color:var(--ink-soft)}
+
+.cc-puntos{display:grid;gap:12px}
+.cc-puntos>div{display:flex;gap:11px;font-size:.92rem;line-height:1.5;color:var(--ink-soft)}
+.cc-puntos svg{flex:0 0 auto;margin-top:3px;color:var(--purple)}
+.cc-puntos b{color:var(--ink)}
+
+/* ---------- Dos cajas ---------- */
+
+.dos-cajas{
+  display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));
+  gap:18px;max-width:940px;margin:0 auto;
+}
+
+.dc{
+  padding:26px;border-radius:14px;
+  background:var(--card);border:1px solid var(--border);color:var(--brand);
+}
+.dc h3{margin:12px 0 10px;font-size:1.1rem;color:var(--ink)}
+.dc p{margin:0;font-size:.93rem;line-height:1.6;color:var(--ink-soft)}
+
+/* ---------- Expediente ---------- */
+
+.expediente{
+  display:grid;grid-template-columns:repeat(auto-fill,minmax(232px,1fr));
+  gap:10px;max-width:980px;margin:0 auto 40px;
+}
+
+.exp-item{
+  display:flex;align-items:center;gap:11px;padding:13px 15px;border-radius:10px;
+  background:var(--card);border:1px solid var(--border);
+  font-size:.89rem;color:var(--ink-soft);
+}
+.exp-num{flex:0 0 auto;font-size:.72rem;font-weight:700;letter-spacing:.04em;color:var(--purple)}
+
+/* ---------- Beneficios por actor ---------- */
+
+.actores-grid{
+  display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:18px;
+}
+
+.actor-col{
+  padding:26px 24px;border-radius:14px;
+  background:var(--card);border:1px solid var(--border);
+}
+
+.actor-ico{
+  display:grid;place-items:center;width:46px;height:46px;border-radius:12px;
+  background:rgba(255,255,255,.04);color:var(--purple);
+}
+
+.actor-col h3{margin:14px 0;font-size:1.15rem;color:var(--ink)}
+.actor-col ul{margin:0;padding:0;list-style:none;display:grid;gap:10px}
+.actor-col li{
+  display:flex;align-items:flex-start;gap:9px;
+  font-size:.92rem;line-height:1.45;color:var(--ink-soft);
+}
+.actor-col li svg{flex:0 0 auto;margin-top:3px;color:var(--green)}
+
+/* ---------- CTA final ---------- */
+
+.cta-in{display:grid;grid-template-columns:1.1fr .9fr;gap:44px;align-items:center}
+
+.cta h2{
+  margin:0 0 16px;font-size:clamp(1.5rem,3vw,2.2rem);
+  line-height:1.2;letter-spacing:-.02em;color:var(--ink);
+}
+.cta p{margin:0 0 14px;font-size:1.02rem;line-height:1.6;color:var(--ink-soft)}
+
+.cta-cierre{
+  font-weight:600;
+  background:var(--grad);-webkit-background-clip:text;background-clip:text;
+  -webkit-text-fill-color:transparent;
+}
+
+.cta-form{
+  display:grid;gap:14px;padding:28px;border-radius:16px;
+  background:var(--card);border:1px solid var(--border);
+}
+
+.cta-form label{display:grid;gap:6px;font-size:.85rem;color:var(--muted)}
+
+.cta-form input{
+  padding:12px 14px;font-size:1rem;font-family:inherit;color:var(--ink);
+  background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:10px;
+}
+.cta-form input:focus{outline:2px solid var(--purple);outline-offset:1px}
+
+.form-ok{
+  padding:34px 28px;text-align:center;border-radius:16px;
+  background:var(--green-soft);border:1px solid rgba(16,185,129,.3);color:#6ee7b7;
+}
+.form-ok h3{margin:12px 0 8px;font-size:1.15rem;color:var(--ink)}
+.form-ok p{margin:0;font-size:.93rem}
+
+/* ---------- Pie ---------- */
+
+.foot-in{
+  display:flex;align-items:center;justify-content:space-between;
+  gap:20px;flex-wrap:wrap;font-size:.85rem;color:var(--muted);
+}
+
+@media(max-width:860px){
+  .comp-fila{grid-template-columns:1fr}
+
+  /* En una columna la cabecera queda arriba y despues veinte celdas alternando:
+     el encabezado deja de mapear a nada. Se oculta y cada par se lee como una
+     unidad —el antes arriba, el despues pegado abajo— separada de la siguiente.
+     La cruz y el ticket cargan el significado sin necesidad de etiquetas. */
+  .comp-cab{display:none}
+  .comparativa{border:0;border-radius:0}
+
+  .comp-fila{
+    margin-bottom:14px;border:1px solid var(--border);border-radius:12px;overflow:hidden;
+  }
+  .comp-fila span{border-top:0;padding:12px 15px}
+  .comp-fila .comp-antes{padding-bottom:4px;text-decoration:line-through;opacity:.75}
+  .comp-fila .comp-despues{border-left:0;padding-top:4px}
+  .caja-confianza{flex-direction:column;gap:18px;padding:26px}
+  .cta-in{grid-template-columns:1fr;gap:30px}
+  .caso-flecha,.esc-flecha,.cad-flecha{display:none}
+  .caso-cuerpo{flex-direction:column;align-items:stretch}
+}

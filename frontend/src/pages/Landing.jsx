@@ -1,75 +1,127 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
-  Activity, AlertTriangle, ArrowRight, Bot, Camera, Check, CheckCircle2, Database,
-  FileText, Flag, Gavel, Mail, MessageSquareText, Play, Pause, Scale, ShieldCheck,
-  Sparkles, TrendingUp, Users, Wallet, X,
+  AlertTriangle, ArrowRight, Bell, BookOpen, Camera, Check, CheckCircle2, FileText,
+  Gavel, Inbox, Mail, MessageSquareText, Play, Pause, Scale, ScrollText, ShieldCheck,
+  Sparkles, Users, Wallet, X,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { LogoVivePiola } from '../components/Marca';
 import './Landing.css';
+import './LandingSecciones.css';
+
+/**
+ * Landing comercial.
+ *
+ * REGLA QUE MANDA AQUI: no se promete nada que el sistema no haga hoy. Es una
+ * pagina de un producto que emite sanciones; prometer de mas se descubre en la
+ * primera demo y cuesta la venta y la confianza.
+ *
+ * Por eso NO aparecen: dashboard de metricas, informes agregados, ni apelar
+ * respondiendo el correo (el enlace si funciona). Cuando existan, entran.
+ */
 
 const FLUJO = [
-  { Icon: Database, actor: 'Configuracion', corto: 'Configuracion inicial', titulo: 'Configuracion inicial',
-    desc: 'Se carga la nomina de residentes (planilla tipo Excel) junto con todos los reglamentos aplicables: copropiedad, estacionamientos, uso de espacios comunes y mas.' },
-  { Icon: Flag, actor: 'Denunciante', corto: 'Ingreso de la denuncia', titulo: 'Ingreso de la denuncia',
-    desc: 'Un conserje, un miembro del comite o un vecino —con opcion de mantener el anonimato— ingresa el reporte de la infraccion al sistema.' },
-  { Icon: Sparkles, actor: 'Nosotros', corto: 'Analizamos y notificamos', titulo: 'Analizamos y notificamos',
-    desc: 'Cruzamos los datos de la denuncia con los reglamentos: identificamos los articulos infringidos, tipificamos la falta, calculamos el monto y emitimos la notificacion. Sin reuniones previas ni esperas: el residente se entera mientras el hecho todavia esta fresco.' },
-  { Icon: MessageSquareText, actor: 'Residente', corto: 'Derecho a apelacion', titulo: 'Derecho a apelacion',
-    desc: 'El residente recibe la notificacion con el articulo aplicado y la evidencia, y tiene un plazo de 5 dias para apelar por los canales integrados: app, correo o WhatsApp. Su defensa se ejerce sobre un caso concreto, no sobre una propuesta.' },
-  { Icon: Scale, actor: 'Comite', corto: 'Resolucion del comite', titulo: 'Resolucion del comite',
-    desc: 'Es la unica intervencion del comite, y solo ocurre cuando alguien apela. Puede mantener la multa intacta, aplicar un porcentaje de descuento (30%, 50%) o condonarla dejandola en cero. Si nadie apela en el plazo, la multa queda firme sola.' },
-  { Icon: Wallet, actor: 'Administrador', corto: 'Traspaso a cobro', titulo: 'Traspaso a cobro',
-    desc: 'Si la resolucion determina que hay un monto a pagar, la instruccion pasa a la administracion para cargarla en la proxima boleta de gastos comunes.' },
-  { Icon: FileText, actor: 'Sistema', corto: 'Trazabilidad e historial', titulo: 'Trazabilidad e historial',
-    desc: 'Todo el proceso —fechas, actores, apelaciones y resoluciones— queda en un informe dentro de la carpeta digital del residente. Aplicamos multiplicadores automaticos si hay reincidencia.' },
+  { Icon: BookOpen, actor: 'Configuracion', corto: 'Se cargan las reglas', titulo: 'Se cargan las reglas',
+    desc: 'La nomina de residentes y los documentos de tu comunidad: reglamento de copropiedad, estacionamientos, espacios comunes, normas de seguridad y actas de asamblea. La normativa general de Chile ya viene en la plataforma.' },
+  { Icon: Camera, actor: 'Quien reporta', corto: 'Alguien reporta algo', titulo: 'Alguien reporta algo',
+    desc: 'El conserje, un miembro del comite o un vecino —con opcion de mantener el anonimato— describe lo que paso y adjunta foto o video. El sistema detecta si otro ya reporto el mismo hecho.' },
+  { Icon: Sparkles, actor: 'La plataforma', corto: 'Se analiza y se notifica', titulo: 'Se analiza y se notifica',
+    desc: 'Se mira la evidencia, se busca la norma aplicable entre las de tu comunidad y las generales, se revisa el historial de la unidad y se notifica. Sin reuniones previas: el residente se entera mientras el hecho esta fresco.' },
+  { Icon: MessageSquareText, actor: 'Residente', corto: 'Puede apelar', titulo: 'Puede apelar',
+    desc: 'Recibe el caso con la norma aplicada y la evidencia. Puede confirmar, descargar el documento y presentar su version, sin crear ninguna cuenta. El plazo corre desde que confirma, no desde que se envio.' },
+  { Icon: Scale, actor: 'Comite', corto: 'Resuelve, si hay apelacion', titulo: 'Resuelve, si hay apelacion',
+    desc: 'Es su unica intervencion. Ve el caso preparado, con los antecedentes y el historial, y decide: mantener, rebajar, dar parte de cortesia o anular. Si nadie apela, el caso se cierra solo.' },
+  { Icon: Wallet, actor: 'Administracion', corto: 'Se traspasa al cobro', titulo: 'Se traspasa al cobro',
+    desc: 'Si quedo un monto por pagar, se incorpora al proximo aviso de gastos comunes a nombre de quien responde por la unidad.' },
+  { Icon: FileText, actor: 'Sistema', corto: 'Queda el expediente', titulo: 'Queda el expediente',
+    desc: 'Todo el recorrido queda registrado y sellado: quien reporto, que se vio, que norma se aplico, cuando se notifico, quien confirmo, que se resolvio y por que.' },
+];
+
+const COMPARATIVA = [
+  ['Denuncias por WhatsApp, correo o de palabra', 'Un solo lugar donde entran todos los reportes'],
+  ['Reglamentos repartidos en carpetas y correos', 'Toda la normativa junta y consultable'],
+  ['Buscar a mano el articulo que corresponde', 'Se busca solo, en las reglas de tu comunidad y en la ley'],
+  ['Criterios distintos segun quien revise', 'Las mismas reglas, configuradas y aprobadas antes'],
+  ['Nadie recuerda cuantas veces paso', 'Historial de reincidencias automatico'],
+  ['Se multa desde la primera vez', 'Primero se avisa sin cobrar; se multa cuando corresponde'],
+  ['"Te mande un correo" como unica prueba', 'Registro de cada intento de entrega y del acuse'],
+  ['El comite revisa todos los casos', 'El comite entra cuando hay apelacion'],
+  ['Fotos sueltas en el telefono de alguien', 'Evidencia unida al caso y sellada'],
+  ['Reconstruir un caso viejo es imposible', 'El expediente completo, siempre'],
+];
+
+const SEMAFORO = [
+  { color: 'verde', nivel: 'Leve', que: 'Primero se avisa sin cobrar. La falta queda registrada, pero no se carga nada al gasto comun.' },
+  { color: 'ambar', nivel: 'Grave', que: 'Se avisa igual las primeras veces, y a la tercera se multa. La comunidad define cuantos avisos da.' },
+  { color: 'rojo', nivel: 'Muy grave', que: 'Se multa desde la primera vez. Frente a un riesgo real, avisar sin consecuencia seria el mensaje contrario.' },
 ];
 
 const ACTORES = [
-  { Icon: Sparkles, nombre: 'Nosotros (VIVEPIOLA)', rol: 'Analizamos los hechos, cruzamos los reglamentos, calculamos el monto y notificamos al residente.' },
-  { Icon: Flag, nombre: 'Denunciante', rol: 'Ingresa el reporte inicial de la infraccion.' },
-  { Icon: Gavel, nombre: 'Comite de administracion', rol: 'Interviene una sola vez: resuelve las apelaciones. Deja de ser el cuello de botella.' },
-  { Icon: Users, nombre: 'Residente', rol: 'Recibe notificaciones, ejerce su defensa y asume el pago.' },
-  { Icon: Wallet, nombre: 'Administrador', rol: 'Ejecuta el cobro en el gasto comun, con un informe transparente.' },
+  {
+    Icon: Users, nombre: 'Administrador',
+    puntos: ['Deja de perseguir casos por WhatsApp', 'Todo en un solo lugar', 'No se le pasa ningun paso', 'El cobro sale listo'],
+  },
+  {
+    Icon: Gavel, nombre: 'Comite',
+    puntos: ['Menos reuniones', 'Llega el caso preparado', 'Ve el historial de la unidad', 'Sus decisiones quedan respaldadas'],
+  },
+  {
+    Icon: ShieldCheck, nombre: 'Residente',
+    puntos: ['Sabe que paso y que norma se aplico', 'Puede defenderse sin crear cuenta', 'Conoce sus plazos', 'Primero lo avisan, no lo multan'],
+  },
 ];
 
-const ROLES = [
-  { cls: 'r1', Icon: Camera, nombre: 'Quien reporta', limite: 'Solo reporta', LimIcon: X,
-    texto: 'Cualquiera puede levantar un caso: el personal, la administracion o un vecino, con foto.' },
-  { cls: 'r2', Icon: Gavel, nombre: 'Quien resuelve', limite: 'Solo si hay apelacion', LimIcon: Check,
-    texto: 'El comite o la administracion, segun tu condominio, entra cuando el residente apela: mantiene, rebaja o condona. Una intervencion, no dos.' },
-  { cls: 'r3', Icon: Mail, nombre: 'Administracion', limite: 'Ejecuta y cobra', LimIcon: Check,
-    texto: 'Notifica, lleva el expediente y, cuando la multa es firme, la ingresa como obligacion economica.' },
-  { cls: 'r4', Icon: Users, nombre: 'Residente', limite: 'Derecho a defensa', LimIcon: Check,
-    texto: 'Recibe la notificacion y puede presentar su descargo en 5 dias. Siempre sabe el porque.' },
+const EXPEDIENTE = [
+  'El reporte original', 'La foto o el video', 'Si alguien mas reporto lo mismo',
+  'La norma que se aplico', 'Por que se aplico esa', 'Cortesias anteriores',
+  'Reincidencias', 'Cada intento de notificacion', 'El acuse de recibo',
+  'La apelacion', 'Antecedentes que se sumaron', 'La reunion, si la hubo',
+  'Los votos del comite', 'La resolucion', 'El monto final',
 ];
 
-const BENEFICIOS = [
-  { Icon: FileText, titulo: 'Informe por unidad',
-    texto: 'Descarga el detalle de multas de cada unidad, sus reincidencias y como evolucionan en el tiempo.' },
-  { Icon: Activity, titulo: 'Puntos criticos de la comunidad',
-    texto: 'El comite y la administracion ven los temas y zonas mas conflictivos, para actuar con un plan concreto.' },
-  { Icon: Scale, titulo: 'Valido ante entidades legales',
-    texto: 'Si algun dia hay que presentarlo en un juzgado u otra entidad, generas un informe formal y verificable.' },
-  { Icon: TrendingUp, titulo: 'Mas multas pagadas, mas ingresos',
-    texto: 'La trazabilidad y la notificacion real elevan el pago de las multas: mas ingresos para el condominio.' },
-];
-
-const SALVAGUARDAS = [
-  { Icon: CheckCircle2, titulo: 'Nada es discrecional',
-    texto: 'No hay multas porque si: validamos cada caso contra la Ley 21.442 y el reglamento de tu comunidad.' },
-  { Icon: Bot, titulo: 'Filtramos lo que no corresponde',
-    texto: 'Como no hay reunion previa, el filtro corre antes de notificar: descartamos lo que no es una infraccion y agrupamos los reportes repetidos del mismo hecho, para que nadie reciba dos multas por lo mismo.' },
-  { Icon: AlertTriangle, titulo: 'Sin contacto, no hay multa',
-    texto: 'Si el residente no tiene contacto registrado, el caso queda en pausa hasta poder notificar de verdad.' },
-  { Icon: ShieldCheck, titulo: 'Comite, administracion y residente protegidos',
-    texto: 'Cada decision y cada paso queda documentado. Todos los involucrados quedan respaldados.' },
-];
-
-// El simbolo vive en components/Marca: una sola definicion para toda la app.
 function BrandMark({ size = 36 }) {
   return <LogoVivePiola size={size} className="mk" />;
+}
+
+/** El caso de ejemplo del hero: cuenta el producto entero en cinco lineas. */
+function CasoDemo() {
+  return (
+    <div className="caso rise d3">
+      <div className="caso-barra">
+        <span /><span /><span />
+        <em>Caso #248</em>
+      </div>
+      <div className="caso-cuerpo">
+        <div className="caso-paso">
+          <span className="caso-et">Reporte recibido</span>
+          <b>Auto sobre la rampa de acceso</b>
+        </div>
+        <ArrowRight size={14} className="caso-flecha" />
+        <div className="caso-paso">
+          <span className="caso-et">Norma identificada</span>
+          <b>Instructivo de estacionamientos, Art. 3</b>
+        </div>
+        <ArrowRight size={14} className="caso-flecha" />
+        <div className="caso-paso">
+          <span className="caso-et">Nivel</span>
+          <b><i className="punto ambar" /> Grave</b>
+        </div>
+        <ArrowRight size={14} className="caso-flecha" />
+        <div className="caso-paso">
+          <span className="caso-et">Historial de la unidad</span>
+          <b>2 avisos anteriores</b>
+        </div>
+        <div className="caso-resultado">
+          <CheckCircle2 size={16} />
+          <div>
+            <b>Corresponde multa</b>
+            <span>Notificada, con 5 dias para apelar</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
 }
 
 function FlujoInteractivo() {
@@ -79,7 +131,7 @@ function FlujoInteractivo() {
 
   useEffect(() => {
     if (pausado) return undefined;
-    const id = setInterval(() => setActivo((a) => (a + 1) % total), 4200);
+    const id = setInterval(() => setActivo((a) => (a + 1) % total), 4600);
     return () => clearInterval(id);
   }, [pausado, total, activo]);
 
@@ -126,7 +178,7 @@ export default function Landing() {
   const [form, setForm] = useState({ nombre: '', correo: '', empresa: '' });
   const [enviado, setEnviado] = useState(false);
 
-  const enviarLead = (e) => {
+  const enviar = (e) => {
     e.preventDefault();
     setEnviado(true);
   };
@@ -137,9 +189,9 @@ export default function Landing() {
         <div className="nav-in">
           <Link to="/" className="brand"><BrandMark size={38} /><span className="wordmark"><b>VIVE</b><b>PIOLA</b></span></Link>
           <div className="nav-links">
-            <a href="#flujo">El ciclo</a>
-            <a href="#roles">Trazabilidad</a>
-            <a href="#salvaguardas">Salvaguardas</a>
+            <a href="#flujo">Como funciona</a>
+            <a href="#cortesia">No todo es multa</a>
+            <a href="#expediente">Respaldo</a>
           </div>
           <div className="nav-right">
             <Link to={rutaApp} className="nav-login">Entrar</Link>
@@ -148,97 +200,206 @@ export default function Landing() {
         </div>
       </nav>
 
-      {/* ---------- HERO ---------- */}
+      {/* ---------- 1. HERO ---------- */}
       <header className="hero">
-        {/* Una sola frase, sin nada mas: el video de abajo cuenta el resto. */}
         <div className="hero-inner">
           <h1 className="rise d1">
-            Mejorando la convivencia de las personas <span className="hl">en las comunidades</span>
+            Reglas claras. Menos conflictos.<br />
+            <span className="hl">Una comunidad mas ordenada.</span>
           </h1>
+          <p className="hero-sub rise d2">
+            Reportes, notificaciones, reincidencias y apelaciones en un solo lugar,
+            aplicando siempre las mismas reglas de tu comunidad.
+          </p>
           <div className="hero-ctas rise d2">
-            <a href="#demo" className="btn btn-cyan">Quiero verlo funcionando</a>
-            <a href="#flujo" className="btn btn-outline-l">Ver el ciclo de la multa</a>
+            <a href="#demo" className="btn btn-cyan">Solicitar una demostracion</a>
+            <a href="#flujo" className="btn btn-outline-l">Ver como funciona</a>
           </div>
+          <p className="hero-nota rise d3">
+            Para administradores, comites y comunidades de condominios en Chile.
+          </p>
+          <CasoDemo />
         </div>
 
         <div className="hero-foot" />
         <div className="hero-photo" aria-hidden="true" />
       </header>
 
-      {/* ---------- FLUJO INTERACTIVO ---------- */}
-      <section id="flujo">
+      {/* ---------- 2. LA TRANSFORMACION ---------- */}
+      <section id="problema">
         <div className="wrap">
           <div className="sec-head">
-            <div className="sec-eye">El ciclo de la multa</div>
-            <h2>De la denuncia al cobro, con trazabilidad total</h2>
-            <p>Siete pasos, cada uno con su responsable. La denuncia llega directo al residente y el comite
-              interviene una sola vez, si hay apelacion. Toca una etapa para ver el detalle, o deja que avance solo.</p>
+            <div className="sec-eye">El problema</div>
+            <h2>Hacer cumplir las reglas no deberia terminar en pelea</h2>
+            <p>Cuando las normas estan repartidas entre reglamentos, actas, correos y grupos de
+              WhatsApp, aplicarlas igual para todos se vuelve imposible. Y ahi empieza el conflicto:
+              no por la multa, sino por el "¿por que a mi?".</p>
+          </div>
+
+          <div className="comparativa">
+            <div className="comp-cab">
+              <span className="comp-antes">Como se hace hoy</span>
+              <span className="comp-despues">Con VIVEPIOLA</span>
+            </div>
+            {COMPARATIVA.map(([antes, despues]) => (
+              <div key={antes} className="comp-fila">
+                <span className="comp-antes"><X size={14} /> {antes}</span>
+                <span className="comp-despues"><Check size={14} strokeWidth={3} /> {despues}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ---------- 3. COMO FUNCIONA ---------- */}
+      <section id="flujo" className="band">
+        <div className="wrap">
+          <div className="sec-head">
+            <div className="sec-eye">Como funciona</div>
+            <h2>De un reporte a un caso resuelto</h2>
+            <p>Siete pasos, cada uno con su responsable. Toca una etapa para ver el detalle,
+              o deja que avance solo.</p>
           </div>
           <FlujoInteractivo />
-          <div className="actores">
+        </div>
+      </section>
+
+      {/* ---------- 4. NO TODO TERMINA EN MULTA ---------- */}
+      <section id="cortesia">
+        <div className="wrap">
+          <div className="sec-head">
+            <div className="sec-eye">Lo que nos diferencia</div>
+            <h2>Primero corregir. Multar cuando corresponde.</h2>
+            <p>El objetivo de una comunidad no es recaudar, es que la gente sepa que hay una norma.
+              Quien la incumple por primera vez casi siempre corrige con el aviso.</p>
+          </div>
+
+          <div className="semaforo">
+            {SEMAFORO.map((s) => (
+              <div key={s.nivel} className={`sem ${s.color}`}>
+                <i className={`punto ${s.color}`} />
+                <h3>{s.nivel}</h3>
+                <p>{s.que}</p>
+              </div>
+            ))}
+          </div>
+
+          <div className="escalera">
+            <div className="esc-paso"><Bell size={18} /><b>1a vez</b><span>Aviso, sin cobro</span></div>
+            <ArrowRight size={16} className="esc-flecha" />
+            <div className="esc-paso"><Bell size={18} /><b>2a vez</b><span>Aviso, sin cobro</span></div>
+            <ArrowRight size={16} className="esc-flecha" />
+            <div className="esc-paso esc-multa"><AlertTriangle size={18} /><b>3a vez</b><span>Ahora si, multa</span></div>
+          </div>
+
+          <p className="frase-grande">El sistema recuerda lo que las personas suelen olvidar.</p>
+        </div>
+      </section>
+
+      {/* ---------- 5. LA IA, CON LIMITES ---------- */}
+      <section className="band">
+        <div className="wrap">
+          <div className="caja-confianza">
+            <div className="cc-icono"><Sparkles size={28} strokeWidth={1.8} /></div>
+            <div>
+              <h2>La inteligencia artificial analiza y propone. El sistema aplica las reglas.</h2>
+              <p>
+                No inventa multas. Trabaja sobre un catalogo que tu comunidad reviso y aprobo antes,
+                y si propone algo que no esta en ese catalogo, se descarta.
+              </p>
+              <div className="cc-puntos">
+                <div><ScrollText size={16} /><span><b>Lee tus documentos y la ley.</b> El reglamento de tu comunidad, los instructivos, las actas de asamblea y la normativa chilena vigente.</span></div>
+                <div><Camera size={16} /><span><b>Mira la evidencia.</b> Analiza las fotos y los videos del reporte. Tiene prohibido describir personas.</span></div>
+                <div><CheckCircle2 size={16} /><span><b>Todo nace como borrador.</b> Ninguna regla se puede aplicar hasta que una persona la revisa y la aprueba.</span></div>
+                <div><AlertTriangle size={16} /><span><b>Si no esta segura, no actua.</b> Mientras mas grave sea la falta, mas certeza se le exige antes de notificar sin que alguien la revise.</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ---------- 6. NOTIFICAR NO ES ENVIAR ---------- */}
+      <section id="notificacion">
+        <div className="wrap">
+          <div className="sec-head">
+            <div className="sec-eye">Debido proceso</div>
+            <h2>Notificar no es solo mandar un mensaje</h2>
+            <p>El plazo para apelar empieza cuando el residente confirma que recibio la notificacion.
+              No cuando el sistema la envio. Nadie pierde su defensa por un correo que nunca vio.</p>
+          </div>
+
+          <div className="cadena">
+            <div className="cad-paso"><Mail size={18} /><b>Se notifica</b><span>Correo y WhatsApp</span></div>
+            <ArrowRight size={16} className="cad-flecha" />
+            <div className="cad-paso"><Bell size={18} /><b>Se reintenta</b><span>Hasta 3 veces</span></div>
+            <ArrowRight size={16} className="cad-flecha" />
+            <div className="cad-paso"><CheckCircle2 size={18} /><b>Confirma</b><span>O queda constancia</span></div>
+            <ArrowRight size={16} className="cad-flecha" />
+            <div className="cad-paso cad-final"><Scale size={18} /><b>Ahi corre el plazo</b><span>5 dias para apelar</span></div>
+          </div>
+
+          <div className="dos-cajas">
+            <div className="dc">
+              <Inbox size={20} />
+              <h3>El residente tiene su propio buzon</h3>
+              <p>Sin crear cuenta ni recordar contraseñas. Entra por el enlace del correo o del
+                WhatsApp y ahi encuentra su caso, la norma que se le aplico, la evidencia, el documento
+                para descargar cuando quiera, y el formulario para apelar.</p>
+            </div>
+            <div className="dc">
+              <ShieldCheck size={20} />
+              <h3>Y una proteccion antes del cobro</h3>
+              <p>Si hay señales de que la persona pudo no haberse podido defender —nunca confirmo que
+                recibio el aviso, o figura con una condicion que se lo impide— el cobro se detiene y
+                alguien tiene que confirmarlo antes de emitirse.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ---------- 7. EL EXPEDIENTE ---------- */}
+      <section id="expediente" className="band">
+        <div className="wrap">
+          <div className="sec-head">
+            <div className="sec-eye">El respaldo</div>
+            <h2>Todo termina en un expediente completo</h2>
+            <p>Cada paso queda registrado y sellado. Si el caso se discute meses despues, la respuesta
+              esta entera y se puede demostrar que nadie la modifico.</p>
+          </div>
+
+          <div className="expediente">
+            {EXPEDIENTE.map((item, i) => (
+              <div key={item} className="exp-item">
+                <span className="exp-num">{String(i + 1).padStart(2, '0')}</span>
+                {item}
+              </div>
+            ))}
+          </div>
+
+          <p className="frase-grande">
+            Si mañana alguien pregunta que paso, la respuesta esta completa.
+          </p>
+        </div>
+      </section>
+
+      {/* ---------- 8. QUIEN GANA QUE ---------- */}
+      <section id="beneficios">
+        <div className="wrap">
+          <div className="sec-head">
+            <div className="sec-eye">Para todos</div>
+            <h2>Un proceso claro le sirve a los tres lados</h2>
+          </div>
+
+          <div className="actores-grid">
             {ACTORES.map((a) => (
-              <div key={a.nombre} className="actor">
-                <span className="actor-ico"><a.Icon size={18} strokeWidth={2} /></span>
-                <div><b>{a.nombre}</b><span>{a.rol}</span></div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ---------- TRAZABILIDAD (valor central) ---------- */}
-      <section id="roles" className="band">
-        <div className="wrap">
-          <div className="sec-head">
-            <div className="sec-eye">El valor central</div>
-            <h2>Trazabilidad de multas, notificaciones y reclamos</h2>
-            <p>Desde el reporte hasta el cobro, cada involucrado —quien reporta, quien resuelve, la administracion
-              y el residente— sabe en que estado va cada caso. Esa trazabilidad es el corazon de VIVEPIOLA.</p>
-          </div>
-          <div className="roles">
-            {ROLES.map((r) => (
-              <div key={r.nombre} className={`role ${r.cls}`}>
-                <span className="ri"><r.Icon size={20} strokeWidth={2} /></span>
-                <h3>{r.nombre}</h3>
-                <p>{r.texto}</p>
-                <span className="limit"><r.LimIcon size={12} strokeWidth={3} /> {r.limite}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ---------- BENEFICIOS ---------- */}
-      <section>
-        <div className="wrap">
-          <div className="sec-head">
-            <div className="sec-eye">Lo que ganas</div>
-            <h2>La informacion siempre esta de tu lado</h2>
-            <p>Conoce el estatus real y quien es el responsable en cada punto o parte del proceso.</p>
-          </div>
-          <div className="grid2">
-            {BENEFICIOS.map((b) => (
-              <div key={b.titulo} className="feat">
-                <span className="fi"><b.Icon size={20} strokeWidth={2} /></span>
-                <div><h3>{b.titulo}</h3><p>{b.texto}</p></div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ---------- SALVAGUARDAS ---------- */}
-      <section id="salvaguardas" className="band">
-        <div className="wrap">
-          <div className="sec-head">
-            <h2>Las salvaguardas que te protegen</h2>
-            <p>No basta con seguir el orden: el sistema tambien frena los abusos y cubre los casos dificiles.</p>
-          </div>
-          <div className="grid2">
-            {SALVAGUARDAS.map((s) => (
-              <div key={s.titulo} className="feat">
-                <span className="fi"><s.Icon size={20} strokeWidth={2} /></span>
-                <div><h3>{s.titulo}</h3><p>{s.texto}</p></div>
+              <div key={a.nombre} className="actor-col">
+                <span className="actor-ico"><a.Icon size={22} strokeWidth={1.9} /></span>
+                <h3>{a.nombre}</h3>
+                <ul>
+                  {a.puntos.map((p) => (
+                    <li key={p}><Check size={14} strokeWidth={3} /> {p}</li>
+                  ))}
+                </ul>
               </div>
             ))}
           </div>
@@ -246,54 +407,45 @@ export default function Landing() {
       </section>
 
       {/* ---------- CTA ---------- */}
-      <section id="demo">
-        <div className="wrap">
-          <div className="cta">
-            <div className="cta-grid">
-              <div>
-                <h2>Que tu comite y tu administracion duerman tranquilos</h2>
-                <p>Agenda una demo de 20 minutos. Te mostramos, con las multas de tu propio condominio,
-                  como dejar todo en orden y con trazabilidad completa.</p>
-                <ul>
-                  <li><CheckCircle2 size={16} strokeWidth={2.6} /> Al dia con la Ley 21.442, sin abogados</li>
-                  <li><CheckCircle2 size={16} strokeWidth={2.6} /> Te acompañamos en la puesta en marcha</li>
-                  <li><CheckCircle2 size={16} strokeWidth={2.6} /> No cambias como trabaja tu equipo hoy</li>
-                </ul>
-              </div>
-              <div className="form">
-                {enviado ? (
-                  <div className="form-ok">
-                    <ShieldCheck size={40} strokeWidth={1.8} />
-                    <h3>Listo, recibimos tus datos</h3>
-                    <p>Te contactamos para coordinar tu demo de 20 minutos.</p>
-                  </div>
-                ) : (
-                  <form onSubmit={enviarLead}>
-                    <h3>Agenda tu reunion</h3>
-                    <label>Nombre
-                      <input required value={form.nombre} onChange={(e) => setForm({ ...form, nombre: e.target.value })} />
-                    </label>
-                    <label>Correo
-                      <input type="email" required value={form.correo} onChange={(e) => setForm({ ...form, correo: e.target.value })} />
-                    </label>
-                    <label>Condominio o administradora
-                      <input required value={form.empresa} onChange={(e) => setForm({ ...form, empresa: e.target.value })} />
-                    </label>
-                    <button type="submit" className="btn btn-cyan">Agendar reunion <ArrowRight size={16} /></button>
-                    <p className="form-note">Te respondemos en menos de un dia. Cero spam.</p>
-                  </form>
-                )}
-              </div>
-            </div>
+      <section id="demo" className="cta">
+        <div className="wrap cta-in">
+          <div>
+            <h2>Las reglas de tu comunidad ya existen.<br />Ahora puedes aplicarlas mejor.</h2>
+            <p>Cuentanos de tu condominio y te mostramos el ciclo completo con un caso real:
+              desde el reporte hasta el expediente.</p>
+            <p className="cta-cierre">Reglas claras. Procesos justos. Comunidades mas ordenadas.</p>
           </div>
+
+          {enviado ? (
+            <div className="form-ok">
+              <CheckCircle2 size={30} />
+              <h3>Gracias, {form.nombre || 'que bueno tenerte'}.</h3>
+              <p>Te escribimos a {form.correo} para coordinar la demostracion.</p>
+            </div>
+          ) : (
+            <form onSubmit={enviar} className="cta-form">
+              <label>
+                Tu nombre
+                <input required value={form.nombre} onChange={(e) => setForm({ ...form, nombre: e.target.value })} />
+              </label>
+              <label>
+                Correo
+                <input required type="email" value={form.correo} onChange={(e) => setForm({ ...form, correo: e.target.value })} />
+              </label>
+              <label>
+                Condominio o administradora
+                <input value={form.empresa} onChange={(e) => setForm({ ...form, empresa: e.target.value })} />
+              </label>
+              <button className="btn btn-cyan" type="submit">Solicitar demostracion</button>
+            </form>
+          )}
         </div>
       </section>
 
       <footer>
         <div className="wrap foot-in">
-          <span className="brand"><BrandMark size={30} /><span className="wordmark"><b>VIVE</b><b>PIOLA</b></span></span>
-          <span>© 2026 VIVEPIOLA · Al dia con la Ley 21.442</span>
-          <Link to={rutaApp}>Entrar a la plataforma →</Link>
+          <div className="brand"><BrandMark size={30} /><span className="wordmark"><b>VIVE</b><b>PIOLA</b></span></div>
+          <span>Gestion de convivencia y cumplimiento normativo para condominios en Chile.</span>
         </div>
       </footer>
     </div>
