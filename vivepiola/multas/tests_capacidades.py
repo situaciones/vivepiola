@@ -161,7 +161,12 @@ class CapacidadesNuevasTestCase(APITestCase):
         multa = self._aprobar_y_notificar(self._denunciar())
         self.assertEqual(multa.estado, EstadoMulta.NOTIFICADA)  # el correo legal sigue saliendo
         acta = multa.actas_selladas.filter(tipo_acto=TipoActo.NOTIFICACION).first()
-        self.assertFalse(acta.manifiesto['extra']['whatsapp_enviado'])
+        entregas = acta.manifiesto['extra']['entregas']
+        self.assertTrue(any(e.startswith('EMAIL:') for e in entregas))
+        self.assertFalse(
+            any(e.startswith('WHATSAPP:') for e in entregas),
+            'sin credenciales no se registra una entrega por WhatsApp que nunca salio',
+        )
 
     @override_settings(
         TWILIO_ACCOUNT_SID='ACtest',
@@ -175,7 +180,8 @@ class CapacidadesNuevasTestCase(APITestCase):
         self.assertTrue(mock_post.called)
         self.assertEqual(mock_post.call_args.kwargs['data']['To'], 'whatsapp:+56911112222')
         acta = multa.actas_selladas.filter(tipo_acto=TipoActo.NOTIFICACION).first()
-        self.assertTrue(acta.manifiesto['extra']['whatsapp_enviado'])
+        entregas = acta.manifiesto['extra']['entregas']
+        self.assertIn('WHATSAPP:+56911112222:ENVIADA', entregas)
 
     @override_settings(
         TWILIO_ACCOUNT_SID='ACtest',

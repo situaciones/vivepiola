@@ -373,6 +373,37 @@ mismo día.
 
 ---
 
+### Paso 5 — Programar los reintentos de notificación
+
+Este es el más importante de los dos, porque de él depende que una multa se
+pueda sostener. El plazo para apelar **no corre desde que se envía el correo,
+sino desde que el residente confirma que lo recibió**. Mientras no confirme, el
+sistema reintenta.
+
+En DigitalOcean → **Create → Job** → tipo **Scheduled**, cada 5 minutos:
+
+```bash
+python manage.py reintentar_notificaciones
+```
+
+Para ver qué haría, sin enviar nada:
+
+```bash
+python manage.py reintentar_notificaciones --dry-run
+```
+
+Reenvía por todos los canales registrados (correo y WhatsApp), hasta 3 veces,
+y se detiene apenas hay confirmación. Cuando se agotan los intentos sin
+respuesta, lo lista para que alguien imprima la notificación y **la deje en el
+buzón de la unidad**; esa entrega se registra desde el panel del administrador
+y es lo que hace arrancar el plazo.
+
+Si no programas este job, las notificaciones salen una sola vez: quien no vea
+ese correo nunca confirmará, su plazo nunca arrancará y su multa quedará
+detenida sin poder cobrarse.
+
+---
+
 ### Paso 5 — Lo que conviene explicar a la comunidad
 
 Cuando lo presentes en asamblea, tres ideas:

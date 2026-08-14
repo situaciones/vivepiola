@@ -21,7 +21,8 @@ from .contencion import (
     levantar_contencion, otorgar_delegacion, ratificar_contencion, revocar_delegacion,
 )
 from .models import (
-    Delegacion, Descargo, EstadoMulta, EstadoTicket, EvidenciaFoto, MedidaInmediata, Multa, Ticket, TipoActo,
+    CanalNotificacion, Delegacion, Descargo, EstadoMulta, EstadoTicket, EvidenciaFoto,
+    MedidaInmediata, Multa, Ticket, TipoActo,
 )
 from .sellado import procesar_evidencia, sellar_acto, verificar_expediente
 from .serializers import (
@@ -33,7 +34,8 @@ from .serializers import (
 from .services import (
     ETAPA_PARA_DENUNCIANTE, actualizar_multas_vencidas, aplicar_monto_con_reincidencia,
     buscar_expediente_abierto, cursar_multa_automatica, generar_audit_trail_pdf,
-    notificar_multa, proponer_infraccion, registrar_historial, resolver_descargo,
+    notificar_multa, proponer_infraccion, registrar_acuse, registrar_historial,
+    resolver_descargo,
 )
 
 
@@ -173,7 +175,7 @@ class MultaViewSet(viewsets.ReadOnlyModelViewSet):
     def get_permissions(self):
         if self.action in ('aprobar', 'rechazar', 'resolver_descargo_view'):
             return [EsComite()]
-        if self.action == 'notificar':
+        if self.action in ('notificar', 'constancia_buzon'):
             return [EsAdministrador()]
         if self.action == 'presentar_descargo':
             return [EsResidente()]
@@ -273,6 +275,52 @@ class MultaViewSet(viewsets.ReadOnlyModelViewSet):
 
         return Response(MultaSerializer(multa).data)
 
+    def retrieve(self, request, *args, **kwargs):
+        """
+        Que el propio residente abra su multa vale como acuse de recibo: no hay
+        constancia mas clara de que se entero que haberla ido a ver.
+        """
+        respuesta = super().retrieve(request, *args, **kwargs)
+        multa = self.get_object()
+        if (
+            request.user.rol == Rol.RESIDENTE
+            and multa.persona_infractor_id == request.user.persona_id
+            and multa.estado == EstadoMulta.NOTIFICADA
+            and not multa.fecha_acuse
+        ):
+            registrar_acuse(
+                multa, CanalNotificacion.APP, usuario=request.user,
+                detalle='El residente abrio la multa en la aplicacion.',
+            )
+            multa.refresh_from_db()
+            return Response(MultaSerializer(multa).data)
+        return respuesta
+
+    @action(detail=True, methods=['post'], url_path='constancia-buzon')
+    def constancia_buzon(self, request, pk=None):
+        """
+        Registra que se dejo la notificacion impresa en el buzon de la unidad.
+
+        Es la salida cuando el residente no acusa recibo por ningun canal
+        digital: agotados los intentos, alguien imprime el documento, lo deja
+        en la unidad y lo registra aqui. Ese registro perfecciona la
+        notificacion y recien entonces arranca el plazo de apelacion, con
+        nombre y fecha de quien la dejo.
+        """
+        multa = self.get_object()
+        if multa.estado != EstadoMulta.NOTIFICADA:
+            return Response({'detail': 'Solo aplica a expedientes ya despachados.'}, status=400)
+        if multa.fecha_acuse:
+            return Response({'detail': 'Esta notificacion ya fue recepcionada.'}, status=400)
+
+        registrar_acuse(
+            multa, CanalNotificacion.BUZON, usuario=request.user,
+            destino=multa.unidad.identificador if multa.unidad else '',
+            detalle=request.data.get('detalle', '')[:500],
+        )
+        multa.refresh_from_db()
+        return Response(MultaSerializer(multa).data)
+
     # El adjunto es opcional: se aceptan tanto multipart (con archivo) como
     # JSON (defensa solo de texto), para que un cliente sin archivo no reciba
     # un 415 por enviar el formato natural de la API.
@@ -287,6 +335,15 @@ class MultaViewSet(viewsets.ReadOnlyModelViewSet):
             return Response({'detail': 'Este expediente no corresponde a su ficha de sujeto responsable.'}, status=403)
         if multa.estado != EstadoMulta.NOTIFICADA:
             return Response({'detail': 'Solo se puede presentar descargo a expedientes notificados.'}, status=400)
+        # Apelar es la prueba mas fuerte de que se entero: si llega sin haber
+        # acusado recibo, se registra el acuse ahora y recien ahi hay plazo que
+        # medir. Al reves seria absurdo rechazarle la defensa a quien la ejerce.
+        if not multa.fecha_acuse:
+            registrar_acuse(
+                multa, CanalNotificacion.APP, usuario=request.user,
+                detalle='El residente presento su apelacion en la aplicacion.',
+            )
+            multa.refresh_from_db()
         if not multa.descargo_vigente:
             return Response({'detail': 'El plazo para presentar descargos ha vencido.'}, status=400)
         if hasattr(multa, 'descargo'):

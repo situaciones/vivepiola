@@ -193,7 +193,6 @@ class ClasificadorTestCase(APITestCase):
 
         self.assertEqual(multa.estado, EstadoMulta.NOTIFICADA)
         self.assertEqual(multa.infraccion_id, self.mascotas.id)
-        self.assertIsNotNone(multa.fecha_limite_descargo, 'sin plazo no hay derecho a apelar')
 
         self.client.force_authenticate(self.residente)
         respuesta = self.client.post(f'/api/multas/{multa.id}/descargo/', {'texto': 'No es mi perro'})

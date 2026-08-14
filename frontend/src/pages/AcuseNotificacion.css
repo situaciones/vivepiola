@@ -1,0 +1,110 @@
+/*
+ * Pagina de acuse de recibo. Se diseña para el caso dificil: una persona mayor
+ * abriendo un enlace del correo en el telefono. Texto grande, un solo boton,
+ * cero navegacion que distraiga.
+ */
+
+.acuse {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px 16px;
+  background: #0f172a;
+}
+
+.acuse-caja {
+  width: 100%;
+  max-width: 560px;
+  background: #fff;
+  border-radius: 18px;
+  padding: 36px 32px 40px;
+  box-shadow: 0 24px 60px rgba(2, 6, 23, .45);
+  text-align: center;
+}
+
+.acuse-caja h1 {
+  margin: 20px 0 24px;
+  font-size: 1.6rem;
+  line-height: 1.25;
+  color: #0f172a;
+}
+
+.acuse-detalle {
+  margin: 0 0 24px;
+  text-align: left;
+  border-top: 1px solid #e2e8f0;
+}
+
+.acuse-detalle > div {
+  display: flex;
+  gap: 16px;
+  padding: 12px 4px;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.acuse-detalle dt {
+  flex: 0 0 96px;
+  font-size: .82rem;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+  color: #64748b;
+  padding-top: 2px;
+}
+
+.acuse-detalle dd {
+  margin: 0;
+  flex: 1;
+  font-size: 1.05rem;
+  color: #0f172a;
+}
+
+.acuse-aviso {
+  margin: 0 0 28px;
+  font-size: 1.05rem;
+  line-height: 1.55;
+  color: #334155;
+  text-align: left;
+  background: #f8fafc;
+  border-left: 4px solid #7c3aed;
+  border-radius: 0 10px 10px 0;
+  padding: 16px 18px;
+}
+
+/* Un solo boton, del alto que exige un dedo en un telefono. */
+.acuse-boton {
+  width: 100%;
+  min-height: 60px;
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: #fff;
+  background: linear-gradient(90deg, #7c3aed, #2563eb 55%, #10b981);
+  border: 0;
+  border-radius: 12px;
+  cursor: pointer;
+}
+
+.acuse-boton:disabled { opacity: .6; cursor: default; }
+
+.acuse-ok {
+  font-size: 1.1rem;
+  line-height: 1.55;
+  color: #065f46;
+  margin: 0 0 20px;
+}
+
+.acuse-error {
+  margin: 20px 0 0;
+  font-size: 1.05rem;
+  color: #b91c1c;
+}
+
+.acuse-cargando { margin: 24px 0 0; color: #64748b; }
+
+.acuse-pie {
+  margin: 24px 0 0;
+  font-size: .95rem;
+  line-height: 1.5;
+  color: #64748b;
+  text-align: left;
+}

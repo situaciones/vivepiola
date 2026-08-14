@@ -154,8 +154,15 @@ class FlujoLegalTestCase(APITestCase):
         self.assertIn('Requiere tipificacion humana', entradas[0][1])
         self.assertEqual(
             [estado for estado, _ in entradas[1:]],
-            [EstadoMulta.APROBADA, EstadoMulta.NOTIFICADA, EstadoMulta.CON_DESCARGO, EstadoMulta.FIRME],
+            [
+                EstadoMulta.APROBADA,
+                EstadoMulta.NOTIFICADA,
+                EstadoMulta.NOTIFICADA,  # acuse de recibo: aqui arranco el plazo
+                EstadoMulta.CON_DESCARGO,
+                EstadoMulta.FIRME,
+            ],
         )
+        self.assertIn('recepcionada', entradas[3][1], 'debe quedar constancia de cuando arranco el plazo')
 
     def test_descargo_aceptado_anula_multa(self):
         multa = self.crear_ticket()
@@ -416,7 +423,11 @@ class SelladoCriptograficoTestCase(APITestCase):
         self.assertEqual(informe['version'], 2)
         self.assertTrue(informe['integra'])
         tipos = [a['tipo_acto'] for a in informe['actas']]
-        self.assertEqual(tipos, ['APROBACION', 'NOTIFICACION', 'DESCARGO_PRESENTADO', 'RESOLUCION_DESCARGO'])
+        self.assertEqual(
+            tipos,
+            ['APROBACION', 'NOTIFICACION', 'ACUSE_RECIBO', 'DESCARGO_PRESENTADO', 'RESOLUCION_DESCARGO'],
+            'el acuse de recibo es parte de la cadena: prueba cuando arranco el plazo',
+        )
         # La cadena esta encadenada de verdad
         actas = list(ActaSellada.objects.filter(multa=multa).order_by('indice'))
         self.assertEqual(actas[0].hash_previo, ActaSellada.GENESIS)

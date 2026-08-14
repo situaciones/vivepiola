@@ -1,6 +1,7 @@
 import { Navigate, Route, BrowserRouter, Routes } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import ProtectedRoute from './components/ProtectedRoute';
+import AcuseNotificacion from './pages/AcuseNotificacion';
 import AtajoMulta from './pages/AtajoMulta';
 import Landing from './pages/Landing';
 import Login from './pages/Login';
@@ -58,6 +59,8 @@ export default function App() {
           <Route path="/login" element={<Login />} />
           {/* Atajo de los avisos de WhatsApp: /m/12 abre ese expediente. */}
           <Route path="/m/:id" element={<AtajoMulta />} />
+          {/* Publica a proposito: se llega por el enlace del correo, sin cuenta. */}
+          <Route path="/acuse/:token" element={<AcuseNotificacion />} />
           <Route
             path="/app"
             element={

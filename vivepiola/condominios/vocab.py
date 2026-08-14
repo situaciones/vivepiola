@@ -55,6 +55,18 @@ FRASES_DEFAULT = {
         'Si desea presentar descargos, dispone de un plazo de {dias} dias corridos '
         'desde esta notificacion, hasta el {fecha_limite}.'
     ),
+    # El plazo no corre desde el envio sino desde el acuse, asi que el correo
+    # tiene que pedirlo de forma explicita y decir para que sirve.
+    'notificacion_pide_acuse': (
+        'IMPORTANTE: confirme que recibio esta notificacion en el siguiente enlace. '
+        'El plazo para defenderse empieza a correr recien cuando usted confirma, '
+        'de modo que nadie pierde su defensa por un correo que no llego a tiempo:\n'
+        '{enlace}'
+    ),
+    'notificacion_plazo_sin_acuse': (
+        'Dispondra de {dias} dias corridos para presentar sus descargos, contados '
+        'desde que confirme la recepcion de esta notificacion.'
+    ),
     'notificacion_canal_legal': 'Este correo constituye el canal legal de notificacion del sistema.',
     # Se envia en copia al copropietario cuando el infractor es transitorio o
     # ocupa por vinculo con el: la Ley 21.442 lo hace obligado principal al pago.

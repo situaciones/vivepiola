@@ -77,10 +77,14 @@ class CurseAutomaticoTestCase(APITestCase):
         self.assertEqual(multa.infraccion, self.ruido)
         self.assertEqual(multa.monto, Decimal('3.00'))
         self.assertTrue(multa.pdf_notificacion.name)
-        self.assertIsNotNone(multa.fecha_limite_descargo)
+        self.assertIsNone(
+            multa.fecha_limite_descargo,
+            'haber enviado no es haber notificado: el plazo arranca con el acuse',
+        )
 
         self.assertEqual(len(mail.outbox), 1)
         self.assertIn('nora@test.local', mail.outbox[0].to)
+        self.assertIn('/acuse/', mail.outbox[0].body, 'el correo debe traer como confirmar la recepcion')
 
     def test_la_notificacion_no_dice_que_el_comite_aprobo_algo_que_no_vio(self):
         """

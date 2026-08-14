@@ -4,6 +4,7 @@ from decimal import Decimal
 
 import requests
 from django.conf import settings
+from django.core import signing
 from django.core.files.base import ContentFile
 from django.core.mail import EmailMessage
 from django.template.loader import render_to_string
@@ -226,6 +227,142 @@ def copropietario_en_copia(multa):
     return propietario
 
 
+SAL_ACUSE = 'vivepiola-acuse-notificacion'
+# Un enlace de acuse no puede servir para siempre: pasado este plazo el
+# expediente ya se resolvio por otra via y el enlace deja de tener sentido.
+ACUSE_VIGENCIA_SEGUNDOS = 90 * 24 * 3600
+
+
+def token_acuse(multa):
+    """Token firmado que identifica la multa sin exponer nada mas."""
+    return signing.dumps({'multa': multa.id}, salt=SAL_ACUSE)
+
+
+def multa_desde_token_acuse(token):
+    """Devuelve la multa del token, o None si es invalido o vencido."""
+    from .models import Multa
+
+    try:
+        datos = signing.loads(token, salt=SAL_ACUSE, max_age=ACUSE_VIGENCIA_SEGUNDOS)
+    except signing.BadSignature:
+        return None
+    return Multa.objects.filter(id=datos.get('multa')).first()
+
+
+def enlace_acuse(multa):
+    return f'{settings.FRONTEND_URL.rstrip("/")}/acuse/{token_acuse(multa)}'
+
+
+def puntos_de_contacto(multa):
+    """
+    Canales por los que se puede alcanzar al residente, en orden legal.
+
+    El correo es el canal legal; WhatsApp acompaña. Se devuelven juntos porque
+    la notificacion se despacha por TODOS a la vez: alcanzar a la persona
+    importa mas que ahorrarse un mensaje.
+    """
+    from .models import CanalNotificacion
+
+    persona = multa.persona_infractor
+    if not persona:
+        return []
+
+    puntos = []
+    if persona.correo_electronico:
+        puntos.append((CanalNotificacion.EMAIL, persona.correo_electronico))
+    if persona.telefono:
+        puntos.append((CanalNotificacion.WHATSAPP, persona.telefono))
+    return puntos
+
+
+def registrar_acuse(multa, canal, usuario=None, destino='', detalle=''):
+    """
+    Deja constancia de que el residente recibio la notificacion y arranca el
+    plazo de apelacion.
+
+    Es idempotente: el primer acuse manda. Que despues abra el enlace otras
+    diez veces no reabre ni recorta el plazo.
+    """
+    from .models import CanalNotificacion, EstadoEntrega, EstadoMulta, TipoActo
+
+    if multa.fecha_acuse:
+        return False
+
+    ahora = timezone.now()
+    dias = multa.plazo_descargo_dias or multa.condominio.plazo_descargo_dias
+
+    multa.fecha_acuse = ahora
+    multa.canal_acuse = canal
+    multa.fecha_limite_descargo = ahora + timedelta(days=dias)
+    multa.save(update_fields=['fecha_acuse', 'canal_acuse', 'fecha_limite_descargo'])
+
+    entrega = multa.entregas.filter(canal=canal).order_by('-enviada_en').first()
+    if entrega is None:
+        entrega = multa.entregas.create(
+            multa=multa, canal=canal, destino=destino or '', intento=0,
+            registrada_por=usuario, detalle=detalle,
+        )
+    entrega.estado = EstadoEntrega.ACUSADA
+    entrega.acusada_en = ahora
+    if usuario and entrega.registrada_por_id is None:
+        entrega.registrada_por = usuario
+    entrega.save(update_fields=['estado', 'acusada_en', 'registrada_por'])
+
+    etiqueta = CanalNotificacion(canal).label if canal in CanalNotificacion.values else canal
+    registrar_historial(
+        multa, multa.estado, multa.estado, usuario,
+        f'Notificacion recepcionada por {etiqueta}. El plazo de apelacion vence el '
+        f'{multa.fecha_limite_descargo.strftime("%d-%m-%Y")}.',
+    )
+    sellar_acto(
+        multa, TipoActo.ACUSE_RECIBO, usuario,
+        auth_metodo='sistema' if usuario is None else 'sesion',
+        extra={
+            'canal': canal,
+            'destino': destino or '',
+            'fecha_limite_descargo': multa.fecha_limite_descargo.isoformat(),
+            'plazo_descargo_dias': dias,
+        },
+    )
+    return True
+
+
+def despachar_notificacion(multa, pdf_bytes=None, intento=1):
+    """
+    Envia la notificacion por todos los puntos de contacto y registra cada
+    intento, haya funcionado o no.
+
+    Un canal caido no puede impedir los otros: si el correo falla se registra
+    el fallo y se sigue con WhatsApp.
+
+    Devuelve (envios_exitosos, correos_en_copia).
+    """
+    from .models import CanalNotificacion, EstadoEntrega
+
+    if pdf_bytes is None:
+        pdf_bytes = generar_pdf_notificacion(multa)
+
+    enviados = 0
+    copias = []
+    for canal, destino in puntos_de_contacto(multa):
+        try:
+            if canal == CanalNotificacion.EMAIL:
+                copias = enviar_notificacion_email(multa, pdf_bytes)
+            elif not enviar_notificacion_whatsapp(multa):
+                continue  # canal no configurado: no es un fallo que registrar
+            multa.entregas.create(
+                multa=multa, canal=canal, destino=destino, intento=intento,
+                estado=EstadoEntrega.ENVIADA,
+            )
+            enviados += 1
+        except Exception as exc:
+            multa.entregas.create(
+                multa=multa, canal=canal, destino=destino, intento=intento,
+                estado=EstadoEntrega.FALLIDA, detalle=str(exc)[:500],
+            )
+    return enviados, copias
+
+
 def enviar_notificacion_email(multa, pdf_bytes):
     """
     Envia la notificacion legal al correo registrado del sujeto responsable:
@@ -259,7 +396,14 @@ def enviar_notificacion_email(multa, pdf_bytes):
             articulo=inf.articulo_referencia,
         ),
         frase(c, 'notificacion_monto', monto=multa.monto, unidad_monto=inf.unidad_monto),
-        frase(c, 'notificacion_plazo', dias=dias, fecha_limite=fecha_limite),
+        # Antes del acuse no hay fecha de vencimiento que anunciar: prometer una
+        # que todavia no existe seria confundir a quien lee.
+        frase(c, 'notificacion_plazo', dias=dias, fecha_limite=fecha_limite)
+        if multa.fecha_limite_descargo
+        else frase(c, 'notificacion_plazo_sin_acuse', dias=dias),
+        # El acuse es lo que hace correr el plazo, asi que la instruccion va
+        # antes del cierre legal y no perdida al final.
+        frase(c, 'notificacion_pide_acuse', enlace=enlace_acuse(multa)),
         frase(c, 'notificacion_canal_legal'),
     ])
     copia = copropietario_en_copia(multa)
@@ -523,36 +667,48 @@ def buscar_expediente_abierto(condominio, unidad, fecha_hecho, infraccion_propue
 
 
 def notificar_multa(multa, usuario):
-    """Orquesta: genera PDF, calcula plazo de descargo, envia correo (+WhatsApp) y actualiza estado."""
+    """
+    Despacha la notificacion por todos los puntos de contacto y deja el
+    expediente NOTIFICADA.
+
+    Ojo con lo que este paso NO hace: no arranca el plazo de apelacion. Haber
+    enviado no es haber notificado. El plazo empieza cuando hay acuse de
+    recibo (ver registrar_acuse) o cuando se deja constancia en el buzon de la
+    unidad. Mientras tanto la multa no puede quedar firme sola, que es
+    exactamente la proteccion que necesita alguien que no revisa su correo.
+    """
     estado_anterior = multa.estado
     pdf_bytes = generar_pdf_notificacion(multa)
 
     multa.plazo_descargo_dias = multa.plazo_descargo_dias or multa.condominio.plazo_descargo_dias
-    multa.fecha_limite_descargo = timezone.now() + timedelta(days=multa.plazo_descargo_dias)
+
+    # Primero se despacha y despues se marca NOTIFICADA. Al reves, un envio que
+    # falla por completo dejaba el expediente como notificado sin que saliera
+    # un solo mensaje: alguien sancionado sin enterarse jamas.
+    enviados, copias = despachar_notificacion(multa, pdf_bytes, intento=1)
+    if enviados == 0:
+        raise ValueError('No se pudo despachar la notificacion por ningun canal.')
+
     multa.pdf_notificacion.save(f'notificacion_multa_{multa.id}.pdf', ContentFile(pdf_bytes), save=False)
-
-    copias = enviar_notificacion_email(multa, pdf_bytes)
-
     multa.estado = EstadoMulta.NOTIFICADA
     multa.notificada_por = usuario
     multa.fecha_notificacion = timezone.now()
     multa.save()
 
-    # Aviso complementario por WhatsApp: nunca bloquea el flujo legal.
-    try:
-        whatsapp_enviado = enviar_notificacion_whatsapp(multa)
-    except Exception:
-        whatsapp_enviado = False
-
-    registrar_historial(multa, estado_anterior, multa.estado, usuario, 'Notificacion enviada al correo registrado.')
+    canales = list(multa.entregas.filter(intento=1).values_list('canal', 'destino', 'estado'))
+    registrar_historial(
+        multa, estado_anterior, multa.estado, usuario,
+        'Notificacion despachada. El plazo de apelacion arranca al acusarse recibo.',
+    )
     sellar_acto(multa, TipoActo.NOTIFICACION, usuario, extra={
         'correo_destino': multa.persona_infractor.correo_electronico,
         # Quien recibio copia queda sellado: si mañana se discute si el
         # copropietario fue notificado, el acta lo prueba.
         'copias_copropietario': sorted(copias),
-        'whatsapp_enviado': whatsapp_enviado,
+        # Cada canal con su destino y resultado: si manana se discute si se
+        # notifico, el acta muestra por donde se intento y como resulto.
+        'entregas': sorted(f'{canal}:{destino}:{estado}' for canal, destino, estado in canales),
         'plazo_descargo_dias': multa.plazo_descargo_dias,
-        'fecha_limite_descargo': multa.fecha_limite_descargo.isoformat(),
         'pdf_notificacion': multa.pdf_notificacion.name,
     })
     return multa

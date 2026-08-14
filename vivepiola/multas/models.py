@@ -114,6 +114,11 @@ class Multa(models.Model):
     fecha_notificacion = models.DateTimeField(null=True, blank=True)
     pdf_notificacion = models.FileField(upload_to='notificaciones/%Y/%m/', null=True, blank=True)
     plazo_descargo_dias = models.PositiveSmallIntegerField(null=True, blank=True)
+    # El plazo NO corre desde el envio sino desde el acuse: haber despachado un
+    # correo no prueba que el residente se entero, y un plazo que vence sin que
+    # el afectado supiera de la multa no resiste una impugnacion.
+    fecha_acuse = models.DateTimeField(null=True, blank=True)
+    canal_acuse = models.CharField(max_length=20, blank=True)
     fecha_limite_descargo = models.DateTimeField(null=True, blank=True)
 
     # Propuesta automatica al ingresar la denuncia. Es un BORRADOR para el
@@ -202,12 +207,62 @@ class HistorialMulta(models.Model):
         return f'Multa #{self.multa_id}: {self.estado_anterior} -> {self.estado_nuevo}'
 
 
+class CanalNotificacion(models.TextChoices):
+    EMAIL = 'EMAIL', 'Correo electronico'
+    WHATSAPP = 'WHATSAPP', 'WhatsApp'
+    APP = 'APP', 'Ingreso a la aplicacion'
+    TELEFONO = 'TELEFONO', 'Llamada telefonica'
+    PRESENCIAL = 'PRESENCIAL', 'Entrega en mano'
+    BUZON = 'BUZON', 'Constancia dejada en el buzon de la unidad'
+
+
+class EstadoEntrega(models.TextChoices):
+    ENVIADA = 'ENVIADA', 'Enviada, sin acuse todavia'
+    FALLIDA = 'FALLIDA', 'El envio fallo'
+    ACUSADA = 'ACUSADA', 'Recepcion acusada por el destinatario'
+
+
+class EntregaNotificacion(models.Model):
+    """
+    Cada intento de hacerle llegar la notificacion al residente, por el canal
+    que sea.
+
+    Existe porque "se envio un correo" no prueba que alguien se haya enterado.
+    Si manana el residente alega que nunca supo de la multa, esta bitacora
+    muestra a que direccion se escribio, cuantas veces, por que canales y si
+    hubo o no acuse. Sin esa prueba, el plazo de apelacion es indefendible.
+    """
+
+    multa = models.ForeignKey(Multa, on_delete=models.CASCADE, related_name='entregas')
+    canal = models.CharField(max_length=20, choices=CanalNotificacion.choices)
+    # A donde se envio: el correo, el telefono, o la unidad en el caso del buzon.
+    destino = models.CharField(max_length=200)
+    intento = models.PositiveSmallIntegerField(default=1)
+    estado = models.CharField(max_length=20, choices=EstadoEntrega.choices, default=EstadoEntrega.ENVIADA)
+    enviada_en = models.DateTimeField(auto_now_add=True)
+    acusada_en = models.DateTimeField(null=True, blank=True)
+    # Quien dejo la constancia fisica o registro la entrega en mano. Vacio en
+    # los canales que despacha el sistema.
+    registrada_por = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True,
+        related_name='entregas_registradas',
+    )
+    detalle = models.TextField(blank=True, help_text='Error del envio o nota de quien entrego.')
+
+    class Meta:
+        ordering = ['enviada_en']
+
+    def __str__(self):
+        return f'Multa #{self.multa_id} por {self.canal} (intento {self.intento}): {self.estado}'
+
+
 class TipoActo(models.TextChoices):
     CURSE_AUTOMATICO = 'CURSE_AUTOMATICO', 'Curse automatico de la multa (sin filtro previo)'
     APROBACION = 'APROBACION', 'Aprobacion de la multa'
     RECHAZO = 'RECHAZO', 'Rechazo del reporte'
     NOTIFICACION = 'NOTIFICACION', 'Notificacion al residente'
     DESCARGO_PRESENTADO = 'DESCARGO_PRESENTADO', 'Descargo presentado'
+    ACUSE_RECIBO = 'ACUSE_RECIBO', 'Acuse de recibo de la notificacion'
     RESOLUCION_DESCARGO = 'RESOLUCION_DESCARGO', 'Resolucion del descargo'
     FIRMEZA_AUTOMATICA = 'FIRMEZA_AUTOMATICA', 'Firmeza automatica por vencimiento de plazo'
     # Carril de contencion (manifiesto polimorfico tipo CONTENCION)
