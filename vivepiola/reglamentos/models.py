@@ -3,6 +3,12 @@ from decimal import Decimal
 from django.conf import settings
 from django.db import models
 
+# La base normativa transversal de Chile vive en su propio modulo porque no
+# pertenece a ningun condominio: la mantiene la plataforma.
+from .normativa import (  # noqa: F401  (se reexporta para que Django registre el modelo)
+    NormaTransversal, TipoNormaTransversal, contexto_normativo, estado_del_corpus,
+)
+
 
 class TipoNorma(models.TextChoices):
     """

@@ -6,6 +6,7 @@ import pdfplumber
 from django.conf import settings
 
 from .models import Gravedad
+from .normativa import contexto_normativo
 
 PROMPT_SISTEMA = """Eres un asistente que apoya a administradores de condominios en Chile a \
 digitalizar su reglamento de copropiedad (Ley 21.442). A partir del texto de un reglamento, \
@@ -156,6 +157,19 @@ def sugerir_infracciones_desde_texto(texto_reglamento, tipo='REGLAMENTO_COPROPIE
 
     instruccion = INSTRUCCIONES_POR_TIPO.get(tipo, INSTRUCCIONES_POR_TIPO['OTRO'])
     sistema = f'{PROMPT_SISTEMA}\n\nSOBRE ESTE DOCUMENTO: {instruccion}'
+
+    # La normativa general de Chile va aqui porque es donde mas rinde: al armar
+    # el catalogo se define lo que despues se aplica cientos de veces. Con la
+    # ley a la vista, el modelo puede notar que una sancion excede un tope legal
+    # o que un plazo contradice el que fija la ley.
+    marco = contexto_normativo()
+    if marco:
+        sistema += (
+            f'\n\n{marco}\n\n'
+            'Si el documento de la comunidad contradice la normativa general, dilo '
+            'en el fundamento en vez de reproducir la contradiccion.'
+        )
+
     mensaje = client.messages.create(
         model='claude-sonnet-5',
         max_tokens=4096,

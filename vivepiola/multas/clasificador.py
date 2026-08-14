@@ -87,10 +87,20 @@ def clasificar_con_ia(ticket, infracciones):
         f'REPORTE A CLASIFICAR:\n{json.dumps(reporte, ensure_ascii=False)}'
     )
 
+    # Aqui la normativa general va con presupuesto corto: el catalogo ya la
+    # tiene encarnada (nacio de ella), asi que mandar la ley entera en cada
+    # denuncia costaria mucho y aportaria poco. Sirve para el encuadre general.
+    from reglamentos.normativa import contexto_normativo
+
+    sistema = PROMPT_SISTEMA
+    marco = contexto_normativo(settings.NORMATIVA_PRESUPUESTO_CLASIFICACION)
+    if marco:
+        sistema = f'{PROMPT_SISTEMA}\n\n{marco}'
+
     mensaje = client.messages.create(
         model=MODELO,
         max_tokens=600,
-        system=PROMPT_SISTEMA,
+        system=sistema,
         messages=[{'role': 'user', 'content': contenido_usuario}],
     )
     texto = ''.join(bloque.text for bloque in mensaje.content if bloque.type == 'text')

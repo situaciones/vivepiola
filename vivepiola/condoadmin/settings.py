@@ -261,6 +261,17 @@ CURSE_CONFIANZA_MINIMA_LEVE = config('CURSE_CONFIANZA_MINIMA_LEVE', default=65, 
 CURSE_CONFIANZA_MINIMA_GRAVE = config('CURSE_CONFIANZA_MINIMA_GRAVE', default=80, cast=int)
 CURSE_CONFIANZA_MINIMA_GRAVISIMA = config('CURSE_CONFIANZA_MINIMA_GRAVISIMA', default=90, cast=int)
 
+# Cuanta normativa transversal se le entrega a la IA por llamada. Mandar la ley
+# completa en cada clasificacion es caro y casi siempre innecesario, porque el
+# catalogo ya la tiene encarnada; al leer un reglamento nuevo, en cambio, es
+# justo donde mas sirve. Por eso el presupuesto es distinto en cada caso.
+NORMATIVA_PRESUPUESTO_CARACTERES = config(
+    'NORMATIVA_PRESUPUESTO_CARACTERES', default=40000, cast=int,
+)
+NORMATIVA_PRESUPUESTO_CLASIFICACION = config(
+    'NORMATIVA_PRESUPUESTO_CLASIFICACION', default=6000, cast=int,
+)
+
 CURSE_CONFIANZA_MINIMA = {
     'LEVE': CURSE_CONFIANZA_MINIMA_LEVE,
     'GRAVE': CURSE_CONFIANZA_MINIMA_GRAVE,

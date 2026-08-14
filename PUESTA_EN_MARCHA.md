@@ -373,6 +373,45 @@ mismo día.
 
 ---
 
+### Cargar la base normativa de Chile
+
+El sistema trae **declaradas** las normas generales que rigen a todos los
+condominios, pero **el texto hay que cargarlo una vez**. No viene escrito en el
+código a propósito: lo que se cargue aquí termina citado en notificaciones que
+le llegan a residentes, y un articulado escrito de memoria es la forma más
+rápida de fundar una sanción en un artículo que no existe.
+
+Ver qué falta:
+
+```bash
+python manage.py cargar_normativa --estado
+```
+
+Te va a listar cada norma con **el enlace oficial** de dónde bajarla y el
+nombre de archivo que espera. Baja el texto desde bcn.cl, guárdalo como `.txt`
+en una carpeta, y carga:
+
+```bash
+python manage.py cargar_normativa --desde normativa/
+```
+
+| Norma | Para qué sirve |
+|---|---|
+| Ley 21.442 | El marco de toda la copropiedad |
+| D.S. N° 7 (2023) MINVU | Su reglamento |
+| Ley 19.496 | Protección al consumidor |
+| Ley 19.628 | Datos personales |
+
+**Sin esto el sistema funciona igual**, solo que la IA analiza únicamente con
+los documentos de cada comunidad. Con la ley cargada puede notar que una
+sanción del reglamento excede un tope legal o que un plazo contradice el que
+fija la ley — y decirlo en el fundamento en vez de reproducir el error.
+
+También se puede administrar desde el panel de Django, en **Normas
+transversales (Chile)**.
+
+---
+
 ### Cuánta autonomía le das al sistema
 
 Dos parámetros deciden cuánto hace solo el sistema y cuánto pasa por el comité.
