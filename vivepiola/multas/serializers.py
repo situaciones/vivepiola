@@ -30,9 +30,13 @@ class TicketSerializer(serializers.ModelSerializer):
         fields = (
             'id', 'condominio', 'unidad', 'unidad_identificador', 'persona_reportada', 'creado_por',
             'creado_por_nombre', 'descripcion', 'fecha_hecho', 'ubicacion', 'estado', 'anonimo',
+            'analisis_evidencia',
             'corrobora', 'fecha_creacion', 'evidencias',
         )
-        read_only_fields = ('condominio', 'creado_por', 'estado', 'corrobora', 'fecha_creacion')
+        read_only_fields = (
+            'condominio', 'creado_por', 'estado', 'corrobora', 'fecha_creacion',
+            'analisis_evidencia',
+        )
 
     def validate_fecha_hecho(self, value):
         if value > timezone.now():

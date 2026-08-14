@@ -218,6 +218,29 @@ DEFAULT_FROM_EMAIL = config('DEFAULT_FROM_EMAIL', default='notificaciones@vivepi
 ANTHROPIC_API_KEY = config('ANTHROPIC_API_KEY', default='')
 
 
+# Analisis de evidencia (fotos y videos).
+#
+# Se usa Gemini y no Anthropic porque es el unico de los grandes que ingiere el
+# archivo de VIDEO completo: los demas exigen extraer fotogramas, o sea
+# arrastrar una libreria de video al despliegue y elegir a ciegas que instantes
+# representan el hecho. El razonamiento legal se queda en Anthropic, donde
+# viven las salvaguardas del clasificador.
+#
+# Vacio = sin analisis visual. La evidencia igual queda en el expediente y la
+# sigue viendo una persona: el sistema se degrada, no se cae.
+
+GEMINI_API_KEY = config('GEMINI_API_KEY', default='')
+GEMINI_MODELO_VISION = config('GEMINI_MODELO_VISION', default='gemini-2.5-flash')
+
+# Cuantas piezas se mandan por reporte y cuanto puede pesar cada una. Sin tope,
+# tres videos de 50 MB en un solo reporte harian una llamada carisima y lenta.
+VISION_MAX_PIEZAS = config('VISION_MAX_PIEZAS', default=4, cast=int)
+VISION_MAX_BYTES_POR_PIEZA = config(
+    'VISION_MAX_BYTES_POR_PIEZA', default=20 * 1024 * 1024, cast=int,
+)
+VISION_MAX_CARACTERES = config('VISION_MAX_CARACTERES', default=1500, cast=int)
+
+
 # WhatsApp (Twilio) — canal COMPLEMENTARIO de aviso. El canal legal de la
 # notificacion sigue siendo el correo; el WhatsApp nunca lo reemplaza y su
 # fallo jamas bloquea el flujo. Vacio = canal deshabilitado.

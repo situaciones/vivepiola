@@ -35,6 +35,11 @@ class Ticket(models.Model):
     descripcion = models.TextField()
     fecha_hecho = models.DateTimeField(help_text='Fecha/hora en que ocurrio la presunta infraccion.')
     ubicacion = models.CharField(max_length=255, blank=True)
+    # Lo que el analisis visual dice ver en las fotos y videos adjuntos. Se
+    # guarda para que cualquiera pueda contrastar lo que el sistema afirmo ver
+    # con lo que la imagen realmente muestra: una descripcion que solo viviera
+    # dentro de un prompt no seria auditable.
+    analisis_evidencia = models.TextField(blank=True)
     estado = models.CharField(max_length=20, choices=EstadoTicket.choices, default=EstadoTicket.PENDIENTE)
     # Anonimato del denunciante: se conserva creado_por en la base para la
     # auditoria interna, pero se omite en las vistas del expediente para no

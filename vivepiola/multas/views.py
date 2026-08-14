@@ -41,8 +41,8 @@ from .services import (
     ETAPA_PARA_DENUNCIANTE, actualizar_multas_vencidas, aplicar_monto_con_reincidencia,
     buscar_expediente_abierto, cursar_multa_automatica, generar_audit_trail_pdf,
     confirmar_antes_del_cobro, convocar_reunion, notificar_multa, proponer_infraccion,
-    proponer_resoluciones, registrar_acta_reunion, registrar_acuse, registrar_historial,
-    registrar_voto_resolucion, resolver_descargo,
+    proponer_resoluciones, reevaluar_con_evidencia, registrar_acta_reunion, registrar_acuse,
+    registrar_historial, registrar_voto_resolucion, resolver_descargo,
 )
 
 
@@ -199,6 +199,7 @@ class TicketViewSet(viewsets.ModelViewSet):
             descripcion=request.data.get('descripcion', ''),
             sha256=digest, metadatos_origen=metadatos, anclaje_fisico=anclaje,
         )
+        reevaluar_con_evidencia(ticket, self.request.user)
         return Response(EvidenciaFotoSerializer(evidencia).data, status=201)
 
 

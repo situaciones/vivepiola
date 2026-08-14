@@ -711,6 +711,53 @@ def cursar_multa_automatica(multa, confianza):
     return True
 
 
+def reevaluar_con_evidencia(ticket, usuario=None):
+    """
+    Analiza la evidencia recien subida y, si el expediente todavia no se curso,
+    lo vuelve a evaluar con lo que se ve en ella.
+
+    Hace falta por un problema de orden: el reporte se ingresa primero y las
+    fotos llegan por otra llamada, segundos despues. Sin esto, una foto que
+    prueba el hecho llegaba tarde para influir en la clasificacion y solo
+    servia cuando una persona abria el caso.
+
+    Si el expediente ya se notifico no se reabre —no se puede cambiar una
+    sancion ya comunicada— pero el analisis igual queda guardado para quien
+    tenga que resolver despues.
+    """
+    from .models import EstadoMulta, Multa
+    from .vision import analizar_evidencias
+
+    descripcion, piezas = analizar_evidencias(ticket)
+    if not descripcion:
+        return False
+
+    ticket.analisis_evidencia = descripcion
+    ticket.save(update_fields=['analisis_evidencia'])
+
+    multa = Multa.objects.filter(ticket=ticket).first()
+    if multa is None or multa.estado != EstadoMulta.EN_REVISION:
+        return False
+
+    # Con la evidencia a la vista el encuadre puede cambiar, y con el la
+    # confianza: lo que antes no alcanzaba el umbral ahora puede alcanzarlo.
+    sugerida, origen, confianza, fundamento = proponer_infraccion(ticket)
+    multa.infraccion = sugerida
+    multa.monto = sugerida.monto if sugerida else None
+    multa.propuesta_origen = origen
+    multa.propuesta_confianza = confianza
+    multa.propuesta_fundamento = fundamento
+    multa.save(update_fields=[
+        'infraccion', 'monto', 'propuesta_origen', 'propuesta_confianza', 'propuesta_fundamento',
+    ])
+
+    registrar_historial(
+        multa, multa.estado, multa.estado, usuario,
+        f'Se analizo la evidencia adjunta ({piezas} pieza[s]) y se reevaluo el encuadre.',
+    )
+    return cursar_multa_automatica(multa, confianza)
+
+
 def proponer_infraccion(ticket):
     """
     Analiza el reporte y propone la infraccion del catalogo ACTIVO que

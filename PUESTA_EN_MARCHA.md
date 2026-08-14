@@ -123,6 +123,41 @@ python manage.py probar_clasificador --sembrar
 
 ---
 
+### 1.4 Gemini (análisis de evidencia) — 🟠 importante
+
+**Por qué:** es lo que hace que el sistema **mire** las fotos y los videos, no
+solo lea la descripción escrita. Un auto sobre la rampa, basura fuera del punto
+limpio, un forcejeo en el pasillo: hechos que la imagen prueba y el texto apenas
+insinúa.
+
+**Por qué Gemini y no Anthropic:** ningún modelo de Anthropic ni de OpenAI
+ingiere **video**. Obligan a extraer fotogramas, o sea arrastrar una librería de
+video al despliegue y elegir a ciegas qué instantes representan el hecho. Gemini
+recibe el archivo completo. El razonamiento legal se queda en Anthropic, donde
+están las salvaguardas del clasificador.
+
+**Cómo obtenerlo**
+
+1. `aistudio.google.com/apikey` → **Create API key**
+2. Copiar (empieza con `AIza`)
+
+**Variables**
+
+```
+GEMINI_API_KEY=AIza...                      🔒 Encrypt
+GEMINI_MODELO_VISION=gemini-2.5-flash
+```
+
+**Sin esta clave el sistema NO se cae:** la evidencia se guarda igual en el
+expediente y la sigue viendo una persona. Solo que la IA no la mira.
+
+> El análisis tiene prohibido describir personas. Un sistema que anotara
+> "hombre de unos 50, polera roja" estaría armando perfiles de residentes desde
+> las cámaras, que es justo lo que la Ley 19.628 busca evitar. Describe la
+> conducta y el lugar, no a quién aparece.
+
+---
+
 ### 1.4 Twilio WhatsApp — 🟡 opcional
 
 **Por qué:** el aviso que hace que el correo se lea, con link directo al caso.

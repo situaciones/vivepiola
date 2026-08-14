@@ -82,6 +82,12 @@ def clasificar_con_ia(ticket, infracciones):
         'fecha_hecho': ticket.fecha_hecho.isoformat() if ticket.fecha_hecho else '',
         'unidad': ticket.unidad.identificador,
     }
+    # Lo que se ve en las fotos y videos, si hubo analisis visual. Va marcado
+    # como observacion de la evidencia y no mezclado con la descripcion, para
+    # que el modelo distinga lo que alguien escribio de lo que la camara
+    # registro: si se contradicen, eso mismo es informacion.
+    if ticket.analisis_evidencia:
+        reporte['observado_en_la_evidencia'] = ticket.analisis_evidencia[:2000]
     contenido_usuario = (
         f'CATALOGO DE INFRACCIONES VIGENTE:\n{json.dumps(_catalogo_para_prompt(infracciones), ensure_ascii=False)}\n\n'
         f'REPORTE A CLASIFICAR:\n{json.dumps(reporte, ensure_ascii=False)}'
