@@ -722,3 +722,29 @@ textarea { resize: vertical; }
 }
 
 .cargando-pantalla { display: flex; align-items: center; justify-content: center; height: 100vh; color: var(--texto-tenue); font-weight: 500; }
+
+/* Sugerencias del sistema al Comite: se leen antes de decidir, asi que van
+   con el fundamento a la vista y sin competir con los botones de accion. */
+.propuestas-resolucion {
+  margin: 20px 0 4px;
+  padding: 16px 18px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-left: 4px solid #0e7490;
+  border-radius: 0 10px 10px 0;
+}
+
+.propuestas-resolucion h4 { margin: 0 0 4px; font-size: .95rem; color: #0f172a; }
+.propuestas-nota { margin: 0 0 12px; font-size: .82rem; color: #64748b; }
+.propuestas-resolucion ul { margin: 0; padding: 0; list-style: none; }
+
+.propuestas-resolucion li {
+  padding: 8px 0;
+  border-top: 1px solid #e2e8f0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.propuestas-resolucion li b { font-size: .92rem; color: #0f172a; }
+.propuestas-resolucion li span { font-size: .85rem; line-height: 1.45; color: #475569; }

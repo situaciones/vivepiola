@@ -45,6 +45,8 @@ export default function ComiteDashboard() {
   const [multas, setMultas] = useState([]);
   const [infracciones, setInfracciones] = useState([]);
   const [borradores, setBorradores] = useState([]);
+  // Opciones que sugiere el sistema para el caso abierto, con su fundamento.
+  const [propuestas, setPropuestas] = useState([]);
   // /app?multa=12 llega desde el link del aviso: se abre ese expediente.
   const [seleccionId, setSeleccionId] = useState(() => {
     const pedida = new URLSearchParams(window.location.search).get('multa');
@@ -66,6 +68,18 @@ export default function ComiteDashboard() {
   };
 
   useEffect(cargarTodo, []);
+
+  // Las propuestas se piden por caso: dependen del historial de esa unidad.
+  useEffect(() => {
+    const caso = [...multas].find((m) => m.id === seleccionId) || null;
+    if (!caso || caso.estado !== 'CON_DESCARGO') {
+      setPropuestas([]);
+      return;
+    }
+    client.get(`/multas/${caso.id}/propuestas-resolucion/`)
+      .then((res) => setPropuestas(res.data.opciones || []))
+      .catch(() => setPropuestas([]));
+  }, [seleccionId, multas]);
 
   const ratificarMedida = async (id) => {
     try {
@@ -173,9 +187,12 @@ export default function ComiteDashboard() {
     if (porcentaje_descuento) cuerpo.porcentaje_descuento = porcentaje_descuento;
     await client.post(`/multas/${activa.id}/resolver-descargo/`, cuerpo);
     setMensaje(
+      // eslint-disable-next-line no-nested-ternary
       porcentaje_descuento
         ? `Descargo de multa #${activa.id} resuelto con ${porcentaje_descuento}% de descuento.`
-        : `Descargo de multa #${activa.id} resuelto: ${resolucion}.`,
+        : resolucion === 'CORTESIA'
+          ? `Multa #${activa.id} resuelta como parte de cortesia: la falta queda en el registro, sin cobro.`
+          : `Descargo de multa #${activa.id} resuelto: ${resolucion}.`,
     );
     setSeleccionId(null);
     cargarTodo();
@@ -440,12 +457,32 @@ export default function ComiteDashboard() {
                             </div>
                           </div>
 
+                          {propuestas.length > 0 && (
+                            <div className="propuestas-resolucion">
+                              <h4>Lo que sugiere el sistema</h4>
+                              <p className="propuestas-nota">
+                                Son sugerencias con su fundamento a la vista. Quien resuelve es el Comite.
+                              </p>
+                              <ul>
+                                {propuestas.map((o) => (
+                                  <li key={`${o.resolucion}-${o.porcentaje_descuento || ''}`}>
+                                    <b>{o.etiqueta}</b>
+                                    <span>{o.fundamento}</span>
+                                  </li>
+                                ))}
+                              </ul>
+                            </div>
+                          )}
+
                           <div className="acciones">
                             <button className="btn btn-exito" onClick={() => resolverDescargo('ACEPTADO')}>
                               Aceptar descargo (anula la multa)
                             </button>
                             <button className="btn btn-secundario" onClick={resolverConDescuento}>
                               Aplicar descuento (multa firme, monto rebajado)
+                            </button>
+                            <button className="btn btn-secundario" onClick={() => resolverDescargo('CORTESIA')}>
+                              Parte de cortesia (sin cobro, queda en el registro)
                             </button>
                             <button className="btn btn-peligro" onClick={() => resolverDescargo('RECHAZADO')}>
                               Rechazar descargo (multa firme)

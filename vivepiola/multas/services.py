@@ -7,6 +7,7 @@ from django.conf import settings
 from django.core import signing
 from django.core.files.base import ContentFile
 from django.core.mail import EmailMessage
+from django.db.models.functions import Coalesce
 from django.template.loader import render_to_string
 from django.utils import timezone
 from xhtml2pdf import pisa
@@ -45,19 +46,32 @@ def verificar_reincidencia(unidad, infraccion, ventana_meses=None):
             estado__in=[
                 EstadoMulta.APROBADA, EstadoMulta.NOTIFICADA,
                 EstadoMulta.CON_DESCARGO, EstadoMulta.FIRME, EstadoMulta.EXPORTADA,
+                # El parte de cortesia cuenta: su sentido es avisar que la
+                # proxima vez se cobra. Si no contara, se podria pedir cortesia
+                # indefinidamente por la misma falta.
+                EstadoMulta.CORTESIA,
             ],
-            fecha_aprobacion__gte=limite,
         )
-        .order_by('fecha_aprobacion')
+        # Las multas que se cursan solas no tienen fecha_aprobacion, porque
+        # nadie las aprobo. Tomar solo esa fecha las dejaba fuera del conteo y
+        # la reincidencia dejaba de detectarse justo en el camino normal.
+        .annotate(fecha_sancion=Coalesce('fecha_aprobacion', 'fecha_notificacion'))
+        .filter(fecha_sancion__gte=limite)
+        .order_by('fecha_sancion')
         .first()
     )
 
     if not primera_sancion:
         return False, None, ''
 
+    fecha_previa = primera_sancion.fecha_aprobacion or primera_sancion.fecha_notificacion
+    tipo_previo = (
+        'ya advertida con parte de cortesia'
+        if primera_sancion.estado == EstadoMulta.CORTESIA else 'ya sancionada'
+    )
     agravante = (
-        f'Reincidencia: misma infraccion "{infraccion.codigo}" ya sancionada el '
-        f'{primera_sancion.fecha_aprobacion:%d-%m-%Y} (multa #{primera_sancion.id}), '
+        f'Reincidencia: misma infraccion "{infraccion.codigo}" {tipo_previo} el '
+        f'{fecha_previa:%d-%m-%Y} (multa #{primera_sancion.id}), '
         f'dentro de los {ventana_meses} meses que establece la ley. '
         'Se sugiere al Comite aplicar el agravante correspondiente de su reglamento.'
     )
@@ -739,6 +753,69 @@ def actualizar_multas_vencidas(condominio=None):
         })
 
 
+def proponer_resoluciones(multa):
+    """
+    Sugiere al Comite como podria resolver la apelacion, con el fundamento de
+    cada opcion.
+
+    Propone, no decide: son opciones ordenadas con su razon a la vista, para
+    que el Comite resuelva sabiendo que hay detras y no tenga que reconstruir
+    a mano el historial de la unidad. Quien firma sigue siendo el Comite.
+    """
+    from .models import EstadoMulta, Multa, ResolucionDescargo
+
+    opciones = []
+    if multa.infraccion is None or multa.unidad is None:
+        return opciones
+
+    antecedentes = (
+        Multa.objects
+        .filter(unidad=multa.unidad, infraccion=multa.infraccion)
+        .exclude(id=multa.id)
+        .exclude(estado__in=[EstadoMulta.RECHAZADA, EstadoMulta.ANULADA, EstadoMulta.EN_REVISION])
+        .count()
+    )
+
+    if antecedentes == 0:
+        opciones.append({
+            'resolucion': ResolucionDescargo.CORTESIA,
+            'etiqueta': 'Parte de cortesia (sin cobro)',
+            'fundamento': (
+                f'Es la primera vez que esta unidad incurre en "{multa.infraccion.codigo}". '
+                'La falta queda acreditada y en el registro, pero no se cobra. Una nueva '
+                'falta igual ya no admitira cortesia.'
+            ),
+        })
+        opciones.append({
+            'resolucion': ResolucionDescargo.DESCUENTO,
+            'porcentaje_descuento': 50,
+            'etiqueta': 'Rebajar el monto a la mitad',
+            'fundamento': 'Sin antecedentes previos por esta infraccion, una rebaja es proporcional.',
+        })
+    else:
+        opciones.append({
+            'resolucion': ResolucionDescargo.RECHAZADO,
+            'etiqueta': 'Mantener la multa',
+            'fundamento': (
+                f'La unidad ya registra {antecedentes} caso(s) por "{multa.infraccion.codigo}". '
+                'No corresponde cortesia sobre una falta reiterada.'
+            ),
+        })
+        opciones.append({
+            'resolucion': ResolucionDescargo.DESCUENTO,
+            'porcentaje_descuento': 30,
+            'etiqueta': 'Rebajar el monto un 30%',
+            'fundamento': 'Si los descargos aportan algo atendible, una rebaja menor deja el precedente.',
+        })
+
+    opciones.append({
+        'resolucion': ResolucionDescargo.ACEPTADO,
+        'etiqueta': 'Anular la multa',
+        'fundamento': 'Si los descargos desvirtuan el hecho, la falta se cae completa.',
+    })
+    return opciones
+
+
 def resolver_descargo(descargo, resolucion, usuario, comentario='', porcentaje_descuento=None):
     """
     El Comite resuelve la apelacion con tres desenlaces posibles (Ley 21.442):
@@ -760,6 +837,15 @@ def resolver_descargo(descargo, resolucion, usuario, comentario='', porcentaje_d
     monto_final = multa.monto
     if resolucion == ResolucionDescargo.ACEPTADO:
         multa.estado = EstadoMulta.ANULADA
+    elif resolucion == ResolucionDescargo.CORTESIA:
+        # La falta se dio por acreditada pero no se cobra. Se conserva el monto
+        # original en el descargo: sin ese dato no se podria explicar despues
+        # de cuanto fue la cortesia que se otorgo.
+        descargo.monto_original = multa.monto
+        monto_final = Decimal('0.00')
+        multa.monto = monto_final
+        multa.estado = EstadoMulta.CORTESIA
+        multa.fecha_firme = timezone.now()
     elif resolucion == ResolucionDescargo.DESCUENTO:
         pct = int(porcentaje_descuento or 0)
         descargo.monto_original = multa.monto
@@ -779,6 +865,12 @@ def resolver_descargo(descargo, resolucion, usuario, comentario='', porcentaje_d
     detalle = f'Descargo resuelto: {resolucion}.'
     if resolucion == ResolucionDescargo.DESCUENTO:
         detalle = f'Descargo resuelto: DESCUENTO {porcentaje_descuento}% (monto {descargo.monto_original} -> {monto_final}).'
+    elif resolucion == ResolucionDescargo.CORTESIA:
+        detalle = (
+            f'Descargo resuelto: PARTE DE CORTESIA. La falta queda acreditada y en el '
+            f'registro, sin cobro (se condonaron {descargo.monto_original}). '
+            f'Una nueva falta igual ya no admite cortesia.'
+        )
     registrar_historial(multa, estado_anterior, multa.estado, usuario, f'{detalle} {comentario}'.strip())
     sellar_acto(multa, TipoActo.RESOLUCION_DESCARGO, usuario, extra={
         'resolucion': resolucion,

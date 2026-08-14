@@ -77,6 +77,10 @@ class EstadoMulta(models.TextChoices):
     NOTIFICADA = 'NOTIFICADA', 'Notificada al residente'
     CON_DESCARGO = 'CON_DESCARGO', 'Con descargo presentado'
     FIRME = 'FIRME', 'Firme (sin apelaciones pendientes)'
+    # Se dio por acreditada la falta pero se resuelve sin cobro. No es lo mismo
+    # que ANULADA: alli la falta se cae, aqui queda en el registro y cuenta para
+    # la reincidencia, de modo que la proxima vez ya no hay cortesia que dar.
+    CORTESIA = 'CORTESIA', 'Parte de cortesia (sin cobro)'
     ANULADA = 'ANULADA', 'Anulada'
     EXPORTADA = 'EXPORTADA', 'Exportada a gastos comunes'
 
@@ -161,6 +165,7 @@ class ResolucionDescargo(models.TextChoices):
     ACEPTADO = 'ACEPTADO', 'Aceptado (multa anulada)'
     RECHAZADO = 'RECHAZADO', 'Rechazado (multa se mantiene firme)'
     DESCUENTO = 'DESCUENTO', 'Descuento parcial (firme, con el monto rebajado)'
+    CORTESIA = 'CORTESIA', 'Parte de cortesia (falta acreditada, sin cobro)'
 
 
 class Descargo(models.Model):

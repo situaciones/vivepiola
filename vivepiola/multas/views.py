@@ -34,8 +34,8 @@ from .serializers import (
 from .services import (
     ETAPA_PARA_DENUNCIANTE, actualizar_multas_vencidas, aplicar_monto_con_reincidencia,
     buscar_expediente_abierto, cursar_multa_automatica, generar_audit_trail_pdf,
-    notificar_multa, proponer_infraccion, registrar_acuse, registrar_historial,
-    resolver_descargo,
+    notificar_multa, proponer_infraccion, proponer_resoluciones, registrar_acuse,
+    registrar_historial, resolver_descargo,
 )
 
 
@@ -173,7 +173,7 @@ class MultaViewSet(viewsets.ReadOnlyModelViewSet):
     serializer_class = MultaSerializer
 
     def get_permissions(self):
-        if self.action in ('aprobar', 'rechazar', 'resolver_descargo_view'):
+        if self.action in ('aprobar', 'rechazar', 'resolver_descargo_view', 'propuestas_resolucion'):
             return [EsComite()]
         if self.action in ('notificar', 'constancia_buzon'):
             return [EsAdministrador()]
@@ -295,6 +295,16 @@ class MultaViewSet(viewsets.ReadOnlyModelViewSet):
             multa.refresh_from_db()
             return Response(MultaSerializer(multa).data)
         return respuesta
+
+    @action(detail=True, methods=['get'], url_path='propuestas-resolucion')
+    def propuestas_resolucion(self, request, pk=None):
+        """
+        Opciones sugeridas para resolver la apelacion, cada una con su
+        fundamento. El Comite decide; esto solo le evita reconstruir a mano el
+        historial de la unidad antes de hacerlo.
+        """
+        multa = self.get_object()
+        return Response({'opciones': proponer_resoluciones(multa)})
 
     @action(detail=True, methods=['post'], url_path='constancia-buzon')
     def constancia_buzon(self, request, pk=None):

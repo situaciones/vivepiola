@@ -137,7 +137,7 @@ class PresentarDescargoSerializer(serializers.Serializer):
 
 
 class ResolverDescargoSerializer(serializers.Serializer):
-    resolucion = serializers.ChoiceField(choices=['ACEPTADO', 'RECHAZADO', 'DESCUENTO'])
+    resolucion = serializers.ChoiceField(choices=['ACEPTADO', 'RECHAZADO', 'DESCUENTO', 'CORTESIA'])
     comentario = serializers.CharField(required=False, allow_blank=True)
     porcentaje_descuento = serializers.IntegerField(required=False, min_value=1, max_value=99)
 
