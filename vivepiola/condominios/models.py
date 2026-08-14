@@ -68,6 +68,17 @@ class Condominio(models.Model):
         default=1,
         help_text='Cuantos miembros del Comite deben coincidir para resolver una apelacion.',
     )
+    # Las primeras faltas se avisan sin cobrar. El objetivo de una comunidad no
+    # es recaudar sino que la gente sepa que hay una norma; quien la incumple
+    # por primera vez casi siempre corrige con el aviso. Con 0 se cobra desde
+    # la primera, que es como funcionaba antes de existir este parametro.
+    cortesias_antes_de_multar = models.PositiveSmallIntegerField(
+        default=2,
+        help_text=(
+            'Cuantas faltas NO graves se avisan sin cobro antes de empezar a multar. '
+            '0 = se multa desde la primera.'
+        ),
+    )
     # Codigo Unico de Comunidad: cualquier vecino puede registrarse via Google
     # con este codigo y queda PENDIENTE de que el Administrador le asigne rol.
     codigo_comunidad = models.CharField(max_length=12, unique=True, null=True, blank=True, db_index=True)

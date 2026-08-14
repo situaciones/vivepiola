@@ -396,10 +396,20 @@ def enviar_notificacion_email(multa, pdf_bytes):
     fecha_limite = multa.fecha_limite_descargo.strftime('%d-%m-%Y') if multa.fecha_limite_descargo else ''
     dias = multa.plazo_descargo_dias or c.plazo_descargo_dias
 
-    asunto = frase(c, 'notificacion_asunto', numero=multa.id, org_nombre=c.nombre)
+    es_cortesia = multa.es_aviso_de_cortesia
+    asunto = (
+        frase(c, 'notificacion_asunto_cortesia', numero=multa.id, org_nombre=c.nombre)
+        if es_cortesia
+        else frase(c, 'notificacion_asunto', numero=multa.id, org_nombre=c.nombre)
+    )
     # Sin aprobacion humana previa no se puede decir que el organo sancionador
     # aprobo: se usa la redaccion del curse automatico.
-    clave_cuerpo = 'notificacion_cuerpo' if multa.aprobada_por_id else 'notificacion_cuerpo_automatica'
+    if es_cortesia:
+        clave_cuerpo = 'notificacion_cuerpo_cortesia'
+    elif multa.aprobada_por_id:
+        clave_cuerpo = 'notificacion_cuerpo'
+    else:
+        clave_cuerpo = 'notificacion_cuerpo_automatica'
     cuerpo = '\n\n'.join([
         frase(c, 'notificacion_saludo', nombre=persona.nombre_completo),
         frase(
@@ -409,7 +419,14 @@ def enviar_notificacion_email(multa, pdf_bytes):
             infraccion=inf.descripcion,
             articulo=inf.articulo_referencia,
         ),
-        frase(c, 'notificacion_monto', monto=multa.monto, unidad_monto=inf.unidad_monto),
+        # En un aviso de cortesia decir "Monto: 0.00" seria absurdo: lo que hay
+        # que decir es que no se cobra y cuanto se habria cobrado.
+        frase(
+            c, 'notificacion_cortesia_sin_cobro',
+            monto_evitado=multa.monto_sin_cortesia, unidad_monto=inf.unidad_monto,
+        )
+        if es_cortesia
+        else frase(c, 'notificacion_monto', monto=multa.monto, unidad_monto=inf.unidad_monto),
         # Antes del acuse no hay fecha de vencimiento que anunciar: prometer una
         # que todavia no existe seria confundir a quien lee.
         frase(c, 'notificacion_plazo', dias=dias, fecha_limite=fecha_limite)
@@ -542,6 +559,76 @@ def puede_cursarse_sola(multa, confianza):
     return True, ''
 
 
+# Estados en que la falta se dio por ocurrida. Son los que cuentan para saber
+# si a esta unidad todavia le quedan cortesias.
+ESTADOS_FALTA_ACREDITADA = (
+    EstadoMulta.APROBADA, EstadoMulta.NOTIFICADA, EstadoMulta.CON_DESCARGO,
+    EstadoMulta.POR_CONFIRMAR, EstadoMulta.FIRME, EstadoMulta.EXPORTADA,
+    EstadoMulta.CORTESIA,
+)
+
+
+def corresponde_cortesia(multa):
+    """
+    Decide si esta falta se avisa sin cobrar por ser de las primeras.
+
+    El objetivo de una comunidad no es recaudar sino que la gente sepa que hay
+    una norma, y quien la incumple por primera vez casi siempre corrige con el
+    aviso. Por eso las primeras faltas de una unidad se notifican sin monto: la
+    falta queda igual en el registro, y es ella misma la que consume el cupo.
+
+    Dos cosas nunca admiten cortesia, por muy primera vez que sea:
+    - una falta GRAVISIMA, y
+    - una que conlleva contencion (paraliza algo o pone a alguien en riesgo).
+    Avisar sin consecuencia frente a un riesgo real seria el mensaje contrario.
+
+    Devuelve (corresponde, motivo).
+    """
+    from reglamentos.models import Gravedad
+    from .models import Multa
+
+    infraccion = multa.infraccion
+    if infraccion is None or multa.unidad is None:
+        return False, ''
+
+    cupo = multa.condominio.cortesias_antes_de_multar
+    if cupo <= 0:
+        return False, ''
+
+    if infraccion.gravedad == Gravedad.GRAVISIMA:
+        return False, 'la falta es gravisima: no admite cortesia'
+    if infraccion.conlleva_contencion:
+        return False, 'la falta conlleva contencion: no admite cortesia'
+
+    # Se cuentan las faltas previas de la unidad, de cualquier tipo, dentro de
+    # la misma ventana que la ley usa para la reincidencia: tres faltas de hace
+    # cinco años no deberian costarle la cortesia a nadie.
+    limite = timezone.now() - timedelta(days=30 * settings.REINCIDENCIA_VENTANA_MESES)
+    previas = (
+        Multa.objects
+        .filter(unidad=multa.unidad, estado__in=ESTADOS_FALTA_ACREDITADA)
+        .exclude(id=multa.id)
+        .annotate(fecha_falta=Coalesce('fecha_aprobacion', 'fecha_notificacion', 'fecha_creacion'))
+        .filter(fecha_falta__gte=limite)
+        .count()
+    )
+    if previas >= cupo:
+        return False, f'la unidad ya acumula {previas} falta(s): corresponde multa'
+
+    restantes = cupo - previas - 1
+    return True, (
+        f'Es la falta numero {previas + 1} de esta unidad y la comunidad avisa sin cobrar '
+        f'las primeras {cupo}. '
+        + (
+            f'Le queda {restantes} aviso mas antes de que se empiece a cobrar.'
+            if restantes == 1 else
+            f'Le quedan {restantes} avisos mas antes de que se empiece a cobrar.'
+            if restantes > 1 else
+            'La proxima falta ya se cobra.'
+        )
+    )
+
+
 def cursar_multa_automatica(multa, confianza):
     """
     Tipifica y notifica el expediente sin intervencion humana previa.
@@ -561,6 +648,14 @@ def cursar_multa_automatica(multa, confianza):
         return False
 
     factor = aplicar_monto_con_reincidencia(multa, multa.infraccion)
+
+    # Las primeras faltas de la unidad se avisan sin cobrar. El monto calculado
+    # arriba se conserva en monto_sin_cortesia: sirve para decirle al residente
+    # cuanto se le habria cobrado, que es lo que le da sentido al aviso.
+    es_cortesia, motivo_cortesia = corresponde_cortesia(multa)
+    if es_cortesia:
+        multa.monto_sin_cortesia = multa.monto
+        multa.monto = Decimal('0.00')
     multa.save()
 
     try:
@@ -574,12 +669,17 @@ def cursar_multa_automatica(multa, confianza):
 
     sellar_acto(multa, TipoActo.CURSE_AUTOMATICO, None, auth_metodo='sistema', extra={
         'monto_aplicado': str(multa.monto),
+        'es_cortesia': es_cortesia,
+        'motivo_cortesia': motivo_cortesia,
+        'monto_sin_cortesia': str(multa.monto_sin_cortesia) if es_cortesia else None,
         'factor_reincidencia_aplicado': str(factor),
         'confianza_propuesta': confianza or 0,
         'origen_propuesta': multa.propuesta_origen,
         'agravante_sugerido': multa.agravante_sugerido,
         'multa_primera_sancion_id': multa.multa_primera_sancion_id,
     })
+    if es_cortesia:
+        registrar_historial(multa, multa.estado, multa.estado, None, motivo_cortesia)
     return True
 
 
@@ -775,18 +875,28 @@ def actualizar_multas_vencidas(condominio=None):
 
     for multa in qs:
         motivo = motivo_para_confirmar(multa)
-        destino = EstadoMulta.POR_CONFIRMAR if motivo else EstadoMulta.FIRME
+        if multa.es_aviso_de_cortesia:
+            # Un aviso sin cobro no necesita confirmarse antes de cobrar: no
+            # hay nada que cobrar. Cierra como cortesia y queda en el registro.
+            destino = EstadoMulta.CORTESIA
+        elif motivo:
+            destino = EstadoMulta.POR_CONFIRMAR
+        else:
+            destino = EstadoMulta.FIRME
 
         multa.estado = destino
         if destino == EstadoMulta.FIRME:
             multa.fecha_firme = timezone.now()
         multa.save(update_fields=['estado', 'fecha_firme'])
 
-        comentario = (
-            f'Vencio el plazo sin apelacion, pero el cobro se detiene para confirmacion. {motivo}'
-            if motivo
-            else 'Firme automaticamente: vencio el plazo de descargo sin presentacion.'
-        )
+        if destino == EstadoMulta.CORTESIA:
+            comentario = (
+                'Cerrado como aviso de cortesia: vencio el plazo sin objecion y no hay cobro.'
+            )
+        elif motivo:
+            comentario = f'Vencio el plazo sin apelacion, pero el cobro se detiene para confirmacion. {motivo}'
+        else:
+            comentario = 'Firme automaticamente: vencio el plazo de descargo sin presentacion.'
         registrar_historial(multa, EstadoMulta.NOTIFICADA, destino, None, comentario)
         sellar_acto(multa, TipoActo.FIRMEZA_AUTOMATICA, None, auth_metodo='sistema', extra={
             'fecha_limite_vencida': multa.fecha_limite_descargo.isoformat(),
@@ -1042,7 +1152,8 @@ def resolver_descargo(descargo, resolucion, usuario, comentario='', porcentaje_d
         multa.estado = EstadoMulta.FIRME
         multa.fecha_firme = timezone.now()
     else:  # RECHAZADO
-        multa.estado = EstadoMulta.FIRME
+        # Mantener un aviso de cortesia no lo convierte en cobro: sigue sin monto.
+        multa.estado = EstadoMulta.CORTESIA if multa.es_aviso_de_cortesia else EstadoMulta.FIRME
         multa.fecha_firme = timezone.now()
 
     descargo.save()

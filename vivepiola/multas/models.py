@@ -133,6 +133,9 @@ class Multa(models.Model):
         'reglamentos.InfraccionCatalogo', on_delete=models.PROTECT, null=True, blank=True, related_name='multas'
     )
     monto = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True)
+    # Cuanto se habria cobrado si no fuera una cortesia. Es lo que le da sentido
+    # al aviso: sin ese numero, "esto no se cobra" no dice nada.
+    monto_sin_cortesia = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True)
     estado = models.CharField(max_length=20, choices=EstadoMulta.choices, default=EstadoMulta.EN_REVISION)
 
     # Aprobacion (Comite)
@@ -175,6 +178,11 @@ class Multa(models.Model):
 
     fecha_creacion = models.DateTimeField(auto_now_add=True)
     fecha_firme = models.DateTimeField(null=True, blank=True)
+
+    @property
+    def es_aviso_de_cortesia(self):
+        """Se notifico sin cobro por ser de las primeras faltas de la unidad."""
+        return self.monto_sin_cortesia is not None
 
     class Meta:
         ordering = ['-fecha_creacion']

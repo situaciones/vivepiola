@@ -51,6 +51,26 @@ FRASES_DEFAULT = {
         'apelar y el {organo_sancionador} resolvera.'
     ),
     'notificacion_monto': 'Monto: {monto} {unidad_monto}',
+    # El aviso de cortesia tiene que decir tres cosas: que no se cobra, cuanto
+    # se habria cobrado (sin ese numero el aviso no dice nada), y que la
+    # proxima vez si se cobra. Si no, se lee como una multa y asusta igual.
+    'notificacion_asunto_cortesia': 'Aviso de {organizacion} #{numero} - sin cobro',
+    # Un aviso de cortesia no puede empezar diciendo "se ha cursado una multa"
+    # y terminar diciendo que no hay cobro: se contradice y se lee como multa.
+    'notificacion_cuerpo_cortesia': (
+        'Se le informa que en {org_nombre} se registro una falta asociada a la '
+        '{unidad} {unidad_id} por "{infraccion}" ({articulo}), conforme al reglamento '
+        'de copropiedad vigente.'
+    ),
+    'notificacion_cortesia_sin_cobro': (
+        'ESTE AVISO NO TIENE COBRO. La falta queda registrada, pero no se le cargara '
+        'nada en el gasto comun. Si esta misma situacion se repite, la sancion que '
+        'corresponde es de {monto_evitado} {unidad_monto}.'
+    ),
+    'notificacion_cortesia_cupo': (
+        'La comunidad avisa sin cobrar las primeras {cupo} faltas de cada unidad. '
+        'Esta es la numero {numero}.'
+    ),
     'notificacion_plazo': (
         'Si desea presentar descargos, dispone de un plazo de {dias} dias corridos '
         'desde esta notificacion, hasta el {fecha_limite}.'

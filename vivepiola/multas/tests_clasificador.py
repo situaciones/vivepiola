@@ -50,7 +50,10 @@ class ClienteFalso:
 class ClasificadorTestCase(APITestCase):
     @classmethod
     def setUpTestData(cls):
-        cls.condominio = Condominio.objects.create(nombre='Condominio Clasificador')
+        # Cupo 0: aqui se mide el clasificador, no la politica de cortesias.
+        cls.condominio = Condominio.objects.create(
+            nombre='Condominio Clasificador', cortesias_antes_de_multar=0,
+        )
         cls.unidad = Unidad.objects.create(condominio=cls.condominio, identificador='Depto 707')
         cls.persona = Persona.objects.create(
             condominio=cls.condominio, unidad=cls.unidad, rol_ocupacion=RolOcupacion.PROPIETARIO,

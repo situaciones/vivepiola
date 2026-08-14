@@ -145,6 +145,7 @@ class MultaSerializer(serializers.ModelSerializer):
     # Por que se detuvo el cobro. Se calcula, no se guarda: depende del estado
     # actual de la persona y del canal por el que se acuso recibo.
     motivo_confirmacion = serializers.SerializerMethodField()
+    es_aviso_de_cortesia = serializers.BooleanField(read_only=True)
 
     class Meta:
         model = Multa
@@ -152,6 +153,7 @@ class MultaSerializer(serializers.ModelSerializer):
             'id', 'condominio', 'ticket', 'ticket_detalle', 'unidad', 'unidad_identificador',
             'persona_infractor', 'persona_nombre', 'infraccion', 'infraccion_descripcion',
             'infraccion_codigo', 'infraccion_articulo', 'infraccion_texto_fuente', 'monto', 'estado',
+            'monto_sin_cortesia', 'es_aviso_de_cortesia',
             'aprobada_por', 'fecha_aprobacion', 'motivo_rechazo',
             'notificada_por', 'fecha_notificacion', 'pdf_notificacion',
             'plazo_descargo_dias', 'fecha_limite_descargo', 'fecha_acuse', 'canal_acuse',

@@ -762,3 +762,15 @@ textarea { resize: vertical; }
   border-radius: 0 8px 8px 0;
 }
 .aviso-reunion p { margin: 4px 0 0; font-size: .88rem; color: #475569; }
+
+/* Aviso de cortesia en la ficha del residente: verde, no rojo. No es un cobro
+   y no debe leerse como uno. */
+.aviso-cortesia {
+  margin: 10px 0;
+  padding: 10px 12px;
+  background: #ecfeff;
+  border-left: 3px solid #0e7490;
+  border-radius: 0 8px 8px 0;
+}
+.aviso-cortesia strong { color: #0e7490; }
+.aviso-cortesia p { margin: 4px 0 0; font-size: .88rem; line-height: 1.5; color: #475569; }

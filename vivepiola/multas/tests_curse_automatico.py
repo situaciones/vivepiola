@@ -34,7 +34,11 @@ def _respuesta_ia(codigo, confianza):
 class CurseAutomaticoTestCase(APITestCase):
     @classmethod
     def setUpTestData(cls):
-        cls.condominio = Condominio.objects.create(nombre='Condominio Curse')
+        # Cupo 0: esta clase prueba el curse automatico, no la cortesia. Con
+        # cupo la primera falta saldria sin cobro y taparia lo que se mide.
+        cls.condominio = Condominio.objects.create(
+            nombre='Condominio Curse', cortesias_antes_de_multar=0,
+        )
         cls.unidad = Unidad.objects.create(condominio=cls.condominio, identificador='Depto 909')
         cls.persona = Persona.objects.create(
             condominio=cls.condominio, unidad=cls.unidad, rol_ocupacion=RolOcupacion.PROPIETARIO,

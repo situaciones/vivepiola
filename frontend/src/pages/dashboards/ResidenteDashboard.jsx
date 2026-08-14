@@ -158,7 +158,20 @@ export default function ResidenteDashboard() {
                   )}
 
                   <p>{m.infraccion_descripcion}</p>
-                  {m.monto && <p><strong>Monto:</strong> {m.monto}</p>}
+                  {/* Un aviso de cortesia mostrado como "Monto: 0.00" se lee como
+                      multa igual. Lo que importa decirle es que no se le cobra
+                      y cuanto se habria cobrado si se repite. */}
+                  {m.es_aviso_de_cortesia ? (
+                    <div className="aviso-cortesia">
+                      <strong>Este aviso no tiene cobro</strong>
+                      <p>
+                        La falta queda registrada, pero no se te carga nada en el gasto comun.
+                        Si se repite, la sancion que corresponde es de {m.monto_sin_cortesia}.
+                      </p>
+                    </div>
+                  ) : (
+                    m.monto && <p><strong>Monto:</strong> {m.monto}</p>
+                  )}
                   {m.infraccion && (
                     <div className="explicacion-ia">
                       <strong>{t('por_que_falta')}</strong> {t('por_que_falta_texto')}
