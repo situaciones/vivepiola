@@ -1,3 +1,4 @@
+from django.db import transaction
 from django.utils import timezone
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
@@ -9,7 +10,7 @@ from accounts.permissions import EsAdministrador, EsComiteOAdministrador
 
 from .models import EstadoInfraccion, InfraccionCatalogo, Reglamento
 from .serializers import InfraccionCatalogoSerializer, ReglamentoSerializer
-from .utils import extraer_texto_pdf, sugerir_infracciones_desde_texto
+from .utils import normalizar_sugerencia, sugerir_infracciones_desde_texto
 
 
 class ReglamentoViewSet(viewsets.ModelViewSet):
@@ -24,13 +25,9 @@ class ReglamentoViewSet(viewsets.ModelViewSet):
         return qs.filter(condominio_id=user.condominio_id)
 
     def perform_create(self, serializer):
-        reglamento = serializer.save(condominio=self.request.user.condominio, cargado_por=self.request.user)
-        try:
-            texto = extraer_texto_pdf(reglamento.archivo_pdf)
-            reglamento.texto_extraido = texto
-            reglamento.save(update_fields=['texto_extraido'])
-        except Exception:
-            pass
+        # El texto ya se extrajo y valido en el serializer: si el PDF no era
+        # legible, aqui no se llega y no queda nada guardado.
+        serializer.save(condominio=self.request.user.condominio, cargado_por=self.request.user)
 
     @action(detail=True, methods=['post'], url_path='generar-borradores-ia')
     def generar_borradores_ia(self, request, pk=None):
@@ -48,42 +45,44 @@ class ReglamentoViewSet(viewsets.ModelViewSet):
         except Exception as exc:
             return Response({'detail': f'Error consultando el modelo de IA: {exc}'}, status=502)
 
+        if not isinstance(sugerencias, list):
+            return Response(
+                {'detail': 'El modelo de IA no devolvio una lista de infracciones.'}, status=502,
+            )
+
         creadas = []
         omitidas = []
-        for item in sugerencias:
-            codigo = str(item.get('codigo') or '').strip()
-            if not codigo:
-                continue
+        # Todo o nada: si algo falla a mitad del lote, el catalogo no queda a medias.
+        with transaction.atomic():
+            for item in sugerencias:
+                datos = normalizar_sugerencia(item)
+                if datos is None:
+                    continue
 
-            existente = InfraccionCatalogo.objects.filter(
-                condominio=reglamento.condominio, codigo=codigo,
-            ).first()
-            if existente and existente.estado != EstadoInfraccion.BORRADOR:
-                # Nunca degradar una infraccion ya confirmada (o descartada) por
-                # un humano: las multas cursadas dependen de su validez.
-                omitidas.append(codigo)
-                continue
+                existente = InfraccionCatalogo.objects.filter(
+                    condominio=reglamento.condominio, codigo=datos['codigo'],
+                ).first()
+                if existente and existente.estado != EstadoInfraccion.BORRADOR:
+                    # Nunca degradar una infraccion ya confirmada (o descartada) por
+                    # un humano: las multas cursadas dependen de su validez.
+                    omitidas.append(datos['codigo'])
+                    continue
 
-            infraccion, _ = InfraccionCatalogo.objects.update_or_create(
-                condominio=reglamento.condominio,
-                codigo=codigo,
-                defaults={
-                    'reglamento': reglamento,
-                    'descripcion': item.get('descripcion', '')[:500],
-                    'articulo_referencia': item.get('articulo_referencia', '')[:100],
-                    'monto': item.get('monto') or 0,
-                    'unidad_monto': item.get('unidad_monto', 'UF'),
-                    'gravedad': item.get('gravedad', 'LEVE'),
-                    'estado': EstadoInfraccion.BORRADOR,
-                    'generado_por_ia': True,
-                    'texto_fuente': item.get('texto_fuente', ''),
-                    'creado_por': request.user,
-                },
-            )
-            creadas.append(infraccion)
+                infraccion, _ = InfraccionCatalogo.objects.update_or_create(
+                    condominio=reglamento.condominio,
+                    codigo=datos['codigo'],
+                    defaults={
+                        **datos,
+                        'reglamento': reglamento,
+                        'estado': EstadoInfraccion.BORRADOR,
+                        'generado_por_ia': True,
+                        'creado_por': request.user,
+                    },
+                )
+                creadas.append(infraccion)
 
-        reglamento.procesado_ia = True
-        reglamento.save(update_fields=['procesado_ia'])
+            reglamento.procesado_ia = True
+            reglamento.save(update_fields=['procesado_ia'])
 
         return Response(
             {
@@ -104,9 +103,13 @@ class InfraccionCatalogoViewSet(viewsets.ModelViewSet):
         qs = InfraccionCatalogo.objects.all()
         if user.rol != Rol.SUPERADMIN:
             qs = qs.filter(condominio_id=user.condominio_id)
-        if user.rol in (Rol.COMITE, Rol.RESIDENTE):
-            # El Comite (al aprobar multas) y el residente solo deben ver el catalogo vigente.
+        if user.rol == Rol.RESIDENTE:
+            # El residente solo ve el catalogo vigente.
             qs = qs.filter(estado=EstadoInfraccion.ACTIVA)
+        # El Comite ve TODO el catalogo, incluidos los borradores: confirmarlos
+        # es su trabajo. Que solo pueda fundar una multa en una infraccion
+        # ACTIVA se garantiza al aprobar (MultaViewSet.aprobar), no escondiendole
+        # aqui los borradores que debe revisar.
         return qs
 
     def get_permissions(self):

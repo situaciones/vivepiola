@@ -94,10 +94,15 @@ export default function AdministradorDashboard() {
     setMensaje('Subiendo reglamento y extrayendo texto...');
     try {
       await client.post('/reglamentos/', formData, { headers: { 'Content-Type': 'multipart/form-data' } });
-      setMensaje('Reglamento cargado.');
+      setMensaje('Reglamento cargado y texto extraido. Ya puedes extraer las infracciones con IA.');
       cargarTodo();
-    } catch {
-      setMensaje('Error al subir el reglamento.');
+    } catch (err) {
+      // El backend explica por que el PDF no sirve (escaneado, danado, vacio).
+      // Ese mensaje es lo unico que le permite al administrador arreglarlo.
+      const datos = err.response?.data;
+      setMensaje(
+        datos?.archivo_pdf?.[0] || datos?.detail || 'Error al subir el reglamento.',
+      );
     }
     e.target.value = '';
   };
