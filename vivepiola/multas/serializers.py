@@ -5,7 +5,7 @@ from rest_framework import serializers
 
 from .models import (
     AntecedenteDescargo, CausalLevantamiento, Delegacion, Descargo, EvidenciaFoto,
-    HistorialMulta, MedidaInmediata, Multa, Ticket,
+    HistorialMulta, MedidaInmediata, ModalidadReunion, Multa, ReunionApelacion, Ticket,
 )
 
 
@@ -76,7 +76,39 @@ class AportarAntecedenteSerializer(serializers.Serializer):
     archivo_adjunto = serializers.FileField(required=False)
 
 
+class ReunionApelacionSerializer(serializers.ModelSerializer):
+    convocada_por_nombre = serializers.CharField(source='convocada_por.get_full_name', read_only=True)
+
+    class Meta:
+        model = ReunionApelacion
+        fields = (
+            'id', 'descargo', 'modalidad', 'fecha_propuesta', 'lugar_o_enlace', 'estado',
+            'convocada_por', 'convocada_por_nombre', 'confirmada_en', 'acta', 'fecha_creacion',
+        )
+        read_only_fields = ('descargo', 'estado', 'convocada_por', 'confirmada_en', 'fecha_creacion')
+
+
+class ConvocarReunionSerializer(serializers.Serializer):
+    modalidad = serializers.ChoiceField(choices=ModalidadReunion.choices)
+    fecha_propuesta = serializers.DateTimeField()
+    lugar_o_enlace = serializers.CharField(max_length=300)
+
+    def validate_fecha_propuesta(self, valor):
+        if valor <= timezone.now():
+            raise serializers.ValidationError('No se puede citar a una reunion en el pasado.')
+        return valor
+
+
+class ActaReunionSerializer(serializers.Serializer):
+    acta = serializers.CharField()
+    # Lo que el residente aporte de viva voz entra al expediente por escrito.
+    antecedentes = serializers.ListField(
+        child=serializers.CharField(), required=False, allow_empty=True,
+    )
+
+
 class DescargoSerializer(serializers.ModelSerializer):
+    reuniones = ReunionApelacionSerializer(many=True, read_only=True)
     antecedentes = AntecedenteDescargoSerializer(many=True, read_only=True)
     resolucion_vencida = serializers.BooleanField(read_only=True)
 
@@ -86,7 +118,7 @@ class DescargoSerializer(serializers.ModelSerializer):
             'id', 'multa', 'presentado_por', 'texto', 'archivo_adjunto', 'fecha_presentacion',
             'resolucion', 'resuelto_por', 'comentario_resolucion',
             'porcentaje_descuento', 'monto_original', 'fecha_resolucion',
-            'fecha_limite_resolucion', 'resolucion_vencida', 'antecedentes',
+            'fecha_limite_resolucion', 'resolucion_vencida', 'antecedentes', 'reuniones',
         )
         read_only_fields = (
             'presentado_por', 'fecha_presentacion', 'resolucion', 'resuelto_por',

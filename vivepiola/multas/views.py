@@ -22,13 +22,15 @@ from .contencion import (
     levantar_contencion, otorgar_delegacion, ratificar_contencion, revocar_delegacion,
 )
 from .models import (
-    AntecedenteDescargo, CanalNotificacion, Delegacion, Descargo, EstadoMulta, EstadoTicket,
-    EvidenciaFoto, MedidaInmediata, Multa, ResolucionDescargo, Ticket, TipoActo,
+    AntecedenteDescargo, CanalNotificacion, Delegacion, Descargo, EstadoMulta, EstadoReunion,
+    EstadoTicket, EvidenciaFoto, MedidaInmediata, Multa, ResolucionDescargo, ReunionApelacion,
+    Ticket, TipoActo,
 )
 from .sellado import procesar_evidencia, sellar_acto, verificar_expediente
 from .serializers import (
-    AntecedenteDescargoSerializer, AportarAntecedenteSerializer, AprobarMultaSerializer,
-    DelegacionSerializer, DescargoSerializer, EjecutarMedidaSerializer,
+    ActaReunionSerializer, AntecedenteDescargoSerializer, AportarAntecedenteSerializer,
+    AprobarMultaSerializer, ConvocarReunionSerializer, DelegacionSerializer, DescargoSerializer,
+    EjecutarMedidaSerializer, ReunionApelacionSerializer,
     EvidenciaFotoSerializer, LevantarMedidaSerializer, MedidaInmediataSerializer, MultaSerializer,
     OtorgarDelegacionSerializer, PresentarDescargoSerializer, RechazarMultaSerializer,
     ResolverDescargoSerializer, TicketSerializer,
@@ -36,8 +38,9 @@ from .serializers import (
 from .services import (
     ETAPA_PARA_DENUNCIANTE, actualizar_multas_vencidas, aplicar_monto_con_reincidencia,
     buscar_expediente_abierto, cursar_multa_automatica, generar_audit_trail_pdf,
-    confirmar_antes_del_cobro, notificar_multa, proponer_infraccion, proponer_resoluciones,
-    registrar_acuse, registrar_historial, resolver_descargo,
+    confirmar_antes_del_cobro, convocar_reunion, notificar_multa, proponer_infraccion,
+    proponer_resoluciones, registrar_acta_reunion, registrar_acuse, registrar_historial,
+    registrar_voto_resolucion, resolver_descargo,
 )
 
 
@@ -178,6 +181,7 @@ class MultaViewSet(viewsets.ReadOnlyModelViewSet):
         if self.action in (
             'aprobar', 'rechazar', 'resolver_descargo_view',
             'propuestas_resolucion', 'confirmar_cobro',
+            'convocar_reunion_view', 'acta_reunion',
         ):
             return [EsComite()]
         if self.action in ('notificar', 'constancia_buzon'):
@@ -466,12 +470,80 @@ class MultaViewSet(viewsets.ReadOnlyModelViewSet):
         datos = ResolverDescargoSerializer(data=request.data)
         datos.is_valid(raise_exception=True)
 
+        resolucion = datos.validated_data['resolucion']
+        comentario = datos.validated_data.get('comentario', '')
+        porcentaje = datos.validated_data.get('porcentaje_descuento')
+
+        # Con quorum 1 resuelve quien entre primero, como siempre. Con 2 o mas,
+        # la comunidad exige acuerdo: los votos se acumulan y solo cuando
+        # coinciden en la MISMA salida se aplica.
+        quorum = multa.condominio.quorum_resolucion_apelacion
+        if quorum > 1:
+            _, completo = registrar_voto_resolucion(
+                multa.descargo, request.user, resolucion,
+                porcentaje_descuento=porcentaje, comentario=comentario,
+            )
+            if not completo:
+                coincidentes = multa.descargo.votos.filter(
+                    resolucion=resolucion, porcentaje_descuento=porcentaje,
+                ).count()
+                return Response({
+                    'detail': (
+                        f'Tu voto quedo sellado. Faltan {max(quorum - coincidentes, 0)} '
+                        f'voto(s) coincidentes para resolver.'
+                    ),
+                    'votos_coincidentes': coincidentes,
+                    'quorum_requerido': quorum,
+                    'resuelta': False,
+                }, status=202)
+
         resolver_descargo(
-            multa.descargo, datos.validated_data['resolucion'], request.user,
-            datos.validated_data.get('comentario', ''),
-            porcentaje_descuento=datos.validated_data.get('porcentaje_descuento'),
+            multa.descargo, resolucion, request.user, comentario,
+            porcentaje_descuento=porcentaje,
         )
         return Response(MultaSerializer(multa).data)
+
+    @action(detail=True, methods=['post'], url_path='convocar-reunion')
+    def convocar_reunion_view(self, request, pk=None):
+        """
+        Cita al residente a exponer su caso. Extiende el plazo de resolucion:
+        escuchar mejor no puede contar como demora del organo.
+        """
+        multa = self.get_object()
+        if not hasattr(multa, 'descargo'):
+            return Response({'detail': 'Este expediente no tiene apelacion presentada.'}, status=400)
+        if multa.descargo.resolucion != ResolucionDescargo.PENDIENTE:
+            return Response({'detail': 'La apelacion ya fue resuelta.'}, status=400)
+
+        datos = ConvocarReunionSerializer(data=request.data)
+        datos.is_valid(raise_exception=True)
+
+        reunion = convocar_reunion(
+            multa.descargo, request.user,
+            datos.validated_data['modalidad'],
+            datos.validated_data['fecha_propuesta'],
+            datos.validated_data['lugar_o_enlace'],
+        )
+        return Response(ReunionApelacionSerializer(reunion).data, status=201)
+
+    @action(detail=True, methods=['post'], url_path='acta-reunion')
+    def acta_reunion(self, request, pk=None):
+        """Cierra la reunion dejando por escrito lo que se expuso."""
+        multa = self.get_object()
+        reunion = ReunionApelacion.objects.filter(
+            descargo__multa=multa, estado__in=(EstadoReunion.PROPUESTA, EstadoReunion.CONFIRMADA),
+        ).order_by('-fecha_propuesta').first()
+        if reunion is None:
+            return Response({'detail': 'No hay una reunion pendiente en este expediente.'}, status=400)
+
+        datos = ActaReunionSerializer(data=request.data)
+        datos.is_valid(raise_exception=True)
+
+        registrar_acta_reunion(
+            reunion, request.user, datos.validated_data['acta'],
+            antecedentes=datos.validated_data.get('antecedentes', []),
+        )
+        return Response(ReunionApelacionSerializer(reunion).data)
 
     @action(detail=True, methods=['get'], url_path='verificar-integridad')
     def verificar_integridad(self, request, pk=None):

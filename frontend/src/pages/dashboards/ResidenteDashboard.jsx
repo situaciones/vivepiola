@@ -197,6 +197,20 @@ export default function ResidenteDashboard() {
                       <p><strong>{t('tu_descargo')}</strong> {m.descargo.texto}</p>
                       <p><strong>Resolucion:</strong> <EstadoBadge estado={m.descargo.resolucion} /> {m.descargo.comentario_resolucion}</p>
 
+                      {m.descargo.reuniones?.filter((r) => r.estado !== 'CANCELADA').map((r) => (
+                        <div key={r.id} className="aviso-reunion">
+                          <strong>
+                            {r.estado === 'REALIZADA' ? 'Reunion realizada' : 'Te citaron a una reunion'}
+                          </strong>
+                          <p>
+                            {r.modalidad === 'ONLINE' ? 'En linea' : 'Presencial'}
+                            {' · '}
+                            {new Date(r.fecha_propuesta).toLocaleString('es-CL')}
+                          </p>
+                          <p>{r.acta || r.lugar_o_enlace}</p>
+                        </div>
+                      ))}
+
                       {m.descargo.antecedentes?.length > 0 && (
                         <ul className="lista-antecedentes">
                           {m.descargo.antecedentes.map((a) => (

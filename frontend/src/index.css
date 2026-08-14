@@ -752,3 +752,13 @@ textarea { resize: vertical; }
 /* Antecedentes sumados a una apelacion ya presentada. */
 .lista-antecedentes { margin: 8px 0 0; padding-left: 18px; }
 .lista-antecedentes li { font-size: .88rem; line-height: 1.5; color: #475569; margin-bottom: 4px; }
+
+/* Citacion a reunion, tal como la ve el residente en su multa. */
+.aviso-reunion {
+  margin-top: 10px;
+  padding: 10px 12px;
+  background: #f5f3ff;
+  border-left: 3px solid #7c3aed;
+  border-radius: 0 8px 8px 0;
+}
+.aviso-reunion p { margin: 4px 0 0; font-size: .88rem; color: #475569; }

@@ -896,6 +896,112 @@ def proponer_resoluciones(multa):
     return opciones
 
 
+def convocar_reunion(descargo, usuario, modalidad, fecha, lugar_o_enlace):
+    """
+    Cita al residente a exponer su caso, en linea o presencialmente.
+
+    Convocar extiende el plazo que tiene el Comite para resolver hasta despues
+    de la reunion: de otro modo, citar a alguien cerca del vencimiento seria
+    imposible, o quedaria contado como incumplimiento del propio organo que
+    esta tratando de escuchar mejor.
+    """
+    from .models import EstadoReunion, ReunionApelacion, TipoActo
+
+    reunion = ReunionApelacion.objects.create(
+        descargo=descargo, modalidad=modalidad, fecha_propuesta=fecha,
+        lugar_o_enlace=lugar_o_enlace, convocada_por=usuario,
+        estado=EstadoReunion.PROPUESTA,
+    )
+
+    margen = fecha + timedelta(days=descargo.multa.condominio.plazo_resolucion_dias)
+    if descargo.fecha_limite_resolucion is None or descargo.fecha_limite_resolucion < margen:
+        descargo.fecha_limite_resolucion = margen
+        descargo.save(update_fields=['fecha_limite_resolucion'])
+
+    multa = descargo.multa
+    registrar_historial(
+        multa, multa.estado, multa.estado, usuario,
+        f'Se cito al residente a una reunion {modalidad.lower()} el '
+        f'{fecha:%d-%m-%Y a las %H:%M}.',
+    )
+    sellar_acto(multa, TipoActo.REUNION_CONVOCADA, usuario, extra={
+        'modalidad': modalidad,
+        'fecha_propuesta': fecha.isoformat(),
+        'lugar_o_enlace': lugar_o_enlace,
+        'nueva_fecha_limite_resolucion': descargo.fecha_limite_resolucion.isoformat(),
+    })
+    return reunion
+
+
+def registrar_acta_reunion(reunion, usuario, acta, antecedentes=()):
+    """
+    Cierra la reunion dejando por escrito lo que se expuso.
+
+    Lo que el residente aporte ahi entra al expediente como antecedente de
+    origen REUNION: una explicacion dada de viva voz que no queda escrita es,
+    para efectos del expediente, una explicacion que no existio.
+    """
+    from .models import AntecedenteDescargo, EstadoReunion, OrigenAntecedente, TipoActo
+
+    reunion.estado = EstadoReunion.REALIZADA
+    reunion.acta = acta
+    reunion.save(update_fields=['estado', 'acta'])
+
+    for texto in antecedentes:
+        if texto and texto.strip():
+            AntecedenteDescargo.objects.create(
+                descargo=reunion.descargo, texto=texto.strip(),
+                origen=OrigenAntecedente.REUNION, aportado_por=usuario,
+            )
+
+    multa = reunion.descargo.multa
+    registrar_historial(
+        multa, multa.estado, multa.estado, usuario,
+        f'Reunion {reunion.modalidad.lower()} realizada y acta registrada.',
+    )
+    sellar_acto(multa, TipoActo.REUNION_REALIZADA, usuario, extra={
+        'modalidad': reunion.modalidad,
+        'acta': acta,
+        'antecedentes_sumados': len([a for a in antecedentes if a and a.strip()]),
+    })
+    return reunion
+
+
+def registrar_voto_resolucion(descargo, usuario, resolucion, porcentaje_descuento=None, comentario=''):
+    """
+    Registra el voto de un miembro del Comite y devuelve (voto, alcanzo_quorum).
+
+    Solo cuentan como acuerdo los votos por la MISMA salida: tres personas que
+    votan cosas distintas no resolvieron nada. Un mismo actor no vota dos veces.
+    """
+    from .models import TipoActo, VotoResolucion
+
+    voto, creado = VotoResolucion.objects.get_or_create(
+        descargo=descargo, actor=usuario,
+        defaults={
+            'resolucion': resolucion,
+            'porcentaje_descuento': porcentaje_descuento,
+            'comentario': comentario,
+        },
+    )
+    if not creado:
+        return voto, False
+
+    quorum = descargo.multa.condominio.quorum_resolucion_apelacion
+    coincidentes = descargo.votos.filter(
+        resolucion=resolucion, porcentaje_descuento=porcentaje_descuento,
+    ).count()
+
+    multa = descargo.multa
+    sellar_acto(multa, TipoActo.VOTO_RESOLUCION, usuario, extra={
+        'resolucion': resolucion,
+        'porcentaje_descuento': porcentaje_descuento,
+        'votos_coincidentes': coincidentes,
+        'quorum_requerido': quorum,
+    })
+    return voto, coincidentes >= quorum
+
+
 def resolver_descargo(descargo, resolucion, usuario, comentario='', porcentaje_descuento=None):
     """
     El Comite resuelve la apelacion con tres desenlaces posibles (Ley 21.442):

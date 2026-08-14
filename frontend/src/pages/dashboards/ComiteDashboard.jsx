@@ -195,7 +195,16 @@ export default function ComiteDashboard() {
     const comentario = prompt(`Comentario de la resolucion (${resolucion}):`) || '';
     const cuerpo = { resolucion, comentario };
     if (porcentaje_descuento) cuerpo.porcentaje_descuento = porcentaje_descuento;
-    await client.post(`/multas/${activa.id}/resolver-descargo/`, cuerpo);
+    const res = await client.post(`/multas/${activa.id}/resolver-descargo/`, cuerpo);
+
+    // 202 = el voto quedo sellado pero la comunidad exige acuerdo y todavia no
+    // se reune. El caso sigue abierto, asi que no se cierra el panel.
+    if (res.status === 202) {
+      setMensaje(res.data.detail);
+      cargarTodo();
+      return;
+    }
+
     setMensaje(
       // eslint-disable-next-line no-nested-ternary
       porcentaje_descuento
@@ -206,6 +215,40 @@ export default function ComiteDashboard() {
     );
     setSeleccionId(null);
     cargarTodo();
+  };
+
+  // Un formulario no siempre alcanza: hay explicaciones que se entienden
+  // hablando. Citar extiende el plazo que tiene el Comite para resolver.
+  const convocarReunion = async (modalidad) => {
+    const fecha = prompt('Fecha y hora de la reunion (AAAA-MM-DD HH:MM):');
+    if (!fecha) return;
+    const lugar = prompt(
+      modalidad === 'ONLINE' ? 'Enlace de la videollamada:' : 'Lugar de la reunion:',
+    );
+    if (!lugar) return;
+    try {
+      await client.post(`/multas/${activa.id}/convocar-reunion/`, {
+        modalidad,
+        fecha_propuesta: new Date(fecha.replace(' ', 'T')).toISOString(),
+        lugar_o_enlace: lugar,
+      });
+      setMensaje('Reunion convocada. El plazo para resolver se extendio hasta despues de la cita.');
+      cargarTodo();
+    } catch (err) {
+      setMensaje(err.response?.data?.detail || 'No se pudo convocar la reunion.');
+    }
+  };
+
+  const registrarActa = async () => {
+    const acta = prompt('Que se expuso en la reunion:');
+    if (!acta) return;
+    try {
+      await client.post(`/multas/${activa.id}/acta-reunion/`, { acta });
+      setMensaje('Acta registrada: lo conversado quedo en el expediente.');
+      cargarTodo();
+    } catch (err) {
+      setMensaje(err.response?.data?.detail || 'No se pudo registrar el acta.');
+    }
   };
 
   // Ultima confirmacion antes del cobro. No se reabre el fondo del caso: se
@@ -530,6 +573,39 @@ export default function ComiteDashboard() {
                               </ul>
                             </div>
                           )}
+
+                          {activa.descargo?.reuniones?.length > 0 && (
+                            <div className="propuestas-resolucion">
+                              <h4>Reuniones con el residente</h4>
+                              <ul>
+                                {activa.descargo.reuniones.map((r) => (
+                                  <li key={r.id}>
+                                    <b>
+                                      {r.modalidad === 'ONLINE' ? 'En linea' : 'Presencial'}
+                                      {' · '}
+                                      {new Date(r.fecha_propuesta).toLocaleString('es-CL')}
+                                      {' · '}{r.estado}
+                                    </b>
+                                    <span>{r.acta || r.lugar_o_enlace}</span>
+                                  </li>
+                                ))}
+                              </ul>
+                            </div>
+                          )}
+
+                          <div className="acciones">
+                            <button className="btn btn-secundario" onClick={() => convocarReunion('ONLINE')}>
+                              Citar a reunion en linea
+                            </button>
+                            <button className="btn btn-secundario" onClick={() => convocarReunion('PRESENCIAL')}>
+                              Citar a reunion presencial
+                            </button>
+                            {activa.descargo?.reuniones?.some((r) => r.estado !== 'REALIZADA') && (
+                              <button className="btn btn-secundario" onClick={registrarActa}>
+                                Registrar acta de la reunion
+                              </button>
+                            )}
+                          </div>
 
                           <div className="acciones">
                             <button className="btn btn-exito" onClick={() => resolverDescargo('ACEPTADO')}>

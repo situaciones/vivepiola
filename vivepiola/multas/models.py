@@ -246,6 +246,72 @@ class AntecedenteDescargo(models.Model):
         return f'Antecedente de la apelacion #{self.descargo_id} ({self.origen})'
 
 
+class ModalidadReunion(models.TextChoices):
+    ONLINE = 'ONLINE', 'En linea'
+    PRESENCIAL = 'PRESENCIAL', 'Presencial'
+
+
+class EstadoReunion(models.TextChoices):
+    PROPUESTA = 'PROPUESTA', 'Propuesta, esperando al residente'
+    CONFIRMADA = 'CONFIRMADA', 'Confirmada por el residente'
+    REALIZADA = 'REALIZADA', 'Realizada'
+    CANCELADA = 'CANCELADA', 'Cancelada'
+
+
+class ReunionApelacion(models.Model):
+    """
+    Instancia para que el residente exponga su caso en persona o en linea.
+
+    Un formulario no siempre alcanza: hay explicaciones que se entienden
+    hablando. Convocarla extiende el plazo que tiene el Comite para resolver,
+    porque de otro modo citar a alguien cerca del vencimiento seria imposible
+    o quedaria como incumplimiento del propio organo.
+    """
+
+    descargo = models.ForeignKey(Descargo, on_delete=models.CASCADE, related_name='reuniones')
+    modalidad = models.CharField(max_length=20, choices=ModalidadReunion.choices)
+    fecha_propuesta = models.DateTimeField()
+    # Sala de videollamada si es en linea, o el lugar fisico si es presencial.
+    lugar_o_enlace = models.CharField(max_length=300)
+    estado = models.CharField(max_length=20, choices=EstadoReunion.choices, default=EstadoReunion.PROPUESTA)
+    convocada_por = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, related_name='reuniones_convocadas',
+    )
+    confirmada_en = models.DateTimeField(null=True, blank=True)
+    acta = models.TextField(blank=True, help_text='Lo que se expuso en la reunion.')
+    fecha_creacion = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['fecha_propuesta']
+
+    def __str__(self):
+        return f'Reunion {self.modalidad} de la apelacion #{self.descargo_id} ({self.estado})'
+
+
+class VotoResolucion(models.Model):
+    """
+    Voto de un miembro del Comite sobre como resolver una apelacion.
+
+    Solo entra en juego cuando la comunidad exige quorum mayor a uno: ahi la
+    resolucion deja de ser de quien llegue primero y pasa a necesitar acuerdo.
+    Un mismo actor no puede votar dos veces la misma apelacion.
+    """
+
+    descargo = models.ForeignKey(Descargo, on_delete=models.CASCADE, related_name='votos')
+    actor = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    resolucion = models.CharField(max_length=20, choices=ResolucionDescargo.choices)
+    porcentaje_descuento = models.PositiveSmallIntegerField(null=True, blank=True)
+    comentario = models.TextField(blank=True)
+    ts = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['ts']
+        unique_together = ('descargo', 'actor')
+
+    def __str__(self):
+        return f'Voto {self.resolucion} de {self.actor} en la apelacion #{self.descargo_id}'
+
+
 class HistorialMulta(models.Model):
     """Bitacora inmutable de cada cambio de estado, para el debido proceso."""
 
@@ -320,6 +386,9 @@ class TipoActo(models.TextChoices):
     DESCARGO_PRESENTADO = 'DESCARGO_PRESENTADO', 'Descargo presentado'
     ACUSE_RECIBO = 'ACUSE_RECIBO', 'Acuse de recibo de la notificacion'
     ANTECEDENTE_APORTADO = 'ANTECEDENTE_APORTADO', 'Antecedente sumado a la apelacion'
+    REUNION_CONVOCADA = 'REUNION_CONVOCADA', 'Reunion convocada con el residente'
+    REUNION_REALIZADA = 'REUNION_REALIZADA', 'Reunion realizada'
+    VOTO_RESOLUCION = 'VOTO_RESOLUCION', 'Voto del Comite sobre la apelacion'
     RESOLUCION_DESCARGO = 'RESOLUCION_DESCARGO', 'Resolucion del descargo'
     FIRMEZA_AUTOMATICA = 'FIRMEZA_AUTOMATICA', 'Firmeza automatica por vencimiento de plazo'
     CONFIRMACION_PREVIA_COBRO = 'CONFIRMACION_PREVIA_COBRO', 'Confirmacion antes del cobro'

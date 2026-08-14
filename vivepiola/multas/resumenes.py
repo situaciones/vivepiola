@@ -89,7 +89,21 @@ def resumen_para_administracion(condominio):
     limite_urgente = timezone.now() + timedelta(days=DIAS_URGENCIA)
     urgentes = novedades.filter(fecha_limite_respuesta__lte=limite_urgente).count()
 
+    # Las apelaciones que el Comite dejo vencer tambien se le avisan a la
+    # administracion: si el organo que decide no responde, alguien tiene que
+    # empujarlo. Una apelacion sin respuesta no se resuelve sola.
+    apelaciones_vencidas = Multa.objects.filter(
+        condominio=condominio, estado=EstadoMulta.CON_DESCARGO,
+        descargo__resolucion=ResolucionDescargo.PENDIENTE,
+        descargo__fecha_limite_resolucion__lt=timezone.now(),
+    ).count()
+
     puntos = []
+    if apelaciones_vencidas:
+        puntos.append(
+            f'{_linea(apelaciones_vencidas, "apelacion", "apelaciones")} que el Comite '
+            f'no ha respondido dentro del plazo: recuerdaselo'
+        )
     if por_notificar:
         puntos.append(f'{_linea(por_notificar, "multa aprobada", "multas aprobadas")} por notificar')
     if urgentes:
@@ -107,8 +121,8 @@ def resumen_para_administracion(condominio):
     return {
         'rol': Rol.ADMINISTRADOR,
         'puntos': puntos,
-        'urgente': bool(urgentes),
-        'total': por_notificar + por_responder + firmes,
+        'urgente': bool(urgentes or apelaciones_vencidas),
+        'total': por_notificar + por_responder + firmes + apelaciones_vencidas,
     }
 
 

@@ -62,6 +62,12 @@ class Condominio(models.Model):
         default=15,
         help_text='Dias corridos que tiene el Comite para resolver una apelacion presentada.',
     )
+    # Con 1 resuelve quien entre primero, como hasta ahora. Con 2 o mas, la
+    # resolucion exige acuerdo: los votos se acumulan hasta reunir el quorum.
+    quorum_resolucion_apelacion = models.PositiveSmallIntegerField(
+        default=1,
+        help_text='Cuantos miembros del Comite deben coincidir para resolver una apelacion.',
+    )
     # Codigo Unico de Comunidad: cualquier vecino puede registrarse via Google
     # con este codigo y queda PENDIENTE de que el Administrador le asigne rol.
     codigo_comunidad = models.CharField(max_length=12, unique=True, null=True, blank=True, db_index=True)
