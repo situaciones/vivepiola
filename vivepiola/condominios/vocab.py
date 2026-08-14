@@ -77,11 +77,16 @@ FRASES_DEFAULT = {
     ),
     # El plazo no corre desde el envio sino desde el acuse, asi que el correo
     # tiene que pedirlo de forma explicita y decir para que sirve.
+    # El enlace no es solo para acusar recibo: es el buzon del residente, donde
+    # esta todo su caso. Anunciarlo como "confirme aqui" desperdiciaba la unica
+    # puerta que tiene quien no usa la app.
     'notificacion_pide_acuse': (
-        'IMPORTANTE: confirme que recibio esta notificacion en el siguiente enlace. '
-        'El plazo para defenderse empieza a correr recien cuando usted confirma, '
-        'de modo que nadie pierde su defensa por un correo que no llego a tiempo:\n'
-        '{enlace}'
+        'IMPORTANTE: en este enlace esta todo su caso. Ahi puede confirmar que lo '
+        'recibio, ver la norma y la evidencia, descargar este documento las veces '
+        'que necesite y presentar su apelacion, sin crear ninguna cuenta:\n'
+        '{enlace}\n\n'
+        'El plazo para defenderse empieza a correr recien cuando usted confirma, de '
+        'modo que nadie pierde su defensa por un correo que no llego a tiempo.'
     ),
     'notificacion_plazo_sin_acuse': (
         'Dispondra de {dias} dias corridos para presentar sus descargos, contados '

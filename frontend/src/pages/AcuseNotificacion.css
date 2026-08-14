@@ -108,3 +108,63 @@
   color: #64748b;
   text-align: left;
 }
+
+/* Buzon: documento, apelacion y estado. Se agrega al diseño del acuse porque
+   es la misma pagina — el residente no deberia tener que ir a otra parte. */
+
+.acuse-norma {
+  font-style: italic;
+  color: #475569;
+}
+
+.acuse-documento {
+  display: block;
+  margin: 0 0 24px;
+  padding: 14px;
+  text-align: center;
+  font-weight: 600;
+  color: #0e7490;
+  background: #ecfeff;
+  border: 1px solid #a5f3fc;
+  border-radius: 10px;
+  text-decoration: none;
+}
+
+.acuse-boton-secundario {
+  margin-top: 12px;
+  background: #fff;
+  color: #7c3aed;
+  border: 2px solid #7c3aed;
+}
+
+.acuse-apelacion { text-align: left; margin-top: 8px; }
+
+.acuse-apelacion label {
+  display: block;
+  margin-bottom: 6px;
+  font-weight: 600;
+  color: #0f172a;
+}
+
+.acuse-apelacion textarea {
+  width: 100%;
+  padding: 12px;
+  font-size: 1rem;
+  font-family: inherit;
+  border: 1px solid #cbd5e1;
+  border-radius: 10px;
+  margin-bottom: 12px;
+  box-sizing: border-box;
+}
+
+.acuse-apelacion-hecha {
+  margin: 0 0 20px;
+  padding: 14px 16px;
+  text-align: left;
+  background: #f5f3ff;
+  border-left: 4px solid #7c3aed;
+  border-radius: 0 10px 10px 0;
+}
+
+.acuse-apelacion-hecha strong { color: #6d28d9; }
+.acuse-apelacion-hecha p { margin: 6px 0 0; font-size: .95rem; line-height: 1.5; color: #475569; }

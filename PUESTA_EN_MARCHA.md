@@ -21,6 +21,7 @@ en las que son secretas.
 | **DigitalOcean Spaces** | Guardar evidencias, PDFs y reglamentos | US$5/mes | 🔴 Sí |
 | **Correo (Brevo o similar)** | Notificación legal con PDF | US$0/mes | 🔴 Sí |
 | **Anthropic** | Leer el reglamento y clasificar denuncias | ~US$5 una vez | 🟠 Degrada |
+| **Gemini** | Mirar las fotos y videos de la evidencia | ~US$5 una vez | 🟠 Degrada |
 | **Twilio WhatsApp** | Avisos con link | ~US$2–6/mes | 🟡 Opcional |
 | **Google OAuth** | Ingreso con Google | US$0 | 🟡 Opcional |
 
@@ -158,7 +159,7 @@ expediente y la sigue viendo una persona. Solo que la IA no la mira.
 
 ---
 
-### 1.4 Twilio WhatsApp — 🟡 opcional
+### 1.5 Twilio WhatsApp — 🟡 opcional
 
 **Por qué:** el aviso que hace que el correo se lea, con link directo al caso.
 
@@ -185,7 +186,7 @@ TWILIO_WHATSAPP_FROM=whatsapp:+14155238886
 
 ---
 
-### 1.5 Google OAuth — 🟡 opcional
+### 1.6 Google OAuth — 🟡 opcional
 
 **Por qué:** que cada persona entre con un toque, sin inventar contraseñas.
 Sin esto, se entra con usuario y contraseña normal.
@@ -215,7 +216,7 @@ VITE_GOOGLE_CLIENT_ID=....apps.googleusercontent.com
 
 ---
 
-### 1.6 Variables que ya deberías tener
+### 1.7 Variables que ya deberías tener
 
 ```
 SECRET_KEY=(cadena larga y aleatoria)       🔒 Encrypt

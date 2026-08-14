@@ -83,10 +83,12 @@ class NotificacionFehacienteTestCase(APITestCase):
         self.assertEqual(multa.estado, EstadoMulta.NOTIFICADA)
         self.assertIsNone(multa.fecha_acuse)
         self.assertIsNone(multa.fecha_limite_descargo)
+        cuerpo = mail.outbox[0].body.lower()
         self.assertIn(
-            'confirme que recibio', mail.outbox[0].body.lower(),
+            'confirmar que lo recibio', cuerpo,
             'el correo tiene que pedir el acuse, que es lo que hace correr el plazo',
         )
+        self.assertIn('presentar su apelacion', cuerpo, 'y ofrecer la defensa en el mismo lugar')
 
     def test_sin_acuse_la_multa_no_puede_quedar_firme_sola(self):
         """La proteccion central: nadie queda sancionado por un correo que no leyo."""

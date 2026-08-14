@@ -478,17 +478,19 @@ def enviar_notificacion_whatsapp(multa):
     c = multa.condominio
     dias = multa.plazo_descargo_dias or c.plazo_descargo_dias
     limite = multa.fecha_limite_descargo.strftime('%d-%m-%Y') if multa.fecha_limite_descargo else ''
-    # Link directo al expediente: el aviso sirve para actuar, no solo para
-    # enterarse. No lleva sesion en la URL a proposito (los mensajes se
-    # reenvian): al abrirlo se pide identificarse y recien ahi se muestra.
-    enlace = f'{settings.FRONTEND_URL.rstrip("/")}/m/{multa.id}'
+    # Lleva al mismo buzon firmado que el correo. Antes apuntaba a /m/<id>, que
+    # exige iniciar sesion: justo la barrera que deja fuera a quien no usa la
+    # app, que es la mayoria de las personas a las que hay que alcanzar por
+    # WhatsApp. El enlace es unico por multa y no se puede reutilizar para otra.
+    enlace = enlace_acuse(multa)
     cuerpo = (
         f'{c.nombre}: se registro una multa (#{multa.id}) para la unidad '
         f'{multa.unidad.identificador}. La notificacion formal, con su documento, '
         f'esta en su correo registrado.\n\n'
         f'Tiene {dias} dias corridos para presentar su descargo'
         f'{f" (hasta el {limite})" if limite else ""}.\n\n'
-        f'Ver el detalle y responder: {enlace}'
+        f'Aqui puede ver el caso completo, descargar el documento y apelar, sin '
+        f'crear cuenta: {enlace}'
     )
     destino = telefono if telefono.startswith('whatsapp:') else f'whatsapp:{telefono}'
     resp = requests.post(

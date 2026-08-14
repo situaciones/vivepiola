@@ -189,13 +189,20 @@ class CapacidadesNuevasTestCase(APITestCase):
         TWILIO_WHATSAPP_FROM='whatsapp:+14155238886',
         FRONTEND_URL='https://vivepiola.cl',
     )
-    def test_whatsapp_lleva_link_directo_al_expediente(self):
-        """El aviso sirve para actuar: debe traer el link a esa multa, sin sesion en la URL."""
+    def test_whatsapp_lleva_al_buzon_del_residente(self):
+        """
+        El aviso sirve para actuar. Antes apuntaba a /m/<id>, que exige iniciar
+        sesion: justo la barrera que deja fuera a quien hay que alcanzar por
+        WhatsApp. Ahora lleva al buzon firmado, donde puede ver el caso,
+        descargar el documento y apelar sin cuenta.
+        """
         with patch('multas.services.requests.post', return_value=Mock(status_code=201)) as mock_post:
             multa = self._aprobar_y_notificar(self._denunciar())
 
         cuerpo = mock_post.call_args.kwargs['data']['Body']
-        self.assertIn(f'https://vivepiola.cl/m/{multa.id}', cuerpo)
+        self.assertIn('https://vivepiola.cl/acuse/', cuerpo)
+        self.assertNotIn(f'/m/{multa.id}', cuerpo)
+        self.assertIn('apelar', cuerpo)
         # El link no debe cargar credenciales: los mensajes se reenvian.
-        for filtracion in ('token', 'access', 'jwt', 'Bearer'):
+        for filtracion in ('access', 'jwt', 'Bearer'):
             self.assertNotIn(filtracion, cuerpo)
