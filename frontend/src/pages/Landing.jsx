@@ -14,14 +14,12 @@ const FLUJO = [
     desc: 'Se carga la nomina de residentes (planilla tipo Excel) junto con todos los reglamentos aplicables: copropiedad, estacionamientos, uso de espacios comunes y mas.' },
   { Icon: Flag, actor: 'Denunciante', corto: 'Ingreso de la denuncia', titulo: 'Ingreso de la denuncia',
     desc: 'Un conserje, un miembro del comite o un vecino —con opcion de mantener el anonimato— ingresa el reporte de la infraccion al sistema.' },
-  { Icon: Sparkles, actor: 'Nosotros', corto: 'Analizamos y proponemos', titulo: 'Analizamos y proponemos',
-    desc: 'Cruzamos los datos de la denuncia con los reglamentos: identificamos los articulos infringidos, tipificamos la falta, calculamos el monto y redactamos una propuesta formal de multa.' },
-  { Icon: Gavel, actor: 'Comite', corto: 'Primer filtro: el comite', titulo: 'Primer filtro: el comite revisa',
-    desc: 'El comite revisa la propuesta que preparamos. Puede rechazarla (el proceso termina) o aprobarla. Si la aprueba, emitimos la notificacion al residente.' },
+  { Icon: Sparkles, actor: 'Nosotros', corto: 'Analizamos y notificamos', titulo: 'Analizamos y notificamos',
+    desc: 'Cruzamos los datos de la denuncia con los reglamentos: identificamos los articulos infringidos, tipificamos la falta, calculamos el monto y emitimos la notificacion. Sin reuniones previas ni esperas: el residente se entera mientras el hecho todavia esta fresco.' },
   { Icon: MessageSquareText, actor: 'Residente', corto: 'Derecho a apelacion', titulo: 'Derecho a apelacion',
-    desc: 'El residente recibe la notificacion y tiene un plazo de 5 dias para presentar su apelacion a traves de los canales integrados: app, correo o WhatsApp.' },
+    desc: 'El residente recibe la notificacion con el articulo aplicado y la evidencia, y tiene un plazo de 5 dias para apelar por los canales integrados: app, correo o WhatsApp. Su defensa se ejerce sobre un caso concreto, no sobre una propuesta.' },
   { Icon: Scale, actor: 'Comite', corto: 'Resolucion del comite', titulo: 'Resolucion del comite',
-    desc: 'El comite evalua la apelacion. Puede mantener la multa intacta, aplicar un porcentaje de descuento (30%, 50%) o condonarla dejandola en cero.' },
+    desc: 'Es la unica intervencion del comite, y solo ocurre cuando alguien apela. Puede mantener la multa intacta, aplicar un porcentaje de descuento (30%, 50%) o condonarla dejandola en cero. Si nadie apela en el plazo, la multa queda firme sola.' },
   { Icon: Wallet, actor: 'Administrador', corto: 'Traspaso a cobro', titulo: 'Traspaso a cobro',
     desc: 'Si la resolucion determina que hay un monto a pagar, la instruccion pasa a la administracion para cargarla en la proxima boleta de gastos comunes.' },
   { Icon: FileText, actor: 'Sistema', corto: 'Trazabilidad e historial', titulo: 'Trazabilidad e historial',
@@ -29,9 +27,9 @@ const FLUJO = [
 ];
 
 const ACTORES = [
-  { Icon: Sparkles, nombre: 'Nosotros (VIVEPIOLA)', rol: 'Analizamos los hechos, cruzamos los reglamentos, calculamos los montos y redactamos.' },
+  { Icon: Sparkles, nombre: 'Nosotros (VIVEPIOLA)', rol: 'Analizamos los hechos, cruzamos los reglamentos, calculamos el monto y notificamos al residente.' },
   { Icon: Flag, nombre: 'Denunciante', rol: 'Ingresa el reporte inicial de la infraccion.' },
-  { Icon: Gavel, nombre: 'Comite de administracion', rol: 'Aprueba las multas y resuelve las apelaciones.' },
+  { Icon: Gavel, nombre: 'Comite de administracion', rol: 'Interviene una sola vez: resuelve las apelaciones. Deja de ser el cuello de botella.' },
   { Icon: Users, nombre: 'Residente', rol: 'Recibe notificaciones, ejerce su defensa y asume el pago.' },
   { Icon: Wallet, nombre: 'Administrador', rol: 'Ejecuta el cobro en el gasto comun, con un informe transparente.' },
 ];
@@ -39,8 +37,8 @@ const ACTORES = [
 const ROLES = [
   { cls: 'r1', Icon: Camera, nombre: 'Quien reporta', limite: 'Solo reporta', LimIcon: X,
     texto: 'Cualquiera puede levantar un caso: el personal, la administracion o un vecino, con foto.' },
-  { cls: 'r2', Icon: Gavel, nombre: 'Quien decide', limite: 'Acepta o rechaza', LimIcon: Check,
-    texto: 'El comite o la administracion, segun tu condominio, revisa la evidencia y aplica la multa segun el reglamento.' },
+  { cls: 'r2', Icon: Gavel, nombre: 'Quien resuelve', limite: 'Solo si hay apelacion', LimIcon: Check,
+    texto: 'El comite o la administracion, segun tu condominio, entra cuando el residente apela: mantiene, rebaja o condona. Una intervencion, no dos.' },
   { cls: 'r3', Icon: Mail, nombre: 'Administracion', limite: 'Ejecuta y cobra', LimIcon: Check,
     texto: 'Notifica, lleva el expediente y, cuando la multa es firme, la ingresa como obligacion economica.' },
   { cls: 'r4', Icon: Users, nombre: 'Residente', limite: 'Derecho a defensa', LimIcon: Check,
@@ -62,7 +60,7 @@ const SALVAGUARDAS = [
   { Icon: CheckCircle2, titulo: 'Nada es discrecional',
     texto: 'No hay multas porque si: validamos cada caso contra la Ley 21.442 y el reglamento de tu comunidad.' },
   { Icon: Bot, titulo: 'Filtramos lo que no corresponde',
-    texto: 'Antes de llegar a quien decide, descartamos lo que claramente no es una infraccion.' },
+    texto: 'Como no hay reunion previa, el filtro corre antes de notificar: descartamos lo que no es una infraccion y agrupamos los reportes repetidos del mismo hecho, para que nadie reciba dos multas por lo mismo.' },
   { Icon: AlertTriangle, titulo: 'Sin contacto, no hay multa',
     texto: 'Si el residente no tiene contacto registrado, el caso queda en pausa hasta poder notificar de verdad.' },
   { Icon: ShieldCheck, titulo: 'Comite, administracion y residente protegidos',
@@ -173,7 +171,8 @@ export default function Landing() {
           <div className="sec-head">
             <div className="sec-eye">El ciclo de la multa</div>
             <h2>De la denuncia al cobro, con trazabilidad total</h2>
-            <p>Ocho pasos, cada uno con su responsable. Toca una etapa para ver el detalle, o deja que avance solo.</p>
+            <p>Siete pasos, cada uno con su responsable. La denuncia llega directo al residente y el comite
+              interviene una sola vez, si hay apelacion. Toca una etapa para ver el detalle, o deja que avance solo.</p>
           </div>
           <FlujoInteractivo />
           <div className="actores">
@@ -193,7 +192,7 @@ export default function Landing() {
           <div className="sec-head">
             <div className="sec-eye">El valor central</div>
             <h2>Trazabilidad de multas, notificaciones y reclamos</h2>
-            <p>Desde el reporte hasta el cobro, cada involucrado —quien reporta, quien decide, la administracion
+            <p>Desde el reporte hasta el cobro, cada involucrado —quien reporta, quien resuelve, la administracion
               y el residente— sabe en que estado va cada caso. Esa trazabilidad es el corazon de VIVEPIOLA.</p>
           </div>
           <div className="roles">
