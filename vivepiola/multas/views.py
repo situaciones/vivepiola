@@ -31,9 +31,9 @@ from .serializers import (
     ResolverDescargoSerializer, TicketSerializer,
 )
 from .services import (
-    ETAPA_PARA_DENUNCIANTE, actualizar_multas_vencidas, buscar_expediente_abierto,
-    generar_audit_trail_pdf, notificar_multa, proponer_infraccion, registrar_historial,
-    resolver_descargo, verificar_reincidencia,
+    ETAPA_PARA_DENUNCIANTE, actualizar_multas_vencidas, aplicar_monto_con_reincidencia,
+    buscar_expediente_abierto, cursar_multa_automatica, generar_audit_trail_pdf,
+    notificar_multa, proponer_infraccion, registrar_historial, resolver_descargo,
 )
 
 
@@ -85,9 +85,10 @@ class TicketViewSet(viewsets.ModelViewSet):
             estado=EstadoTicket.CONVERTIDO,
         )
 
-        # Analisis automatico: se pre-carga la infraccion propuesta junto con su
-        # origen y fundamento, para que el Comite vea de donde salio. La multa
-        # nace EN_REVISION: la sugerencia nunca sanciona por si sola.
+        # Analisis automatico: se identifica la infraccion del catalogo vigente,
+        # con su origen y fundamento. Si el encuadre es solido, el expediente se
+        # notifica de inmediato y el residente se defiende apelando; si no, queda
+        # EN_REVISION para que lo tipifique una persona.
         sugerida, origen, confianza, fundamento = proponer_infraccion(ticket)
 
         # Varios vecinos suelen reportar el mismo hecho. Abrir un expediente por
@@ -106,7 +107,7 @@ class TicketViewSet(viewsets.ModelViewSet):
             )
             return
 
-        Multa.objects.create(
+        multa = Multa.objects.create(
             condominio=ticket.condominio,
             ticket=ticket,
             unidad=ticket.unidad,
@@ -118,6 +119,9 @@ class TicketViewSet(viewsets.ModelViewSet):
             propuesta_confianza=confianza,
             propuesta_fundamento=fundamento,
         )
+        # El comite ya no hace de filtro previo: interviene una sola vez, y solo
+        # si el residente apela. Lo que no se puede cursar solo queda EN_REVISION.
+        cursar_multa_automatica(multa, confianza)
 
     def create(self, request, *args, **kwargs):
         """
@@ -189,10 +193,18 @@ class MultaViewSet(viewsets.ReadOnlyModelViewSet):
 
     @action(detail=True, methods=['post'])
     def aprobar(self, request, pk=None):
-        """Solo el Comite puede aprobar: fija la infraccion y el monto tomados del catalogo."""
+        """
+        Tipificacion humana de un expediente que el sistema no pudo cursar solo.
+
+        Ya no es el paso normal: en el ciclo vigente la denuncia se notifica de
+        inmediato y el comite interviene una sola vez, al resolver la apelacion.
+        Aqui llegan las excepciones —el reporte no calzo con ninguna infraccion,
+        la propuesta quedo bajo el umbral de confianza, o falto el correo del
+        residente— para que no se pierdan sin que nadie las mire.
+        """
         multa = self.get_object()
         if multa.estado != EstadoMulta.EN_REVISION:
-            return Response({'detail': 'Solo se pueden aprobar expedientes en revision.'}, status=400)
+            return Response({'detail': 'Solo se pueden tipificar expedientes en revision.'}, status=400)
 
         datos = AprobarMultaSerializer(data=request.data)
         datos.is_valid(raise_exception=True)
@@ -210,28 +222,15 @@ class MultaViewSet(viewsets.ReadOnlyModelViewSet):
             return Response({'detail': 'Debe indicarse el sujeto responsable antes de aprobar.'}, status=400)
 
         estado_anterior = multa.estado
-        es_reincidencia, primera_sancion, agravante = verificar_reincidencia(multa.unidad, infraccion)
-
-        # Monto base (del catalogo o el que ajuste el Comite) con multiplicador
-        # automatico por reincidencia si el catalogo define un factor > 1.
-        monto_base = datos.validated_data.get('monto') or infraccion.monto
-        factor = infraccion.factor_reincidencia or Decimal('1.00')
-        factor_aplicado = Decimal('1.00')
-        if es_reincidencia and factor > Decimal('1.00'):
-            factor_aplicado = factor
-            monto_base = (monto_base * factor).quantize(Decimal('0.01'))
-
-        multa.infraccion = infraccion
-        multa.monto = monto_base
+        factor_aplicado = aplicar_monto_con_reincidencia(
+            multa, infraccion, monto_base=datos.validated_data.get('monto'),
+        )
         multa.estado = EstadoMulta.APROBADA
         multa.aprobada_por = request.user
         multa.fecha_aprobacion = timezone.now()
-        multa.es_reincidencia = es_reincidencia
-        multa.multa_primera_sancion = primera_sancion
-        multa.agravante_sugerido = agravante
         multa.save()
 
-        registrar_historial(multa, estado_anterior, multa.estado, request.user, 'Multa aprobada por el Comite.')
+        registrar_historial(multa, estado_anterior, multa.estado, request.user, 'Expediente tipificado por el Comite.')
         sellar_acto(multa, TipoActo.APROBACION, request.user, extra={
             'monto_aplicado': str(multa.monto),
             'factor_reincidencia_aplicado': str(factor_aplicado),

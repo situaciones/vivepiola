@@ -76,6 +76,11 @@ def _contexto_vocab_notificacion(multa):
         'termino_unidad_cap': termino(c, 'unidad_cap'),
         'termino_sujeto_cap': termino(c, 'sujeto_cap'),
         'termino_organo': termino(c, 'organo_sancionador'),
+        # El PDF no puede atribuirle al organo sancionador una aprobacion que
+        # no existio: sin aprobada_por, la multa se curso automaticamente.
+        'label_origen': termino(
+            c, 'pdf_label_organo' if multa.aprobada_por_id else 'pdf_label_organo_automatica',
+        ),
         'aviso_descargo': frase(c, 'pdf_aviso_descargo', dias=dias, fecha_limite=fecha_limite),
         'multa_num': frase(c, 'pdf_titulo', numero=multa.id),
     }
@@ -241,10 +246,13 @@ def enviar_notificacion_email(multa, pdf_bytes):
     dias = multa.plazo_descargo_dias or c.plazo_descargo_dias
 
     asunto = frase(c, 'notificacion_asunto', numero=multa.id, org_nombre=c.nombre)
+    # Sin aprobacion humana previa no se puede decir que el organo sancionador
+    # aprobo: se usa la redaccion del curse automatico.
+    clave_cuerpo = 'notificacion_cuerpo' if multa.aprobada_por_id else 'notificacion_cuerpo_automatica'
     cuerpo = '\n\n'.join([
         frase(c, 'notificacion_saludo', nombre=persona.nombre_completo),
         frase(
-            c, 'notificacion_cuerpo',
+            c, clave_cuerpo,
             org_nombre=c.nombre,
             unidad_id=multa.unidad.identificador,
             infraccion=inf.descripcion,
@@ -317,6 +325,106 @@ def enviar_notificacion_whatsapp(multa):
     return resp.status_code in (200, 201)
 
 
+def aplicar_monto_con_reincidencia(multa, infraccion, monto_base=None):
+    """
+    Fija infraccion y monto en el expediente, aplicando el agravante por
+    reincidencia de la Ley 21.442 si el catalogo define un factor mayor a 1.
+
+    Devuelve el factor efectivamente aplicado, para dejarlo sellado en el acta.
+    """
+    es_reincidencia, primera_sancion, agravante = verificar_reincidencia(multa.unidad, infraccion)
+
+    monto = monto_base if monto_base is not None else infraccion.monto
+    factor = infraccion.factor_reincidencia or Decimal('1.00')
+    factor_aplicado = Decimal('1.00')
+    if es_reincidencia and factor > Decimal('1.00'):
+        factor_aplicado = factor
+        monto = (monto * factor).quantize(Decimal('0.01'))
+
+    multa.infraccion = infraccion
+    multa.monto = monto
+    multa.es_reincidencia = es_reincidencia
+    multa.multa_primera_sancion = primera_sancion
+    multa.agravante_sugerido = agravante
+    return factor_aplicado
+
+
+def puede_cursarse_sola(multa, confianza):
+    """
+    Decide si el expediente puede notificarse sin que un humano lo tipifique.
+
+    El ciclo ya no tiene un filtro previo del comite: la denuncia va directo al
+    residente, que se defiende apelando. Para que eso sea legitimo, el encuadre
+    automatico tiene que ser solido, asi que se exige:
+
+    - una infraccion del catalogo vigente,
+    - un sujeto responsable identificado y con correo (sin contacto no hay
+      notificacion valida, y sin notificacion no hay plazo de apelacion),
+    - confianza del clasificador sobre el umbral.
+
+    El umbral por defecto (70) deja fuera al respaldo por coincidencia de
+    terminos, que tope en 60: ese respaldo existe para que el sistema no se
+    caiga sin IA, no para sancionar a alguien por calzar palabras sueltas.
+
+    Lo que no pasa este filtro no se pierde: queda EN_REVISION para que lo
+    tipifique una persona.
+    """
+    if multa.infraccion is None:
+        return False, 'el reporte no calza con ninguna infraccion del catalogo vigente'
+    persona = multa.persona_infractor
+    if persona is None:
+        return False, 'no hay un sujeto responsable identificado'
+    if not persona.correo_electronico:
+        return False, 'el sujeto responsable no tiene correo registrado'
+    if (confianza or 0) < settings.CURSE_AUTOMATICO_CONFIANZA_MINIMA:
+        return False, (
+            f'la propuesta automatica quedo en {confianza or 0} de confianza, bajo el '
+            f'minimo de {settings.CURSE_AUTOMATICO_CONFIANZA_MINIMA} para cursar sin revision'
+        )
+    return True, ''
+
+
+def cursar_multa_automatica(multa, confianza):
+    """
+    Tipifica y notifica el expediente sin intervencion humana previa.
+
+    Si algo falla al notificar (correo caido, PDF, etc.) el expediente queda
+    EN_REVISION con el motivo registrado: una falla tecnica no puede hacer
+    desaparecer una denuncia ni dejar a alguien sancionado sin enterarse.
+
+    Devuelve True solo si el residente quedo efectivamente notificado.
+    """
+    procede, motivo = puede_cursarse_sola(multa, confianza)
+    if not procede:
+        registrar_historial(
+            multa, multa.estado, multa.estado, None,
+            f'Requiere tipificacion humana: {motivo}.',
+        )
+        return False
+
+    factor = aplicar_monto_con_reincidencia(multa, multa.infraccion)
+    multa.save()
+
+    try:
+        notificar_multa(multa, usuario=None)
+    except Exception as exc:
+        registrar_historial(
+            multa, multa.estado, multa.estado, None,
+            f'No se pudo notificar automaticamente: {exc}. Queda para revision.',
+        )
+        return False
+
+    sellar_acto(multa, TipoActo.CURSE_AUTOMATICO, None, auth_metodo='sistema', extra={
+        'monto_aplicado': str(multa.monto),
+        'factor_reincidencia_aplicado': str(factor),
+        'confianza_propuesta': confianza or 0,
+        'origen_propuesta': multa.propuesta_origen,
+        'agravante_sugerido': multa.agravante_sugerido,
+        'multa_primera_sancion_id': multa.multa_primera_sancion_id,
+    })
+    return True
+
+
 def proponer_infraccion(ticket):
     """
     Analiza el reporte y propone la infraccion del catalogo ACTIVO que
@@ -370,8 +478,8 @@ ESTADOS_EXPEDIENTE_ABIERTO = (
 # monto, la infraccion ni la persona: el vecino que reporta no tiene por que
 # conocer la sancion de otra unidad.
 ETAPA_PARA_DENUNCIANTE = {
-    EstadoMulta.EN_REVISION: 'Ya fue reportado y esta en revision del comite.',
-    EstadoMulta.APROBADA: 'Ya fue reportado, el comite lo resolvio y esta por notificarse.',
+    EstadoMulta.EN_REVISION: 'Ya fue reportado y esta pendiente de tipificacion.',
+    EstadoMulta.APROBADA: 'Ya fue reportado y esta por notificarse.',
     EstadoMulta.NOTIFICADA: 'Ya fue reportado y el residente ya fue notificado.',
     EstadoMulta.CON_DESCARGO: 'Ya fue reportado y el residente presento su descargo.',
     EstadoMulta.FIRME: 'Ya fue reportado y el caso quedo cerrado.',

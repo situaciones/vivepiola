@@ -161,7 +161,7 @@ export default function AdministradorDashboard() {
         {tab === 'notificar' && (
           <>
             <PageHeader
-              titulo={`Notificar ${t('multa_plural').toLowerCase()} aprobadas`}
+              titulo={`Notificar ${t('multa_plural').toLowerCase()} tipificadas a mano`}
               subtitulo={`Genera el PDF formal y lo envia al correo registrado del ${t('residente').toLowerCase()}: ese envio es el canal legal de notificacion.`}
               stats={[{ label: 'Pendientes de notificar', valor: aprobadas.length, alerta: aprobadas.length > 0 }]}
             />
@@ -179,7 +179,7 @@ export default function AdministradorDashboard() {
                   </button>
                 </div>
               ))}
-              {aprobadas.length === 0 && <EmptyState icon={BellRing} mensaje={`No hay ${t('multa_plural').toLowerCase()} aprobadas pendientes de notificar.`} />}
+              {aprobadas.length === 0 && <EmptyState icon={BellRing} mensaje={`Nada pendiente: las ${t('multa_plural').toLowerCase()} se notifican solas al ingresar la denuncia. Aqui solo aparecen las que el Comite tuvo que tipificar a mano.`} />}
             </div>
           </>
         )}

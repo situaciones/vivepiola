@@ -39,6 +39,17 @@ FRASES_DEFAULT = {
         'una multa asociada a la {unidad} {unidad_id} por la infraccion '
         '"{infraccion}" ({articulo}).'
     ),
+    # Cuando la multa se cursa sin intervencion humana previa, la notificacion
+    # no puede decir que el organo sancionador "aprobo": nadie la aprobo. Una
+    # notificacion legal no afirma hechos que no ocurrieron; el contrapeso es
+    # el derecho a apelar, que se explica en la frase del plazo.
+    'notificacion_cuerpo_automatica': (
+        'Se le notifica que en {org_nombre} se ha cursado una multa asociada a la '
+        '{unidad} {unidad_id} por la infraccion "{infraccion}" ({articulo}), '
+        'conforme al reglamento de copropiedad vigente. La multa fue emitida '
+        'automaticamente al registrarse el reporte; si no esta de acuerdo, puede '
+        'apelar y el {organo_sancionador} resolvera.'
+    ),
     'notificacion_monto': 'Monto: {monto} {unidad_monto}',
     'notificacion_plazo': (
         'Si desea presentar descargos, dispone de un plazo de {dias} dias corridos '
@@ -56,6 +67,7 @@ FRASES_DEFAULT = {
     'pdf_label_unidad': 'Unidad',
     'pdf_label_sujeto': 'Infractor',
     'pdf_label_organo': 'Aprobada por el Comite',
+    'pdf_label_organo_automatica': 'Cursada automaticamente',
     'pdf_aviso_descargo': (
         'Usted dispone de un plazo de {dias} dias corridos desde esta notificacion, '
         'es decir, hasta el {fecha_limite}, para presentar descargos ante el '

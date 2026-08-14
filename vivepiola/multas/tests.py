@@ -98,10 +98,14 @@ class FlujoLegalTestCase(APITestCase):
     # ------------------------------------------------------------------
 
     def test_flujo_completo_hasta_exportacion(self):
+        """
+        La via de excepcion: sin IA configurada el encuadre queda bajo el umbral,
+        asi que el expediente NO se cursa solo y espera tipificacion humana.
+        """
         multa = self.crear_ticket()
         self.assertEqual(multa.estado, EstadoMulta.EN_REVISION)
 
-        # Comite aprueba
+        # Comite tipifica el expediente que el sistema no pudo cursar
         self.aprobar(multa)
         self.assertEqual(multa.estado, EstadoMulta.APROBADA)
         self.assertEqual(multa.monto, Decimal('1.00'))
@@ -143,10 +147,13 @@ class FlujoLegalTestCase(APITestCase):
         lote = LoteExportacion.objects.get(condominio=self.condominio, periodo='2026-07')
         self.assertEqual(lote.total_monto, Decimal('1.00'))
 
-        # Trazabilidad completa en el historial
-        estados = list(multa.historial.values_list('estado_nuevo', flat=True))
+        # Trazabilidad completa en el historial. La primera entrada explica por
+        # que el expediente no se curso solo: sin ese registro, un caso detenido
+        # en revision no tendria motivo visible.
+        entradas = list(multa.historial.values_list('estado_nuevo', 'comentario'))
+        self.assertIn('Requiere tipificacion humana', entradas[0][1])
         self.assertEqual(
-            estados,
+            [estado for estado, _ in entradas[1:]],
             [EstadoMulta.APROBADA, EstadoMulta.NOTIFICADA, EstadoMulta.CON_DESCARGO, EstadoMulta.FIRME],
         )
 

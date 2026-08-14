@@ -26,7 +26,7 @@
     <tr><th>Articulo / clausula</th><td>{{ multa.infraccion.articulo_referencia }}</td></tr>
     <tr><th>Monto</th><td>{{ multa.monto }} {{ multa.infraccion.unidad_monto }}</td></tr>
     <tr><th>Fecha del hecho</th><td>{{ multa.ticket.fecha_hecho|date:"d-m-Y H:i" }}</td></tr>
-    <tr><th>Aprobada por {{ voc.termino_organo }}</th><td>{{ multa.fecha_aprobacion|date:"d-m-Y H:i" }}</td></tr>
+    <tr><th>{{ voc.label_origen }}</th><td>{{ multa.fecha_aprobacion|default:multa.fecha_notificacion|date:"d-m-Y H:i" }}</td></tr>
     {% if multa.es_reincidencia %}
     <tr><th>Reincidencia</th><td>{{ multa.agravante_sugerido }}</td></tr>
     {% endif %}

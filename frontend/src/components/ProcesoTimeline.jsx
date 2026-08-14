@@ -1,10 +1,19 @@
 import { Check, X } from 'lucide-react';
 
-const PASOS_BASE = [
+/**
+ * El ciclo ya no tiene un filtro previo del comite: la denuncia se tipifica y
+ * se notifica sola. Solo cuando el sistema no puede (sin encuadre claro, sin
+ * correo) la tipifica una persona, y eso es lo que refleja el segundo paso.
+ */
+const pasosBase = (multa) => [
   { id: 'reportado', label: 'Reportado', quien: 'Fiscalizador' },
-  { id: 'revision', label: 'En revision', quien: 'Comite' },
-  { id: 'notificacion', label: 'Notificacion', quien: 'Administrador' },
-  { id: 'descargo', label: 'Descargo', quien: 'Residente' },
+  {
+    id: 'tipificacion',
+    label: 'Tipificacion',
+    quien: multa.fecha_aprobacion ? 'Comite' : 'Automatica',
+  },
+  { id: 'notificacion', label: 'Notificacion', quien: multa.notificada_por ? 'Administrador' : 'Automatica' },
+  { id: 'descargo', label: 'Apelacion', quien: 'Residente' },
   { id: 'resolucion', label: 'Resolucion', quien: 'Comite' },
   { id: 'cobro', label: 'Cobro', quien: 'Administrador' },
 ];
@@ -18,7 +27,7 @@ const fmt = (fecha) => (fecha ? new Date(fecha).toLocaleDateString('es-CL', { da
  * nunca sucederan.
  */
 function construirPasos(multa) {
-  const pasos = PASOS_BASE.map((p) => ({ ...p, estado: 'pendiente', fecha: null }));
+  const pasos = pasosBase(multa).map((p) => ({ ...p, estado: 'pendiente', fecha: null }));
   const completar = (hasta) => {
     for (let i = 0; i <= hasta; i += 1) pasos[i].estado = 'completado';
   };
@@ -36,25 +45,25 @@ function construirPasos(multa) {
       return { pasos: pasos.slice(0, 2), detenido: 'El Comite rechazo el reporte: el proceso termina aqui.' };
     case 'APROBADA':
       completar(1);
-      pasos[1].fecha = fmt(multa.fecha_aprobacion);
+      pasos[1].fecha = fmt(multa.fecha_aprobacion || multa.fecha_notificacion);
       pasos[2].estado = 'actual';
       return { pasos, detenido: null };
     case 'NOTIFICADA':
       completar(2);
-      pasos[1].fecha = fmt(multa.fecha_aprobacion);
+      pasos[1].fecha = fmt(multa.fecha_aprobacion || multa.fecha_notificacion);
       pasos[2].fecha = fmt(multa.fecha_notificacion);
       pasos[3].estado = 'actual';
       return { pasos, detenido: null };
     case 'CON_DESCARGO':
       completar(3);
-      pasos[1].fecha = fmt(multa.fecha_aprobacion);
+      pasos[1].fecha = fmt(multa.fecha_aprobacion || multa.fecha_notificacion);
       pasos[2].fecha = fmt(multa.fecha_notificacion);
       pasos[3].fecha = fmt(multa.descargo?.fecha_presentacion);
       pasos[4].estado = 'actual';
       return { pasos, detenido: null };
     case 'FIRME':
       completar(4);
-      pasos[1].fecha = fmt(multa.fecha_aprobacion);
+      pasos[1].fecha = fmt(multa.fecha_aprobacion || multa.fecha_notificacion);
       pasos[2].fecha = fmt(multa.fecha_notificacion);
       pasos[3].fecha = fmt(multa.descargo?.fecha_presentacion);
       pasos[4].fecha = fmt(multa.descargo?.fecha_resolucion);
@@ -62,18 +71,18 @@ function construirPasos(multa) {
       return { pasos, detenido: null };
     case 'EXPORTADA':
       completar(5);
-      pasos[1].fecha = fmt(multa.fecha_aprobacion);
+      pasos[1].fecha = fmt(multa.fecha_aprobacion || multa.fecha_notificacion);
       pasos[2].fecha = fmt(multa.fecha_notificacion);
       pasos[3].fecha = fmt(multa.descargo?.fecha_presentacion);
       pasos[4].fecha = fmt(multa.descargo?.fecha_resolucion);
       return { pasos, detenido: null };
     case 'ANULADA':
       completar(3);
-      pasos[1].fecha = fmt(multa.fecha_aprobacion);
+      pasos[1].fecha = fmt(multa.fecha_aprobacion || multa.fecha_notificacion);
       pasos[2].fecha = fmt(multa.fecha_notificacion);
       pasos[3].fecha = fmt(multa.descargo?.fecha_presentacion);
       pasos[4].estado = 'anulado';
-      return { pasos: pasos.slice(0, 5), detenido: 'El Comite acepto el descargo: la multa fue anulada.' };
+      return { pasos: pasos.slice(0, 5), detenido: 'El Comite acepto la apelacion: la multa fue anulada.' };
     default:
       return { pasos, detenido: null };
   }

@@ -203,6 +203,7 @@ class HistorialMulta(models.Model):
 
 
 class TipoActo(models.TextChoices):
+    CURSE_AUTOMATICO = 'CURSE_AUTOMATICO', 'Curse automatico de la multa (sin filtro previo)'
     APROBACION = 'APROBACION', 'Aprobacion de la multa'
     RECHAZO = 'RECHAZO', 'Rechazo del reporte'
     NOTIFICACION = 'NOTIFICACION', 'Notificacion al residente'

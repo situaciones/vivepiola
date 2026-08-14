@@ -90,7 +90,7 @@ class ReportesDuplicadosTestCase(APITestCase):
         self.assertTrue(respuesta.data['duplicado'])
         self.assertEqual(respuesta.data['expediente_estado'], EstadoMulta.EN_REVISION)
         self.assertEqual(respuesta.data['reportes_del_hecho'], 2)
-        self.assertIn('revision del comite', respuesta.data['mensaje'])
+        self.assertIn('pendiente de tipificacion', respuesta.data['mensaje'])
         # Quien reporta no debe enterarse del monto ni de la persona sancionada.
         cuerpo = str(respuesta.data)
         self.assertNotIn('3.00', cuerpo)

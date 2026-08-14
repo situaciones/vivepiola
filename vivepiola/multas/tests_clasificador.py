@@ -63,6 +63,10 @@ class ClasificadorTestCase(APITestCase):
         cls.comite = Usuario.objects.create_user(
             username='comite3', password='x', rol=Rol.COMITE, condominio=cls.condominio,
         )
+        cls.residente = Usuario.objects.create_user(
+            username='residente3', password='x', rol=Rol.RESIDENTE,
+            condominio=cls.condominio, persona=cls.persona,
+        )
         cls.mascotas = InfraccionCatalogo.objects.create(
             condominio=cls.condominio, codigo='MASCOTA-01',
             descripcion='Mascota sin correa en espacios comunes',
@@ -104,9 +108,10 @@ class ClasificadorTestCase(APITestCase):
         self.assertEqual(multa.propuesta_confianza, 90)
         self.assertIn('Art. 4', multa.propuesta_fundamento)
         self.assertEqual(multa.monto, Decimal('2.00'))
-        # Sigue siendo un borrador: la decision es del Comite.
-        self.assertEqual(multa.estado, EstadoMulta.EN_REVISION)
-        self.assertIsNone(multa.aprobada_por)
+        # Con 90 de confianza el encuadre es solido: se notifica de inmediato y
+        # el residente se defiende apelando, sin filtro previo del comite.
+        self.assertEqual(multa.estado, EstadoMulta.NOTIFICADA)
+        self.assertIsNone(multa.aprobada_por, 'nadie aprobo: el ciclo ya no tiene ese paso')
 
     def test_el_catalogo_enviado_solo_trae_infracciones_activas(self):
         InfraccionCatalogo.objects.create(
@@ -174,15 +179,47 @@ class ClasificadorTestCase(APITestCase):
 
     # -- Garantia: propone, no decide ----------------------------------
 
-    def test_el_comite_puede_cambiar_la_propuesta_al_aprobar(self):
+    def test_la_propuesta_de_la_ia_nunca_queda_firme_sin_defensa_posible(self):
+        """
+        Con el filtro previo eliminado, la garantia ya no es que un humano
+        apruebe antes: es que el residente siempre puede apelar y el comite
+        puede dejar la multa en cero. La IA notifica, no sanciona en definitiva.
+        """
         cliente = ClienteFalso(
             '{"codigo": "MASCOTA-01", "confianza": 80, "fundamento": "Animal suelto."}'
         )
         with self._con_cliente(cliente):
             multa = self._denunciar('El perro andaba suelto')
-        self.assertEqual(multa.infraccion_id, self.mascotas.id)
 
-        # El Comite discrepa y aprueba con otra infraccion del catalogo.
+        self.assertEqual(multa.estado, EstadoMulta.NOTIFICADA)
+        self.assertEqual(multa.infraccion_id, self.mascotas.id)
+        self.assertIsNotNone(multa.fecha_limite_descargo, 'sin plazo no hay derecho a apelar')
+
+        self.client.force_authenticate(self.residente)
+        respuesta = self.client.post(f'/api/multas/{multa.id}/descargo/', {'texto': 'No es mi perro'})
+        self.assertEqual(respuesta.status_code, 201, respuesta.data)
+
+        self.client.force_authenticate(self.comite)
+        respuesta = self.client.post(
+            f'/api/multas/{multa.id}/resolver-descargo/',
+            {'resolucion': 'ACEPTADO', 'comentario': 'La IA se equivoco de unidad'},
+        )
+        self.assertEqual(respuesta.status_code, 200, respuesta.data)
+
+        multa.refresh_from_db()
+        self.assertEqual(multa.estado, EstadoMulta.ANULADA)
+        # El fundamento de la propuesta original queda en el expediente.
+        self.assertIn('Animal suelto', multa.propuesta_fundamento)
+
+    def test_el_comite_cambia_la_propuesta_cuando_le_toca_tipificar(self):
+        """Con poca confianza no se cursa solo, y ahi el comite sigue mandando."""
+        cliente = ClienteFalso(
+            '{"codigo": "MASCOTA-01", "confianza": 40, "fundamento": "Podria ser un animal."}'
+        )
+        with self._con_cliente(cliente):
+            multa = self._denunciar('El perro andaba suelto')
+        self.assertEqual(multa.estado, EstadoMulta.EN_REVISION, 'bajo el umbral no se notifica solo')
+
         self.client.force_authenticate(self.comite)
         respuesta = self.client.post(
             f'/api/multas/{multa.id}/aprobar/', {'infraccion_id': self.ruido.id},
@@ -192,5 +229,3 @@ class ClasificadorTestCase(APITestCase):
         multa.refresh_from_db()
         self.assertEqual(multa.infraccion_id, self.ruido.id, 'manda el Comite, no la propuesta')
         self.assertEqual(multa.monto, Decimal('3.00'))
-        # El fundamento de la propuesta original queda en el expediente.
-        self.assertIn('Animal suelto', multa.propuesta_fundamento)

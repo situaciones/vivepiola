@@ -143,7 +143,7 @@ export default function ComiteDashboard() {
 
   const aprobar = async () => {
     if (!datosActiva.infraccion_id) {
-      setMensaje('Selecciona una infraccion del catalogo antes de aprobar.');
+      setMensaje('Selecciona una infraccion del catalogo antes de cursar.');
       return;
     }
     try {
@@ -151,11 +151,11 @@ export default function ComiteDashboard() {
         infraccion_id: Number(datosActiva.infraccion_id),
         ...(datosActiva.monto ? { monto: datosActiva.monto } : {}),
       });
-      setMensaje(`Multa #${activa.id} aprobada. Pasa al Administrador para su notificacion legal.`);
+      setMensaje(`Expediente #${activa.id} tipificado. Pasa al Administrador para su notificacion legal.`);
       setSeleccionId(null);
       cargarTodo();
     } catch (err) {
-      setMensaje(err.response?.data?.detail || 'No se pudo aprobar la multa.');
+      setMensaje(err.response?.data?.detail || 'No se pudo cursar el expediente.');
     }
   };
 
@@ -228,10 +228,10 @@ export default function ComiteDashboard() {
           <>
             <PageHeader
               titulo="Bandeja de decision"
-              subtitulo="Unico organo facultado para imponer las multas del reglamento de copropiedad. Compara la evidencia con el articulo aplicable antes de decidir."
+              subtitulo="Aqui llegan las apelaciones de los residentes y los casos que el sistema no pudo tipificar solo. Compara la evidencia con el articulo aplicable antes de decidir."
               stats={[
-                { label: 'En revision', valor: enRevision.length, alerta: enRevision.length > 0 },
-                { label: 'Descargos por resolver', valor: conDescargo.length, alerta: conDescargo.length > 0 },
+                { label: 'Sin tipificar', valor: enRevision.length, alerta: enRevision.length > 0 },
+                { label: 'Apelaciones por resolver', valor: conDescargo.length, alerta: conDescargo.length > 0 },
                 { label: 'Infracciones activas', valor: infracciones.length },
               ]}
             />
@@ -288,7 +288,7 @@ export default function ComiteDashboard() {
 
                       {!activa.persona_nombre && (
                         <p className="alerta-reincidencia">
-                          Sin persona reportada: pide al conserje identificar al infractor antes de aprobar.
+                          Sin persona reportada: pide al conserje identificar al infractor antes de cursar.
                         </p>
                       )}
 
@@ -412,7 +412,7 @@ export default function ComiteDashboard() {
                               onClick={aprobar}
                               disabled={!datosActiva.revisado || !datosActiva.infraccion_id || !activa.persona_nombre}
                             >
-                              Aprobar multa
+                              Tipificar y cursar
                             </button>
                             <button className="btn btn-peligro" onClick={rechazar}>Rechazar reporte</button>
                           </div>
@@ -480,7 +480,7 @@ export default function ComiteDashboard() {
                           </p>
                         ) : (
                           <p className="texto-secundario" style={{ marginTop: 10 }}>
-                            Aun sin actos de decision sellados (los sellos se crean al aprobar, notificar o resolver).
+                            Aun sin actos de decision sellados (los sellos se crean al cursar, notificar o resolver).
                           </p>
                         )
                       )}
@@ -612,7 +612,7 @@ export default function ComiteDashboard() {
 
         {tab === 'catalogo' && (
           <>
-            <PageHeader titulo="Catalogo de infracciones activas" subtitulo="Base legal que el Comite puede invocar al aprobar una multa." />
+            <PageHeader titulo="Catalogo de infracciones activas" subtitulo="Base legal con la que se tipifican las multas, automaticamente o a mano." />
 
             <form className="tarjeta formulario" onSubmit={crearInfraccion} style={{ marginTop: 24 }}>
               <div className="fila-formulario">

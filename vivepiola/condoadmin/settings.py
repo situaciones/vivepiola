@@ -244,4 +244,12 @@ FRONTEND_URL = config('FRONTEND_URL', default='https://vivepiola-p3oup.ondigital
 
 NOVEDADES_PLAZO_RESPUESTA_DIAS = config('NOVEDADES_PLAZO_RESPUESTA_DIAS', default=20, cast=int)
 REINCIDENCIA_VENTANA_MESES = config('REINCIDENCIA_VENTANA_MESES', default=6, cast=int)
+
+# Confianza minima (0-100) del clasificador para notificar una denuncia sin que
+# una persona la tipifique antes. El respaldo por coincidencia de terminos tope
+# en 60, asi que con 70 nunca sanciona solo: para eso hace falta el analisis
+# con IA y un encuadre claro. Bajarlo acelera el ciclo a costa de precision.
+CURSE_AUTOMATICO_CONFIANZA_MINIMA = config(
+    'CURSE_AUTOMATICO_CONFIANZA_MINIMA', default=70, cast=int,
+)
 DESCARGO_PLAZO_DEFAULT_DIAS = config('DESCARGO_PLAZO_DEFAULT_DIAS', default=5, cast=int)
