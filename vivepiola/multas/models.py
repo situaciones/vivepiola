@@ -6,9 +6,15 @@ from django.utils import timezone
 
 
 class EstadoTicket(models.TextChoices):
+    """
+    Ya no existe un DESCARTADO: descartar un reporte es rechazar el
+    expediente, y eso vive en EstadoMulta.RECHAZADA con su motivo y su acta
+    sellada. Tener el descarte en dos lugares invitaba a perder la trazabilidad
+    de por que un reporte no prospero.
+    """
+
     PENDIENTE = 'PENDIENTE', 'Pendiente de revision'
     CONVERTIDO = 'CONVERTIDO', 'Convertido en multa'
-    DESCARTADO = 'DESCARTADO', 'Descartado por el Comite'
 
 
 class Ticket(models.Model):

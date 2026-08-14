@@ -121,6 +121,32 @@ class ImportacionRegistroTestCase(APITestCase):
         self.assertEqual(respuesta.data['filas_error'], 1)
         self.assertIn('permanencia invalida', respuesta.data['detalle_errores'][0]['errores'][0])
 
+    def test_acepta_los_encabezados_que_el_administrador_suele_renombrar(self):
+        """Casi nadie usa la plantilla tal cual: renombra correo, cedula, rol."""
+        contenido = (
+            'unidad,rol,nombre,cedula,domicilio,correo,telefono\n'
+            'Depto 111,PROPIETARIO,Alias Renombrado,25.111.222-3,Depto 111,alias@test.cl,\n'
+        )
+        respuesta = self.importar(contenido)
+        self.assertEqual(respuesta.data['filas_ok'], 1, respuesta.data['detalle_errores'])
+        persona = Persona.objects.get(cedula_identidad='25.111.222-3')
+        self.assertEqual(persona.correo_electronico, 'alias@test.cl')
+        self.assertEqual(persona.rol_ocupacion, RolOcupacion.PROPIETARIO)
+
+    def test_una_fila_reporta_todos_sus_errores_de_una_vez(self):
+        """Corregir el archivo una vez, no de a un error por vez."""
+        contenido = (
+            'unidad,rol_ocupacion,nombre_completo,cedula_identidad,domicilio,correo_electronico,telefono\n'
+            ',NOEXISTE,,,,correo-malo,\n'
+        )
+        respuesta = self.importar(contenido)
+        errores = respuesta.data['detalle_errores'][0]['errores']
+        self.assertGreaterEqual(len(errores), 6, errores)
+        texto = ' | '.join(errores)
+        for esperado in ('unidad vacia', 'rol_ocupacion invalido', 'nombre_completo vacio',
+                         'cedula_identidad vacia', 'domicilio vacio', 'correo_electronico invalido'):
+            self.assertIn(esperado, texto)
+
     def test_registra_el_vinculo_con_el_copropietario(self):
         contenido = (
             'unidad,rol_ocupacion,nombre_completo,cedula_identidad,domicilio,correo_electronico,telefono,permanencia,vinculo_copropietario\n'
@@ -194,6 +220,53 @@ class ObligadoAlPagoTestCase(APITestCase):
         self._multa_firme(self.arrendatario)
         lote = exportar_multas_firmes(self.condominio, '2026-08', self.admin)
         self.assertIn('Fabian Arrendatario', lote.archivo_csv.read().decode('utf-8-sig'))
+
+
+class PlantillaExcelTestCase(APITestCase):
+    """
+    La plantilla que descarga el administrador es la unica instruccion que
+    lee antes de llenar el registro: si no explica lo que provocan las
+    columnas, quedan sin llenar y las reglas que dependen de ellas no corren.
+    """
+
+    def test_la_plantilla_trae_las_columnas_que_el_importador_entiende(self):
+        import openpyxl
+
+        from condominios.utils import COLUMNAS_PLANTILLA, generar_plantilla_excel
+
+        ws = openpyxl.load_workbook(generar_plantilla_excel())['Registro Copropietarios']
+        encabezados = list(next(ws.iter_rows(max_row=1, values_only=True)))
+        self.assertEqual(encabezados, COLUMNAS_PLANTILLA)
+        self.assertEqual(ws.max_row, 1, 'sin filas de ejemplo: se importarian como personas reales')
+
+    def test_las_instrucciones_explican_a_quien_le_llega_la_notificacion(self):
+        import openpyxl
+
+        from condominios.utils import generar_plantilla_excel
+
+        ws = openpyxl.load_workbook(generar_plantilla_excel())['Instrucciones']
+        texto = ' '.join(
+            str(c) for fila in ws.iter_rows(values_only=True) for c in fila if c
+        )
+        self.assertIn('A QUIEN LE LLEGA LA NOTIFICACION', texto)
+        self.assertIn('TRANSITORIO', texto)
+        self.assertIn('copie al propietario', texto)
+
+    def test_los_titulos_van_en_negrita_aunque_se_agreguen_renglones(self):
+        import openpyxl
+
+        from condominios.utils import generar_plantilla_excel
+
+        ws = openpyxl.load_workbook(generar_plantilla_excel())['Instrucciones']
+        negritas = {
+            str(fila[0].value) for fila in ws.iter_rows(min_col=1, max_col=1)
+            if fila[0].value and fila[0].font.bold
+        }
+        self.assertEqual(
+            negritas,
+            {'COMO LLENAR ESTA PLANILLA', 'COLUMNA', 'QUIEN PAGA',
+             'A QUIEN LE LLEGA LA NOTIFICACION', 'ERRORES QUE RECHAZAN LA FILA'},
+        )
 
 
 @override_settings(MEDIA_ROOT=MEDIA_TEMP)

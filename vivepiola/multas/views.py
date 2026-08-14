@@ -76,9 +76,14 @@ class TicketViewSet(viewsets.ModelViewSet):
         if persona and persona.unidad_id != unidad.id:
             raise ValidationError({'persona_reportada': 'El sujeto responsable no pertenece a la entidad indicada.'})
 
-        ticket = serializer.save(condominio=condominio, creado_por=self.request.user)
-        ticket.estado = EstadoTicket.CONVERTIDO
-        ticket.save(update_fields=['estado'])
+        # El ticket nace CONVERTIDO en el mismo INSERT: todo reporte abre
+        # expediente de inmediato. Antes se guardaba PENDIENTE y se sobrescribia
+        # una linea despues, o sea dos escrituras por reporte para un estado
+        # que ningun cliente alcanzaba a ver.
+        ticket = serializer.save(
+            condominio=condominio, creado_por=self.request.user,
+            estado=EstadoTicket.CONVERTIDO,
+        )
 
         # Analisis automatico: se pre-carga la infraccion propuesta junto con su
         # origen y fundamento, para que el Comite vea de donde salio. La multa

@@ -1,7 +1,6 @@
 const ESTILOS = {
   PENDIENTE: { color: '#475569', fondo: '#f1f5f9', etiqueta: 'Pendiente' },
   CONVERTIDO: { color: '#475569', fondo: '#f1f5f9', etiqueta: 'Convertido en multa' },
-  DESCARTADO: { color: '#475569', fondo: '#f1f5f9', etiqueta: 'Descartado' },
   EN_REVISION: { color: '#92400e', fondo: '#fffbeb', etiqueta: 'En revision' },
   RECHAZADA: { color: '#b91c1c', fondo: '#fef2f2', etiqueta: 'Rechazada' },
   APROBADA: { color: '#3730a3', fondo: '#eef2ff', etiqueta: 'Aprobada' },
