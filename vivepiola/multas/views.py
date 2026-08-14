@@ -1,6 +1,8 @@
+import os
 from datetime import timedelta
 from decimal import Decimal
 
+from django.conf import settings
 from django.http import HttpResponse
 from django.utils import timezone
 from rest_framework import viewsets
@@ -155,13 +157,46 @@ class TicketViewSet(viewsets.ModelViewSet):
 
     @action(detail=True, methods=['post'], url_path='evidencia', parser_classes=[MultiPartParser])
     def agregar_evidencia(self, request, pk=None):
+        """
+        Adjunta una foto o un video al reporte.
+
+        Hay hechos que una imagen fija no prueba: una pelea, un choque, un
+        perro suelto. Exigir foto obligaba a describir con palabras lo que la
+        camara ya habia registrado.
+        """
         ticket = self.get_object()
         imagen = request.FILES.get('imagen')
-        if not imagen:
-            return Response({'detail': 'Debe adjuntar una imagen.'}, status=400)
-        digest, metadatos, anclaje = procesar_evidencia(imagen)
+        video = request.FILES.get('video')
+
+        if not imagen and not video:
+            return Response({'detail': 'Debe adjuntar una imagen o un video.'}, status=400)
+        if imagen and video:
+            return Response({'detail': 'Adjunte un solo archivo por evidencia.'}, status=400)
+
+        if video:
+            extension = os.path.splitext(video.name)[1].lower()
+            if extension not in settings.EVIDENCIA_VIDEO_FORMATOS:
+                return Response({
+                    'detail': (
+                        f'Formato de video no admitido ({extension or "sin extension"}). '
+                        f'Use: {", ".join(settings.EVIDENCIA_VIDEO_FORMATOS)}.'
+                    ),
+                }, status=400)
+            maximo = settings.EVIDENCIA_VIDEO_MAX_MB * 1024 * 1024
+            if video.size > maximo:
+                return Response({
+                    'detail': (
+                        f'El video pesa {video.size / 1048576:.1f} MB y el maximo es '
+                        f'{settings.EVIDENCIA_VIDEO_MAX_MB} MB. Recorta el clip al momento '
+                        f'del hecho: eso es lo que sirve como prueba.'
+                    ),
+                }, status=400)
+
+        archivo = video or imagen
+        digest, metadatos, anclaje = procesar_evidencia(archivo, es_video=bool(video))
         evidencia = EvidenciaFoto.objects.create(
-            ticket=ticket, imagen=imagen, descripcion=request.data.get('descripcion', ''),
+            ticket=ticket, imagen=imagen, video=video,
+            descripcion=request.data.get('descripcion', ''),
             sha256=digest, metadatos_origen=metadatos, anclaje_fisico=anclaje,
         )
         return Response(EvidenciaFotoSerializer(evidencia).data, status=201)

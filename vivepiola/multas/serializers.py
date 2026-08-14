@@ -10,9 +10,13 @@ from .models import (
 
 
 class EvidenciaFotoSerializer(serializers.ModelSerializer):
+    es_video = serializers.BooleanField(read_only=True)
     class Meta:
         model = EvidenciaFoto
-        fields = ('id', 'ticket', 'imagen', 'descripcion', 'subida_en', 'sha256', 'anclaje_fisico')
+        fields = (
+            'id', 'ticket', 'imagen', 'video', 'es_video', 'descripcion',
+            'subida_en', 'sha256', 'anclaje_fisico',
+        )
         read_only_fields = ('subida_en', 'sha256', 'anclaje_fisico')
 
 

@@ -252,4 +252,10 @@ REINCIDENCIA_VENTANA_MESES = config('REINCIDENCIA_VENTANA_MESES', default=6, cas
 CURSE_AUTOMATICO_CONFIANZA_MINIMA = config(
     'CURSE_AUTOMATICO_CONFIANZA_MINIMA', default=70, cast=int,
 )
+
+# Un video de evidencia sin tope se sube entero al almacenamiento y lo paga la
+# comunidad. 50 MB alcanza de sobra para el clip de unos segundos que prueba un
+# hecho; lo que exceda eso no es evidencia, es una grabacion sin recortar.
+EVIDENCIA_VIDEO_MAX_MB = config('EVIDENCIA_VIDEO_MAX_MB', default=50, cast=int)
+EVIDENCIA_VIDEO_FORMATOS = ('.mp4', '.mov', '.webm', '.3gp', '.m4v')
 DESCARGO_PLAZO_DEFAULT_DIAS = config('DESCARGO_PLAZO_DEFAULT_DIAS', default=5, cast=int)

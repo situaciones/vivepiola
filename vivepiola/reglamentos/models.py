@@ -4,12 +4,48 @@ from django.conf import settings
 from django.db import models
 
 
+class TipoNorma(models.TextChoices):
+    """
+    Que clase de documento es. Una comunidad no se rige por un solo texto: al
+    reglamento de copropiedad se suman los instructivos de estacionamientos y
+    espacios comunes, las normas de seguridad, la normativa ambiental y los
+    acuerdos de asamblea, que obligan igual que el reglamento.
+
+    Importa mas alla de la etiqueta: el acta se lee distinto que el reglamento
+    (tiene acuerdos, no articulos), y la infraccion que salga de ella debe
+    citar el acuerdo y su fecha, no un articulo inexistente.
+    """
+
+    REGLAMENTO_COPROPIEDAD = 'REGLAMENTO_COPROPIEDAD', 'Reglamento de copropiedad'
+    ESTACIONAMIENTOS = 'ESTACIONAMIENTOS', 'Normas de uso de estacionamientos'
+    ESPACIOS_COMUNES = 'ESPACIOS_COMUNES', 'Normas de uso de espacios comunes'
+    SEGURIDAD = 'SEGURIDAD', 'Normas de seguridad'
+    AMBIENTAL = 'AMBIENTAL', 'Normativa ambiental'
+    ACTA_ASAMBLEA = 'ACTA_ASAMBLEA', 'Acta o acuerdo de asamblea'
+    OTRO = 'OTRO', 'Otro cuerpo normativo'
+
+
 class Reglamento(models.Model):
-    """PDF del reglamento de copropiedad vigente, base legal del catalogo de infracciones."""
+    """
+    Un cuerpo normativo de la comunidad, en PDF: base legal del catalogo.
+
+    Se sigue llamando Reglamento porque asi lo referencia el resto del sistema,
+    pero ya no es solo el reglamento de copropiedad: ver TipoNorma.
+    """
 
     condominio = models.ForeignKey(
         'condominios.Condominio', on_delete=models.CASCADE, related_name='reglamentos'
     )
+    tipo = models.CharField(
+        max_length=30, choices=TipoNorma.choices, default=TipoNorma.REGLAMENTO_COPROPIEDAD,
+    )
+    titulo = models.CharField(
+        max_length=200, blank=True,
+        help_text='Como lo conoce la comunidad. Ej: "Instructivo de estacionamientos 2026".',
+    )
+    # Fecha del documento, no de la carga: en un acta de asamblea es lo que
+    # identifica el acuerdo y lo que se cita al sancionar.
+    fecha_documento = models.DateField(null=True, blank=True)
     archivo_pdf = models.FileField(upload_to='reglamentos/%Y/%m/')
     version = models.CharField(max_length=50, blank=True)
     vigente = models.BooleanField(default=True)
@@ -22,7 +58,16 @@ class Reglamento(models.Model):
         ordering = ['-fecha_carga']
 
     def __str__(self):
-        return f'Reglamento {self.condominio.nombre} v{self.version or self.id}'
+        etiqueta = self.titulo or TipoNorma(self.tipo).label
+        return f'{etiqueta} - {self.condominio.nombre}'
+
+    @property
+    def referencia_citable(self):
+        """Como se nombra este documento al fundar una sancion."""
+        if self.tipo == TipoNorma.ACTA_ASAMBLEA:
+            fecha = self.fecha_documento.strftime('%d-%m-%Y') if self.fecha_documento else 's/f'
+            return f'Acuerdo de asamblea del {fecha}'
+        return self.titulo or TipoNorma(self.tipo).label
 
 
 class EstadoInfraccion(models.TextChoices):

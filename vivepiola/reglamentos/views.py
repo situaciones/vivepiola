@@ -41,7 +41,7 @@ class ReglamentoViewSet(viewsets.ModelViewSet):
             return Response({'detail': 'No se pudo extraer texto del PDF de este reglamento.'}, status=400)
 
         try:
-            sugerencias = sugerir_infracciones_desde_texto(reglamento.texto_extraido)
+            sugerencias = sugerir_infracciones_desde_texto(reglamento.texto_extraido, reglamento.tipo)
         except Exception as exc:
             return Response({'detail': f'Error consultando el modelo de IA: {exc}'}, status=502)
 

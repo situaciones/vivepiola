@@ -24,6 +24,37 @@ Estas sugerencias son un BORRADOR: un humano debe revisarlas y confirmarlas ante
 tengan validez, asi que prioriza fidelidad al texto por sobre completar campos con inventos.
 No inventes infracciones que no esten razonablemente respaldadas por el texto."""
 
+# Como leer cada clase de documento. El acta es el caso distinto: no tiene
+# articulos sino acuerdos, y citar un "Art. 12" que no existe seria inventar
+# la base legal de una sancion.
+INSTRUCCIONES_POR_TIPO = {
+    'REGLAMENTO_COPROPIEDAD': 'Es el reglamento de copropiedad. Cita el articulo o clausula.',
+    'ESTACIONAMIENTOS': (
+        'Es un instructivo de uso de estacionamientos. Las faltas suelen ser ocupar un lugar '
+        'ajeno, estacionar en zonas de circulacion o exceder el tiempo de visitas.'
+    ),
+    'ESPACIOS_COMUNES': (
+        'Es un instructivo de uso de espacios comunes (quincho, piscina, gimnasio, salon). '
+        'Las faltas suelen ser usar fuera de horario, exceder aforo o no dejar aseado.'
+    ),
+    'SEGURIDAD': (
+        'Son normas de seguridad. Trata con especial cuidado las faltas que ponen en riesgo '
+        'a personas: describelas con precision y no las suavices.'
+    ),
+    'AMBIENTAL': (
+        'Es normativa ambiental. Las faltas suelen referirse a residuos, reciclaje, ruido '
+        'ambiental o manejo de sustancias.'
+    ),
+    'ACTA_ASAMBLEA': (
+        'Es un ACTA O ACUERDO DE ASAMBLEA, no un reglamento. No tiene articulos: tiene '
+        'acuerdos adoptados. En "articulo_referencia" escribe el acuerdo tal como aparece '
+        '(ej: "Acuerdo 3 de la asamblea"), NUNCA un numero de articulo que no exista. '
+        'Extrae solo los acuerdos que establecen una obligacion o prohibicion sancionable; '
+        'ignora lo que sea informativo, administrativo o de mera constancia.'
+    ),
+    'OTRO': 'Es otro cuerpo normativo de la comunidad. Cita la seccion en que te bases.',
+}
+
 
 class ReglamentoIlegible(Exception):
     """El PDF no entrega texto utilizable: escaneado como imagen, vacio o corrupto."""
@@ -46,15 +77,15 @@ def extraer_texto_pdf(archivo_pdf):
             texto = '\n'.join(pagina.extract_text() or '' for pagina in pdf.pages)
     except Exception as exc:
         raise ReglamentoIlegible(
-            'No se pudo leer el archivo como PDF. Revisa que el archivo sea el '
-            'reglamento de copropiedad y que no este danado.'
+            'No se pudo leer el archivo como PDF. Revisa que sea el documento '
+            'correcto y que no este danado.'
         ) from exc
 
     if len(texto.strip()) < MINIMO_CARACTERES_UTILES:
         raise ReglamentoIlegible(
             'El PDF no contiene texto legible: parece un documento escaneado como '
-            'imagen. Sube una version digital del reglamento (con texto que se pueda '
-            'seleccionar) o pasa el escaneo por un OCR antes de subirlo.'
+            'imagen. Sube una version digital (con texto que se pueda seleccionar) '
+            'o pasa el escaneo por un OCR antes de subirlo.'
         )
     return texto
 
@@ -105,9 +136,14 @@ def normalizar_sugerencia(item):
     }
 
 
-def sugerir_infracciones_desde_texto(texto_reglamento):
+def sugerir_infracciones_desde_texto(texto_reglamento, tipo='REGLAMENTO_COPROPIEDAD'):
     """
     Llama a la API de Anthropic para obtener un borrador de infracciones.
+
+    El tipo de documento cambia como se lee: un acta de asamblea no tiene
+    articulos sino acuerdos, y pedirle a la IA que cite un "Art. 12"
+    inexistente seria inventarle base legal a una sancion.
+
     Devuelve una lista de dicts; nunca escribe directamente en el catalogo activo.
     """
     if not settings.ANTHROPIC_API_KEY:
@@ -118,10 +154,12 @@ def sugerir_infracciones_desde_texto(texto_reglamento):
     client = anthropic.Anthropic(api_key=settings.ANTHROPIC_API_KEY)
     texto_recortado = texto_reglamento[:60000]  # limite de contexto razonable
 
+    instruccion = INSTRUCCIONES_POR_TIPO.get(tipo, INSTRUCCIONES_POR_TIPO['OTRO'])
+    sistema = f'{PROMPT_SISTEMA}\n\nSOBRE ESTE DOCUMENTO: {instruccion}'
     mensaje = client.messages.create(
         model='claude-sonnet-5',
         max_tokens=4096,
-        system=PROMPT_SISTEMA,
+        system=sistema,
         messages=[{'role': 'user', 'content': texto_recortado}],
     )
 

@@ -57,8 +57,23 @@ class Ticket(models.Model):
 
 
 class EvidenciaFoto(models.Model):
+    """
+    Prueba adjunta al reporte: una foto o un video.
+
+    El nombre quedo de cuando solo habia fotos y se conserva porque lo
+    referencia el resto del sistema. Un hecho como una pelea o un choque no se
+    entiende en una imagen fija, y exigir foto obligaba a describir con
+    palabras lo que la camara ya habia registrado.
+
+    Ojo con la diferencia probatoria: la foto trae EXIF con fecha y GPS, y de
+    ahi sale el anclaje fisico. El video que sale de un telefono no siempre lo
+    trae, asi que suele quedar SIN anclar. Sigue siendo prueba, pero mas debil
+    para acreditar cuando y donde.
+    """
+
     ticket = models.ForeignKey(Ticket, on_delete=models.CASCADE, related_name='evidencias')
-    imagen = models.ImageField(upload_to='evidencias/%Y/%m/')
+    imagen = models.ImageField(upload_to='evidencias/%Y/%m/', null=True, blank=True)
+    video = models.FileField(upload_to='evidencias/video/%Y/%m/', null=True, blank=True)
     descripcion = models.CharField(max_length=255, blank=True)
     subida_en = models.DateTimeField(auto_now_add=True)
     # Sellado V2: hash de contenido calculado en la ingesta. Vacio = evidencia
@@ -68,6 +83,19 @@ class EvidenciaFoto(models.Model):
     # politica por defecto es marcar la falta de anclaje, no rechazar la foto.
     metadatos_origen = models.JSONField(default=dict, blank=True)
     anclaje_fisico = models.BooleanField(default=False)
+
+    @property
+    def archivo(self):
+        """El medio adjunto, sea cual sea."""
+        return self.video or self.imagen
+
+    @property
+    def es_video(self):
+        return bool(self.video)
+
+    def __str__(self):
+        tipo = 'Video' if self.es_video else 'Foto'
+        return f'{tipo} del reporte #{self.ticket_id}'
 
 
 class EstadoMulta(models.TextChoices):

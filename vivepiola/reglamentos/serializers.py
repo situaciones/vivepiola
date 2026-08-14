@@ -5,6 +5,7 @@ from .utils import ReglamentoIlegible, extraer_texto_pdf
 
 
 class ReglamentoSerializer(serializers.ModelSerializer):
+    referencia_citable = serializers.CharField(read_only=True)
     # En multipart un booleano ausente se interpreta como "casilla desmarcada",
     # asi que sin este default todo reglamento subido desde la app quedaba
     # marcado como no vigente.
@@ -31,10 +32,11 @@ class ReglamentoSerializer(serializers.ModelSerializer):
     class Meta:
         model = Reglamento
         fields = (
-            'id', 'condominio', 'archivo_pdf', 'version', 'vigente',
-            'cargado_por', 'fecha_carga', 'procesado_ia',
+            'id', 'condominio', 'tipo', 'titulo', 'fecha_documento', 'archivo_pdf',
+            'version', 'vigente', 'cargado_por', 'fecha_carga', 'procesado_ia',
+            'referencia_citable',
         )
-        read_only_fields = ('condominio', 'cargado_por', 'fecha_carga', 'procesado_ia')
+        read_only_fields = ('condominio', 'cargado_por', 'fecha_carga', 'procesado_ia', 'referencia_citable')
 
 
 class InfraccionCatalogoSerializer(serializers.ModelSerializer):

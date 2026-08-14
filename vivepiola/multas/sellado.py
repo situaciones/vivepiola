@@ -58,14 +58,21 @@ TAG_DATETIME_ORIGINAL = 36867
 TAG_GPS = 34853
 
 
-def procesar_evidencia(archivo):
+def procesar_evidencia(archivo, es_video=False):
     """Devuelve (sha256, metadatos_origen, anclaje_fisico) para un upload.
 
     anclaje_fisico = la imagen trae fecha de captura Y datos GPS en su EXIF.
     La falta de anclaje se marca, no se rechaza (politica configurable por
     vertical; en condominios las fotos reenviadas rara vez conservan EXIF).
+
+    Un video se sella igual por contenido, pero no pasa por EXIF: los
+    contenedores de video guardan sus metadatos de otra forma y leerlos
+    exigiria una dependencia nueva. Queda sin anclaje declarado, que es lo
+    honesto: es prueba del hecho, no de cuando ni donde ocurrio.
     """
     digest = sha256_archivo(archivo)
+    if es_video:
+        return digest, {'medio': 'video', 'anclaje': 'no evaluado'}, False
 
     metadatos = {}
     tiene_gps = False

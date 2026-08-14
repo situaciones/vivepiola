@@ -20,6 +20,11 @@ export default function AdministradorDashboard() {
   const [tieneDelegacion, setTieneDelegacion] = useState(false);
   const [firmasPendientes, setFirmasPendientes] = useState(0);
   const [mensaje, setMensaje] = useState('');
+  // Una comunidad no se rige por un solo texto: al reglamento se suman los
+  // instructivos, las normas de seguridad y los acuerdos de asamblea.
+  const [nuevaNorma, setNuevaNorma] = useState({
+    tipo: 'REGLAMENTO_COPROPIEDAD', titulo: '', fecha_documento: '',
+  });
   const [resultadoImportacion, setResultadoImportacion] = useState(null);
   const [periodo, setPeriodo] = useState(() => new Date().toISOString().slice(0, 7));
   const [lote, setLote] = useState(null);
@@ -91,7 +96,12 @@ export default function AdministradorDashboard() {
     if (!archivo) return;
     const formData = new FormData();
     formData.append('archivo_pdf', archivo);
-    setMensaje('Subiendo reglamento y extrayendo texto...');
+    formData.append('tipo', nuevaNorma.tipo);
+    if (nuevaNorma.titulo) formData.append('titulo', nuevaNorma.titulo);
+    // En un acta lo que la identifica es la fecha en que la asamblea acordo,
+    // y es lo que se cita despues al fundar la sancion.
+    if (nuevaNorma.fecha_documento) formData.append('fecha_documento', nuevaNorma.fecha_documento);
+    setMensaje('Subiendo documento y extrayendo texto...');
     try {
       await client.post('/reglamentos/', formData, { headers: { 'Content-Type': 'multipart/form-data' } });
       setMensaje('Reglamento cargado y texto extraido. Ya puedes extraer las infracciones con IA.');
@@ -239,17 +249,52 @@ export default function AdministradorDashboard() {
 
         {tab === 'reglamento' && (
           <>
-            <PageHeader titulo="Reglamento e infracciones" subtitulo="Sube el PDF vigente; la IA sugiere infracciones como borrador para que el Comite las confirme." />
+            <PageHeader titulo="Normas e infracciones" subtitulo="Sube el reglamento y tambien los instructivos, las normas de seguridad y los acuerdos de asamblea: todos obligan igual. La IA sugiere infracciones como borrador para que el Comite las confirme." />
             <div className="tarjeta formulario" style={{ marginTop: 24 }}>
+              <div className="fila-formulario">
+                <label>
+                  Que documento es
+                  <select
+                    value={nuevaNorma.tipo}
+                    onChange={(e) => setNuevaNorma({ ...nuevaNorma, tipo: e.target.value })}
+                  >
+                    <option value="REGLAMENTO_COPROPIEDAD">Reglamento de copropiedad</option>
+                    <option value="ESTACIONAMIENTOS">Normas de uso de estacionamientos</option>
+                    <option value="ESPACIOS_COMUNES">Normas de uso de espacios comunes</option>
+                    <option value="SEGURIDAD">Normas de seguridad</option>
+                    <option value="AMBIENTAL">Normativa ambiental</option>
+                    <option value="ACTA_ASAMBLEA">Acta o acuerdo de asamblea</option>
+                    <option value="OTRO">Otro cuerpo normativo</option>
+                  </select>
+                </label>
+                <label>
+                  Como lo conoce la comunidad (opcional)
+                  <input
+                    value={nuevaNorma.titulo}
+                    placeholder="Ej: Instructivo de estacionamientos 2026"
+                    onChange={(e) => setNuevaNorma({ ...nuevaNorma, titulo: e.target.value })}
+                  />
+                </label>
+                {nuevaNorma.tipo === 'ACTA_ASAMBLEA' && (
+                  <label>
+                    Fecha de la asamblea
+                    <input
+                      type="date"
+                      value={nuevaNorma.fecha_documento}
+                      onChange={(e) => setNuevaNorma({ ...nuevaNorma, fecha_documento: e.target.value })}
+                    />
+                  </label>
+                )}
+              </div>
               <label className="btn btn-secundario subir-evidencia" style={{ alignSelf: 'flex-start' }}>
-                Subir PDF del reglamento
+                Subir PDF del documento
                 <input type="file" accept="application/pdf" hidden onChange={subirReglamento} />
               </label>
             </div>
             <div className="lista-tarjetas">
               {reglamentos.map((r) => (
                 <div key={r.id} className="tarjeta tarjeta-compacta">
-                  <span>Reglamento #{r.id} {r.procesado_ia ? '(IA ya proceso este documento)' : ''}</span>
+                  <span>{r.referencia_citable} {r.procesado_ia ? '(IA ya proceso este documento)' : ''}</span>
                   <button className="btn btn-primario" onClick={() => generarBorradoresIA(r.id)}>
                     Extraer infracciones con IA
                   </button>

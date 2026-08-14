@@ -98,15 +98,22 @@ export default function FiscalizadorDashboard() {
     }
   };
 
+  // Hay hechos que una foto no prueba: una pelea, un choque, un perro suelto.
+  // El campo se elige por el tipo real del archivo, no por como se llame.
   const subirEvidencia = async (ticketId, archivo) => {
+    const esVideo = archivo.type.startsWith('video/');
     const formData = new FormData();
-    formData.append('imagen', archivo);
+    formData.append(esVideo ? 'video' : 'imagen', archivo);
     setSubiendoEvidencia(ticketId);
     try {
       await client.post(`/tickets/${ticketId}/evidencia/`, formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
       cargarTickets();
+    } catch (err) {
+      // El backend explica el limite de peso o el formato: sin ese mensaje,
+      // quien graba no sabe por que su video no entro.
+      setMensaje(err.response?.data?.detail || 'No se pudo subir la evidencia.');
     } finally {
       setSubiendoEvidencia(null);
     }
@@ -288,7 +295,7 @@ export default function FiscalizadorDashboard() {
                     {subiendoEvidencia === t.id ? 'Subiendo...' : 'Agregar foto de evidencia'}
                     <input
                       type="file"
-                      accept="image/*"
+                      accept="image/*,video/*"
                       hidden
                       onChange={(e) => e.target.files[0] && subirEvidencia(t.id, e.target.files[0])}
                     />
