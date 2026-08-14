@@ -76,6 +76,9 @@ class EstadoMulta(models.TextChoices):
     APROBADA = 'APROBADA', 'Aprobada, pendiente de notificacion'
     NOTIFICADA = 'NOTIFICADA', 'Notificada al residente'
     CON_DESCARGO = 'CON_DESCARGO', 'Con descargo presentado'
+    # Vencio el plazo sin apelacion, pero hay una señal de que la persona pudo
+    # no haber podido defenderse. Espera una confirmacion antes de cobrarse.
+    POR_CONFIRMAR = 'POR_CONFIRMAR', 'Por confirmar antes del cobro'
     FIRME = 'FIRME', 'Firme (sin apelaciones pendientes)'
     # Se dio por acreditada la falta pero se resuelve sin cobro. No es lo mismo
     # que ANULADA: alli la falta se cae, aqui queda en el registro y cuenta para
@@ -270,6 +273,7 @@ class TipoActo(models.TextChoices):
     ACUSE_RECIBO = 'ACUSE_RECIBO', 'Acuse de recibo de la notificacion'
     RESOLUCION_DESCARGO = 'RESOLUCION_DESCARGO', 'Resolucion del descargo'
     FIRMEZA_AUTOMATICA = 'FIRMEZA_AUTOMATICA', 'Firmeza automatica por vencimiento de plazo'
+    CONFIRMACION_PREVIA_COBRO = 'CONFIRMACION_PREVIA_COBRO', 'Confirmacion antes del cobro'
     # Carril de contencion (manifiesto polimorfico tipo CONTENCION)
     CONTENCION_EJECUTADA = 'CONTENCION_EJECUTADA', 'Medida inmediata ejecutada'
     VOTO_RATIFICACION = 'VOTO_RATIFICACION', 'Voto de ratificacion (quorum)'

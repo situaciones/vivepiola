@@ -7,6 +7,7 @@ const ESTILOS = {
   NOTIFICADA: { color: '#6d28d9', fondo: '#f5f3ff', etiqueta: 'Notificada' },
   CON_DESCARGO: { color: '#9a3412', fondo: '#fff7ed', etiqueta: 'Con descargo' },
   FIRME: { color: '#065f46', fondo: '#ecfdf5', etiqueta: 'Firme' },
+  POR_CONFIRMAR: { color: '#92400e', fondo: '#fffbeb', etiqueta: 'Por confirmar' },
   CORTESIA: { color: '#0e7490', fondo: '#ecfeff', etiqueta: 'Parte de cortesia' },
   ANULADA: { color: '#475569', fondo: '#f1f5f9', etiqueta: 'Anulada' },
   EXPORTADA: { color: '#065f46', fondo: '#ecfdf5', etiqueta: 'Exportada a GGCC' },

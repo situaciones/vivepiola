@@ -34,8 +34,8 @@ from .serializers import (
 from .services import (
     ETAPA_PARA_DENUNCIANTE, actualizar_multas_vencidas, aplicar_monto_con_reincidencia,
     buscar_expediente_abierto, cursar_multa_automatica, generar_audit_trail_pdf,
-    notificar_multa, proponer_infraccion, proponer_resoluciones, registrar_acuse,
-    registrar_historial, resolver_descargo,
+    confirmar_antes_del_cobro, notificar_multa, proponer_infraccion, proponer_resoluciones,
+    registrar_acuse, registrar_historial, resolver_descargo,
 )
 
 
@@ -173,7 +173,10 @@ class MultaViewSet(viewsets.ReadOnlyModelViewSet):
     serializer_class = MultaSerializer
 
     def get_permissions(self):
-        if self.action in ('aprobar', 'rechazar', 'resolver_descargo_view', 'propuestas_resolucion'):
+        if self.action in (
+            'aprobar', 'rechazar', 'resolver_descargo_view',
+            'propuestas_resolucion', 'confirmar_cobro',
+        ):
             return [EsComite()]
         if self.action in ('notificar', 'constancia_buzon'):
             return [EsAdministrador()]
@@ -295,6 +298,27 @@ class MultaViewSet(viewsets.ReadOnlyModelViewSet):
             multa.refresh_from_db()
             return Response(MultaSerializer(multa).data)
         return respuesta
+
+    @action(detail=True, methods=['post'], url_path='confirmar-cobro')
+    def confirmar_cobro(self, request, pk=None):
+        """
+        Ultima confirmacion antes de cobrar un expediente que quedo sin apelar
+        pero traia una señal de indefension. Solo dos salidas: cobrar, o dar
+        parte de cortesia. No se reabre el fondo del caso.
+        """
+        multa = self.get_object()
+        if multa.estado != EstadoMulta.POR_CONFIRMAR:
+            return Response(
+                {'detail': 'Este expediente no esta esperando confirmacion.'}, status=400,
+            )
+
+        confirmar_antes_del_cobro(
+            multa, request.user,
+            dar_cortesia=bool(request.data.get('dar_cortesia')),
+            comentario=str(request.data.get('comentario', ''))[:500],
+        )
+        multa.refresh_from_db()
+        return Response(MultaSerializer(multa).data)
 
     @action(detail=True, methods=['get'], url_path='propuestas-resolucion')
     def propuestas_resolucion(self, request, pk=None):

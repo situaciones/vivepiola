@@ -208,6 +208,23 @@ class VinculoCopropietario(models.TextChoices):
     FAMILIAR = 'FAMILIAR', 'Otro familiar'
 
 
+class CondicionEspecial(models.TextChoices):
+    """
+    Circunstancias que pueden impedirle a alguien defenderse en plazo.
+
+    No dan impunidad ni anulan nada por si solas: hacen que el expediente se
+    detenga antes de cobrarse, para que una persona lo mire en vez de que el
+    plazo venza en silencio. La lista es corta y verificable a proposito.
+    """
+
+    NINGUNA = '', 'Sin condicion declarada'
+    FALLECIDO = 'FALLECIDO', 'Fallecido'
+    DISCAPACIDAD = 'DISCAPACIDAD', 'Situacion de discapacidad'
+    # Cubre al adulto mayor que no logra usar la app sin ayuda, sin tener que
+    # deducirlo de una fecha de nacimiento que nadie va a mantener al dia.
+    REQUIERE_APOYO = 'REQUIERE_APOYO', 'Requiere apoyo para tramites digitales'
+
+
 class Persona(models.Model):
     """
     Ficha individual del registro de copropietarios exigido por la Ley 21.442:
@@ -225,6 +242,10 @@ class Persona(models.Model):
     vinculo_copropietario = models.CharField(
         max_length=20, choices=VinculoCopropietario.choices, blank=True, default='',
         help_text='Conyuge o conviviente civil pueden integrar el Comite aunque no sean dueños.',
+    )
+    condicion_especial = models.CharField(
+        max_length=20, choices=CondicionEspecial.choices, blank=True, default='',
+        help_text='Detiene el cobro automatico para que alguien revise el caso antes.',
     )
     nombre_completo = models.CharField(max_length=255)
     cedula_identidad = models.CharField(max_length=20)

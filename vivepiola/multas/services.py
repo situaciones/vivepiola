@@ -728,11 +728,44 @@ def notificar_multa(multa, usuario):
     return multa
 
 
+def motivo_para_confirmar(multa):
+    """
+    Devuelve por que este expediente no deberia cobrarse sin que alguien lo
+    mire, o cadena vacia si puede quedar firme solo.
+
+    No se revisan todas las multas sin apelar: eso devolveria al comite al
+    papel de cuello de botella. Se detienen unicamente aquellas donde hay una
+    señal concreta de que la persona pudo no haber podido defenderse.
+    """
+    from condominios.models import CondicionEspecial
+    from .models import CanalNotificacion
+
+    persona = multa.persona_infractor
+    if persona and persona.condicion_especial:
+        etiqueta = CondicionEspecial(persona.condicion_especial).label
+        return f'{persona.nombre_completo} figura en el registro como: {etiqueta.lower()}.'
+
+    # Que la notificacion se haya perfeccionado dejando un papel en el buzon
+    # significa que nunca hubo confirmacion de la propia persona: pudo estar
+    # de viaje, hospitalizada, o simplemente no verlo.
+    if multa.canal_acuse == CanalNotificacion.BUZON:
+        return (
+            'La notificacion nunca fue confirmada por el residente: se perfecciono '
+            'dejando la constancia en el buzon de la unidad.'
+        )
+    return ''
+
+
 def actualizar_multas_vencidas(condominio=None):
     """
-    Marca como FIRME las multas notificadas cuyo plazo de descargo vencio sin
-    que el residente presentara defensa. Se ejecuta de forma perezosa (al
-    listar) para no depender de un scheduler externo tipo Celery.
+    Cierra las multas notificadas cuyo plazo vencio sin apelacion.
+
+    La mayoria queda FIRME sola, sin que nadie intervenga. Las que traen una
+    señal de indefension (ver motivo_para_confirmar) quedan POR_CONFIRMAR: no
+    se estudian de nuevo, solo esperan que alguien confirme antes del cobro.
+
+    Se ejecuta de forma perezosa (al listar) para no depender de un scheduler
+    externo tipo Celery.
     """
     from .models import Multa
 
@@ -741,16 +774,63 @@ def actualizar_multas_vencidas(condominio=None):
         qs = qs.filter(condominio=condominio)
 
     for multa in qs:
-        multa.estado = EstadoMulta.FIRME
-        multa.fecha_firme = timezone.now()
+        motivo = motivo_para_confirmar(multa)
+        destino = EstadoMulta.POR_CONFIRMAR if motivo else EstadoMulta.FIRME
+
+        multa.estado = destino
+        if destino == EstadoMulta.FIRME:
+            multa.fecha_firme = timezone.now()
         multa.save(update_fields=['estado', 'fecha_firme'])
-        registrar_historial(
-            multa, EstadoMulta.NOTIFICADA, EstadoMulta.FIRME, None,
-            'Firme automaticamente: vencio el plazo de descargo sin presentacion.',
+
+        comentario = (
+            f'Vencio el plazo sin apelacion, pero el cobro se detiene para confirmacion. {motivo}'
+            if motivo
+            else 'Firme automaticamente: vencio el plazo de descargo sin presentacion.'
         )
+        registrar_historial(multa, EstadoMulta.NOTIFICADA, destino, None, comentario)
         sellar_acto(multa, TipoActo.FIRMEZA_AUTOMATICA, None, auth_metodo='sistema', extra={
             'fecha_limite_vencida': multa.fecha_limite_descargo.isoformat(),
+            'estado_resultante': destino,
+            'motivo_confirmacion': motivo,
         })
+
+
+def confirmar_antes_del_cobro(multa, usuario, dar_cortesia=False, comentario=''):
+    """
+    Resuelve un expediente detenido antes del cobro. Solo dos salidas: confirmar
+    que se cobra, o convertirlo en parte de cortesia.
+
+    Es a proposito una confirmacion y no una revision de fondo: el caso ya
+    quedo sin apelacion en plazo. Lo unico que se pregunta es si corresponde
+    cobrarle a alguien que quiza nunca pudo defenderse.
+    """
+    from .models import EstadoMulta, TipoActo
+
+    estado_anterior = multa.estado
+    monto_condonado = multa.monto
+
+    if dar_cortesia:
+        multa.monto = Decimal('0.00')
+        multa.estado = EstadoMulta.CORTESIA
+        detalle = (
+            f'Confirmado como parte de cortesia por la condicion del residente: la falta '
+            f'queda en el registro y se condonan {monto_condonado}.'
+        )
+    else:
+        multa.estado = EstadoMulta.FIRME
+        detalle = 'Confirmado el cobro pese a la alerta: el expediente queda firme.'
+
+    multa.fecha_firme = timezone.now()
+    multa.save(update_fields=['estado', 'monto', 'fecha_firme'])
+
+    registrar_historial(multa, estado_anterior, multa.estado, usuario, f'{detalle} {comentario}'.strip())
+    sellar_acto(multa, TipoActo.CONFIRMACION_PREVIA_COBRO, usuario, extra={
+        'dio_cortesia': dar_cortesia,
+        'monto_condonado': str(monto_condonado) if dar_cortesia else None,
+        'motivo_de_la_alerta': motivo_para_confirmar(multa),
+        'comentario': comentario,
+    })
+    return multa
 
 
 def proponer_resoluciones(multa):

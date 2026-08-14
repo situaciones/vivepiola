@@ -7,16 +7,20 @@ import openpyxl.worksheet.datavalidation
 from django.core.exceptions import ValidationError
 from django.core.validators import validate_email
 
-from .models import Permanencia, Persona, RolOcupacion, Unidad, VinculoCopropietario
+from .models import (
+    CondicionEspecial, Permanencia, Persona, RolOcupacion, Unidad, VinculoCopropietario,
+)
 
 COLUMNAS_PLANTILLA = [
     'unidad', 'rol_ocupacion', 'nombre_completo', 'cedula_identidad',
     'domicilio', 'correo_electronico', 'telefono', 'permanencia', 'vinculo_copropietario',
+    'condicion_especial',
 ]
 
 ROLES_VALIDOS = {choice.value for choice in RolOcupacion}
 PERMANENCIAS_VALIDAS = {choice.value for choice in Permanencia}
 VINCULOS_VALIDOS = {choice.value for choice in VinculoCopropietario}
+CONDICIONES_VALIDAS = {choice.value for choice in CondicionEspecial}
 
 
 # Ayuda por columna: se muestra al pararse en la celda, sin abrir otra hoja.
@@ -41,11 +45,17 @@ AYUDA_COLUMNAS = {
         'Solo si ocupa por su vinculo con el dueño. En ese caso la notificacion '
         'tambien se le copia al propietario.',
     ),
+    'condicion_especial': (
+        'Opcional',
+        'Solo si corresponde: FALLECIDO, DISCAPACIDAD o REQUIERE_APOYO. Detiene el '
+        'cobro automatico para que el Comite revise el caso antes de cobrarlo.',
+    ),
 }
 
 # Columnas con valores cerrados: van como lista desplegable para que no haya
 # que adivinar la ortografia ni acordarse de escribir en mayusculas.
 LISTAS_DESPLEGABLES = {
+    'condicion_especial': sorted(c for c in CONDICIONES_VALIDAS if c),
     'rol_ocupacion': sorted(ROLES_VALIDOS),
     'permanencia': sorted(PERMANENCIAS_VALIDAS),
     'vinculo_copropietario': sorted(v for v in VINCULOS_VALIDOS if v),
@@ -71,7 +81,7 @@ def generar_plantilla_excel():
     ws.title = 'Registro Copropietarios'
     ws.append(COLUMNAS_PLANTILLA)
     ws.freeze_panes = 'A2'
-    for i, ancho in enumerate([16, 16, 30, 18, 38, 30, 18, 16, 22], start=1):
+    for i, ancho in enumerate([16, 16, 30, 18, 38, 30, 18, 16, 22, 22], start=1):
         ws.column_dimensions[openpyxl.utils.get_column_letter(i)].width = ancho
 
     for i, columna in enumerate(COLUMNAS_PLANTILLA, start=1):
@@ -118,7 +128,7 @@ def generar_plantilla_excel():
         (None, '', ''),
         (None, 'Encabezado oscuro = obligatorio. Encabezado gris = opcional.', ''),
         (None, 'Al pararse en una celda aparece la ayuda de esa columna.', ''),
-        (None, 'rol_ocupacion, permanencia y vinculo_copropietario son listas desplegables:', ''),
+        (None, 'rol_ocupacion, permanencia, vinculo y condicion son listas desplegables:', ''),
         (None, '   elija el valor y no tendra que acordarse de escribirlo en mayusculas.', ''),
         (None, '', ''),
         (TITULO, 'COLUMNA', 'QUE VA / REGLAS'),
@@ -135,6 +145,9 @@ def generar_plantilla_excel():
         (None, 'vinculo_copropietario',
          'Opcional. CONYUGE, CONVIVIENTE_CIVIL o FAMILIAR. Si ocupa por vinculo con el dueño, '
          'la notificacion tambien se le copia a el.'),
+        (None, 'condicion_especial',
+         'Opcional. FALLECIDO, DISCAPACIDAD o REQUIERE_APOYO. Detiene el cobro automatico '
+         'para que el Comite confirme antes de cobrar.'),
         (None, '', ''),
         (TITULO, 'QUIEN PAGA', ''),
         (None, 'El PROPIETARIO es el obligado al pago ante la comunidad.', ''),
@@ -234,10 +247,11 @@ ALIAS_COLUMNAS = {
     'telefono': ('telefono',),
     'permanencia': ('permanencia',),
     'vinculo_copropietario': ('vinculo_copropietario', 'vinculo'),
+    'condicion_especial': ('condicion_especial', 'condicion'),
 }
 
 # Se guardan en mayusculas porque son codigos, no texto libre.
-CAMPOS_EN_MAYUSCULAS = ('rol_ocupacion', 'permanencia', 'vinculo_copropietario')
+CAMPOS_EN_MAYUSCULAS = ('rol_ocupacion', 'permanencia', 'vinculo_copropietario', 'condicion_especial')
 
 
 def _campos_de_fila(fila):
@@ -286,6 +300,11 @@ def _errores_de_fila(campos):
             f"vinculo_copropietario invalido: '{campos['vinculo_copropietario']}' "
             f"(use CONYUGE, CONVIVIENTE_CIVIL o FAMILIAR)"
         )
+    if campos['condicion_especial'] and campos['condicion_especial'] not in CONDICIONES_VALIDAS:
+        errores.append(
+            f"condicion_especial invalida: '{campos['condicion_especial']}' "
+            f"(use FALLECIDO, DISCAPACIDAD o REQUIERE_APOYO)"
+        )
 
     correo = campos['correo_electronico']
     if not correo:
@@ -312,6 +331,7 @@ def _guardar_persona(condominio, campos):
             'rol_ocupacion': campos['rol_ocupacion'],
             'permanencia': campos['permanencia'],
             'vinculo_copropietario': campos['vinculo_copropietario'],
+            'condicion_especial': campos['condicion_especial'],
             'nombre_completo': campos['nombre_completo'],
             'domicilio': campos['domicilio'],
             'correo_electronico': campos['correo_electronico'],

@@ -113,7 +113,10 @@ export default function ComiteDashboard() {
 
   const enRevision = multas.filter((m) => m.estado === 'EN_REVISION');
   const conDescargo = multas.filter((m) => m.estado === 'CON_DESCARGO');
-  const pendientes = [...enRevision, ...conDescargo];
+  // Vencieron sin apelacion, pero traian una señal de que la persona pudo no
+  // haber podido defenderse. Solo hay que confirmar, no volver a estudiarlas.
+  const porConfirmar = multas.filter((m) => m.estado === 'POR_CONFIRMAR');
+  const pendientes = [...enRevision, ...conDescargo, ...porConfirmar];
 
   const activa = pendientes.find((m) => m.id === seleccionId) || pendientes[0] || null;
   const datosActiva = activa ? decision[activa.id] || {} : {};
@@ -198,6 +201,25 @@ export default function ComiteDashboard() {
     cargarTodo();
   };
 
+  // Ultima confirmacion antes del cobro. No se reabre el fondo del caso: se
+  // pregunta solo si corresponde cobrarle a alguien que quiza no pudo defenderse.
+  const confirmarCobro = async (dar_cortesia) => {
+    const comentario = prompt(
+      dar_cortesia
+        ? 'Motivo para dar parte de cortesia:'
+        : 'Comentario (opcional) para confirmar el cobro:',
+    );
+    if (dar_cortesia && !comentario) return;
+    await client.post(`/multas/${activa.id}/confirmar-cobro/`, { dar_cortesia, comentario: comentario || '' });
+    setMensaje(
+      dar_cortesia
+        ? `Multa #${activa.id} convertida en parte de cortesia: no se cobra.`
+        : `Cobro de la multa #${activa.id} confirmado.`,
+    );
+    setSeleccionId(null);
+    cargarTodo();
+  };
+
   // Descuento parcial: la multa queda firme, pero con el monto rebajado.
   const resolverConDescuento = async () => {
     const ingresado = prompt('Porcentaje de descuento a aplicar (1-99):', '30');
@@ -249,6 +271,7 @@ export default function ComiteDashboard() {
               stats={[
                 { label: 'Sin tipificar', valor: enRevision.length, alerta: enRevision.length > 0 },
                 { label: 'Apelaciones por resolver', valor: conDescargo.length, alerta: conDescargo.length > 0 },
+                { label: 'Por confirmar antes del cobro', valor: porConfirmar.length, alerta: porConfirmar.length > 0 },
                 { label: 'Infracciones activas', valor: infracciones.length },
               ]}
             />
@@ -486,6 +509,41 @@ export default function ComiteDashboard() {
                             </button>
                             <button className="btn btn-peligro" onClick={() => resolverDescargo('RECHAZADO')}>
                               Rechazar descargo (multa firme)
+                            </button>
+                          </div>
+                        </>
+                      )}
+
+                      {activa.estado === 'POR_CONFIRMAR' && (
+                        <>
+                          <div className="propuestas-resolucion">
+                            <h4>Este cobro se detuvo antes de emitirse</h4>
+                            <p className="propuestas-nota">
+                              Nadie apelo dentro del plazo, pero hay una señal de que esta persona
+                              pudo no haber podido defenderse. No hay que estudiar el caso de nuevo:
+                              solo decidir si corresponde cobrarlo igual.
+                            </p>
+                            <ul>
+                              <li>
+                                <b>Por que se detuvo</b>
+                                <span>{activa.motivo_confirmacion}</span>
+                              </li>
+                              <li>
+                                <b>Multa</b>
+                                <span>
+                                  {activa.infraccion_codigo} · {activa.infraccion_descripcion}
+                                  {' '}— {activa.monto}
+                                </span>
+                              </li>
+                            </ul>
+                          </div>
+
+                          <div className="acciones">
+                            <button className="btn btn-secundario" onClick={() => confirmarCobro(true)}>
+                              Dar parte de cortesia (no se cobra)
+                            </button>
+                            <button className="btn btn-peligro" onClick={() => confirmarCobro(false)}>
+                              Confirmar el cobro
                             </button>
                           </div>
                         </>
