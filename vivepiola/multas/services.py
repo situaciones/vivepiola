@@ -177,12 +177,59 @@ def generar_audit_trail_pdf(multa, solicitante):
     return buffer.read()
 
 
+def copropietario_en_copia(multa):
+    """
+    Devuelve al copropietario cuando la notificacion debe llegarle en copia,
+    o None cuando basta con notificar al infractor.
+
+    La Ley 21.442 hace al copropietario el obligado principal al pago, asi que
+    tiene interes legitimo en toda multa de su unidad. Pero copiarlo siempre
+    seria excesivo: se hace solo cuando el infractor podria no estar para
+    ejercer su defensa, o cuando ocupa la unidad precisamente por el vinculo
+    con el dueño.
+
+    - TRANSITORIO: puede haberse ido antes de que corra el plazo de descargo
+      (hospedaje turistico, estadia corta). Sin copia al dueño, el expediente
+      arriesga quedarse sin notificado valido.
+    - Ocupa por vinculo con el copropietario (conyuge, conviviente civil,
+      familiar): su titulo de ocupacion depende de ese vinculo.
+
+    Nunca se copia al propio infractor ni a quien no tenga correo registrado.
+    """
+    from condominios.models import Permanencia, VinculoCopropietario
+
+    infractor = multa.persona_infractor
+    if not infractor or not multa.unidad:
+        return None
+
+    corresponde = (
+        infractor.permanencia == Permanencia.TRANSITORIO
+        or infractor.vinculo_copropietario in (
+            VinculoCopropietario.CONYUGE,
+            VinculoCopropietario.CONVIVIENTE_CIVIL,
+            VinculoCopropietario.FAMILIAR,
+        )
+    )
+    if not corresponde:
+        return None
+
+    propietario = multa.unidad.propietario
+    if not propietario or propietario.id == infractor.id or not propietario.correo_electronico:
+        return None
+    if propietario.correo_electronico == infractor.correo_electronico:
+        return None
+    return propietario
+
+
 def enviar_notificacion_email(multa, pdf_bytes):
     """
     Envia la notificacion legal al correo registrado del sujeto responsable:
     este es EL canal legal de notificacion exigido para el debido proceso.
     Asunto y cuerpo se componen por frases completas del vertical (i18n
     clave-por-frase), no por concatenacion de palabras sueltas.
+
+    Devuelve la lista de correos que recibieron copia (ver copropietario_en_copia),
+    para que quede sellada en el acta quien fue notificado realmente.
     """
     persona = multa.persona_infractor
     if not persona or not persona.correo_electronico:
@@ -207,14 +254,24 @@ def enviar_notificacion_email(multa, pdf_bytes):
         frase(c, 'notificacion_plazo', dias=dias, fecha_limite=fecha_limite),
         frase(c, 'notificacion_canal_legal'),
     ])
+    copia = copropietario_en_copia(multa)
+    copias = [copia.correo_electronico] if copia else []
+    if copia:
+        cuerpo += '\n\n' + frase(
+            c, 'notificacion_copia_copropietario',
+            nombre=copia.nombre_completo, unidad_id=multa.unidad.identificador,
+        )
+
     email = EmailMessage(
         subject=asunto,
         body=cuerpo,
         from_email=settings.DEFAULT_FROM_EMAIL,
         to=[persona.correo_electronico],
+        cc=copias,
     )
     email.attach(f'notificacion_{multa.id}.pdf', pdf_bytes, 'application/pdf')
     email.send(fail_silently=False)
+    return copias
 
 
 def enviar_notificacion_whatsapp(multa):
@@ -366,7 +423,7 @@ def notificar_multa(multa, usuario):
     multa.fecha_limite_descargo = timezone.now() + timedelta(days=multa.plazo_descargo_dias)
     multa.pdf_notificacion.save(f'notificacion_multa_{multa.id}.pdf', ContentFile(pdf_bytes), save=False)
 
-    enviar_notificacion_email(multa, pdf_bytes)
+    copias = enviar_notificacion_email(multa, pdf_bytes)
 
     multa.estado = EstadoMulta.NOTIFICADA
     multa.notificada_por = usuario
@@ -382,6 +439,9 @@ def notificar_multa(multa, usuario):
     registrar_historial(multa, estado_anterior, multa.estado, usuario, 'Notificacion enviada al correo registrado.')
     sellar_acto(multa, TipoActo.NOTIFICACION, usuario, extra={
         'correo_destino': multa.persona_infractor.correo_electronico,
+        # Quien recibio copia queda sellado: si mañana se discute si el
+        # copropietario fue notificado, el acta lo prueba.
+        'copias_copropietario': sorted(copias),
         'whatsapp_enviado': whatsapp_enviado,
         'plazo_descargo_dias': multa.plazo_descargo_dias,
         'fecha_limite_descargo': multa.fecha_limite_descargo.isoformat(),

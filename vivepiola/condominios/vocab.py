@@ -45,6 +45,13 @@ FRASES_DEFAULT = {
         'desde esta notificacion, hasta el {fecha_limite}.'
     ),
     'notificacion_canal_legal': 'Este correo constituye el canal legal de notificacion del sistema.',
+    # Se envia en copia al copropietario cuando el infractor es transitorio o
+    # ocupa por vinculo con el: la Ley 21.442 lo hace obligado principal al pago.
+    'notificacion_copia_copropietario': (
+        'Se envia copia de esta notificacion a {nombre}, copropietario(a) de la '
+        '{unidad} {unidad_id}, por ser el obligado principal al pago de las '
+        'obligaciones economicas de la unidad.'
+    ),
     'pdf_titulo': 'Notificacion de Multa N° {numero}',
     'pdf_label_unidad': 'Unidad',
     'pdf_label_sujeto': 'Infractor',

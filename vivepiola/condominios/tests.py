@@ -3,15 +3,18 @@
 import tempfile
 from decimal import Decimal
 
+from django.core import mail
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import override_settings
 from django.utils import timezone
 from rest_framework.test import APITestCase
 
 from accounts.models import Rol, Usuario
-from condominios.models import Condominio, Permanencia, Persona, RolOcupacion, Unidad
+from condominios.models import (
+    Condominio, Permanencia, Persona, RolOcupacion, Unidad, VinculoCopropietario,
+)
 from gastos_comunes.utils import exportar_multas_firmes
-from multas.models import EstadoMulta, Multa, Ticket
+from multas.models import EstadoMulta, Multa, Ticket, TipoActo
 from reglamentos.models import EstadoInfraccion, InfraccionCatalogo
 
 MEDIA_TEMP = tempfile.mkdtemp(prefix='debido_test_media_')
@@ -191,3 +194,120 @@ class ObligadoAlPagoTestCase(APITestCase):
         self._multa_firme(self.arrendatario)
         lote = exportar_multas_firmes(self.condominio, '2026-08', self.admin)
         self.assertIn('Fabian Arrendatario', lote.archivo_csv.read().decode('utf-8-sig'))
+
+
+@override_settings(MEDIA_ROOT=MEDIA_TEMP)
+class CopiaAlCopropietarioTestCase(APITestCase):
+    """
+    A quien le llega la notificacion legal.
+
+    Se copia al copropietario cuando el infractor podria no estar para ejercer
+    su defensa (permanencia transitoria) o cuando ocupa la unidad por su
+    vinculo con el dueño. En el resto de los casos basta con el infractor: la
+    copia sistematica seria exponer sin necesidad.
+    """
+
+    @classmethod
+    def setUpTestData(cls):
+        cls.condominio = Condominio.objects.create(nombre='Condominio Copia')
+        cls.unidad = Unidad.objects.create(condominio=cls.condominio, identificador='Depto 700')
+        cls.dueno = Persona.objects.create(
+            condominio=cls.condominio, unidad=cls.unidad, rol_ocupacion=RolOcupacion.PROPIETARIO,
+            nombre_completo='Rosa Dueña', cedula_identidad='9.000.000-1',
+            domicilio='Depto 700', correo_electronico='rosa@test.local',
+        )
+        cls.admin = Usuario.objects.create_user(
+            username='admin_copia', password='x', rol=Rol.ADMINISTRADOR, condominio=cls.condominio,
+        )
+        cls.infraccion = InfraccionCatalogo.objects.create(
+            condominio=cls.condominio, codigo='PISCINA-01', descripcion='Uso de piscina fuera de horario',
+            articulo_referencia='Art. 22', monto=Decimal('2.00'), estado=EstadoInfraccion.ACTIVA,
+        )
+
+    def _notificar(self, infractor):
+        from multas.services import notificar_multa
+
+        ticket = Ticket.objects.create(
+            condominio=self.condominio, unidad=self.unidad, persona_reportada=infractor,
+            descripcion='Uso de piscina a las 3 AM', fecha_hecho=timezone.now(),
+        )
+        multa = Multa.objects.create(
+            condominio=self.condominio, ticket=ticket, unidad=self.unidad,
+            persona_infractor=infractor, infraccion=self.infraccion,
+            monto=Decimal('2.00'), estado=EstadoMulta.APROBADA,
+        )
+        mail.outbox = []
+        notificar_multa(multa, self.admin)
+        return multa, mail.outbox[0]
+
+    def _persona(self, **kwargs):
+        datos = dict(
+            condominio=self.condominio, unidad=self.unidad, rol_ocupacion=RolOcupacion.ARRENDATARIO,
+            nombre_completo='Ocupante', cedula_identidad='9.111.111-1',
+            domicilio='Depto 700', correo_electronico='ocupante@test.local',
+        )
+        datos.update(kwargs)
+        return Persona.objects.create(**datos)
+
+    def test_al_transitorio_se_le_copia_al_dueno(self):
+        """Puede haberse ido antes de que corra el plazo de descargo."""
+        turista = self._persona(
+            nombre_completo='Tomas Turista', cedula_identidad='9.222.222-2',
+            correo_electronico='tomas@test.local', permanencia=Permanencia.TRANSITORIO,
+        )
+        _, correo = self._notificar(turista)
+
+        self.assertEqual(correo.to, ['tomas@test.local'])
+        self.assertEqual(correo.cc, ['rosa@test.local'])
+        self.assertIn('Rosa Dueña', correo.body, 'el correo debe decir a quien se copio y por que')
+
+    def test_al_permanente_sin_vinculo_no_se_copia_a_nadie(self):
+        arrendatario = self._persona(
+            nombre_completo='Pablo Permanente', cedula_identidad='9.333.333-3',
+            correo_electronico='pablo@test.local', permanencia=Permanencia.PERMANENTE,
+        )
+        _, correo = self._notificar(arrendatario)
+
+        self.assertEqual(correo.to, ['pablo@test.local'])
+        self.assertEqual(correo.cc, [], 'copiar al dueño siempre seria exponer sin necesidad')
+
+    def test_a_quien_ocupa_por_vinculo_con_el_dueno_se_le_copia(self):
+        conyuge = self._persona(
+            rol_ocupacion=RolOcupacion.OCUPANTE, nombre_completo='Carmen Conyuge',
+            cedula_identidad='9.444.444-4', correo_electronico='carmen@test.local',
+            vinculo_copropietario=VinculoCopropietario.CONYUGE,
+        )
+        _, correo = self._notificar(conyuge)
+        self.assertEqual(correo.cc, ['rosa@test.local'])
+
+    def test_al_dueno_no_se_le_copia_su_propia_multa(self):
+        self.dueno.permanencia = Permanencia.TRANSITORIO
+        self.dueno.save(update_fields=['permanencia'])
+        _, correo = self._notificar(self.dueno)
+
+        self.assertEqual(correo.to, ['rosa@test.local'])
+        self.assertEqual(correo.cc, [], 'nadie se copia a si mismo')
+
+    def test_sin_correo_del_dueno_la_notificacion_igual_sale(self):
+        """La copia es un refuerzo: nunca puede impedir el canal legal principal."""
+        self.dueno.correo_electronico = ''
+        self.dueno.save(update_fields=['correo_electronico'])
+        turista = self._persona(
+            nombre_completo='Tania Transitoria', cedula_identidad='9.555.555-5',
+            correo_electronico='tania@test.local', permanencia=Permanencia.TRANSITORIO,
+        )
+        _, correo = self._notificar(turista)
+
+        self.assertEqual(correo.to, ['tania@test.local'])
+        self.assertEqual(correo.cc, [])
+
+    def test_el_acta_sella_a_quien_se_copio(self):
+        """Si mañana se discute si el copropietario fue notificado, el acta lo prueba."""
+        turista = self._persona(
+            nombre_completo='Teo Transitorio', cedula_identidad='9.666.666-6',
+            correo_electronico='teo@test.local', permanencia=Permanencia.TRANSITORIO,
+        )
+        multa, _ = self._notificar(turista)
+
+        acta = multa.actas_selladas.filter(tipo_acto=TipoActo.NOTIFICACION).latest('id')
+        self.assertEqual(acta.manifiesto['extra']['copias_copropietario'], ['rosa@test.local'])
