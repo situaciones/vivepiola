@@ -246,12 +246,26 @@ NOVEDADES_PLAZO_RESPUESTA_DIAS = config('NOVEDADES_PLAZO_RESPUESTA_DIAS', defaul
 REINCIDENCIA_VENTANA_MESES = config('REINCIDENCIA_VENTANA_MESES', default=6, cast=int)
 
 # Confianza minima (0-100) del clasificador para notificar una denuncia sin que
-# una persona la tipifique antes. El respaldo por coincidencia de terminos tope
-# en 60, asi que con 70 nunca sanciona solo: para eso hace falta el analisis
-# con IA y un encuadre claro. Bajarlo acelera el ciclo a costa de precision.
-CURSE_AUTOMATICO_CONFIANZA_MINIMA = config(
-    'CURSE_AUTOMATICO_CONFIANZA_MINIMA', default=70, cast=int,
-)
+# una persona la tipifique antes.
+#
+# El umbral SUBE con la gravedad, porque los dos numeros responden preguntas
+# distintas: la confianza dice "entendi bien que paso" y la gravedad dice
+# "cuanto pesa equivocarse". Cursar sola una falta leve que ademas sera un
+# aviso sin cobro casi no tiene costo si el encuadre falla; cursar sola una
+# gravisima significa cobrar de inmediato un monto alto, sin cortesia y
+# posiblemente con una paralizacion detras.
+#
+# Poner un umbral sobre 100 equivale a exigir siempre revision humana para esa
+# gravedad, porque el clasificador nunca supera 100.
+CURSE_CONFIANZA_MINIMA_LEVE = config('CURSE_CONFIANZA_MINIMA_LEVE', default=65, cast=int)
+CURSE_CONFIANZA_MINIMA_GRAVE = config('CURSE_CONFIANZA_MINIMA_GRAVE', default=80, cast=int)
+CURSE_CONFIANZA_MINIMA_GRAVISIMA = config('CURSE_CONFIANZA_MINIMA_GRAVISIMA', default=90, cast=int)
+
+CURSE_CONFIANZA_MINIMA = {
+    'LEVE': CURSE_CONFIANZA_MINIMA_LEVE,
+    'GRAVE': CURSE_CONFIANZA_MINIMA_GRAVE,
+    'GRAVISIMA': CURSE_CONFIANZA_MINIMA_GRAVISIMA,
+}
 
 # Un video de evidencia sin tope se sube entero al almacenamiento y lo paga la
 # comunidad. 50 MB alcanza de sobra para el clip de unos segundos que prueba un

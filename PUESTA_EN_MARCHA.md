@@ -373,6 +373,38 @@ mismo día.
 
 ---
 
+### Cuánta autonomía le das al sistema
+
+Dos parámetros deciden cuánto hace solo el sistema y cuánto pasa por el comité.
+Los valores por defecto son conservadores; puedes ajustarlos como variables de
+entorno cuando veas cómo se comporta tu comunidad.
+
+**Cuántos avisos antes de cobrar** (`cortesias_antes_de_multar`, por comunidad):
+
+| valor | qué pasa |
+|-------|----------|
+| 2 (por defecto) | Las dos primeras faltas no graves se avisan sin cobro |
+| 0 | Se cobra desde la primera |
+
+Las faltas **gravísimas** y las que paralizan algo nunca reciben aviso: se
+cobran desde la primera vez, por muy primera que sea.
+
+**Cuánta certeza se exige para notificar sin que nadie revise:**
+
+| variable | por defecto | qué significa |
+|----------|-------------|---------------|
+| `CURSE_CONFIANZA_MINIMA_LEVE` | 65 | Una leve termina en aviso sin cobro: equivocarse cuesta poco |
+| `CURSE_CONFIANZA_MINIMA_GRAVE` | 80 | |
+| `CURSE_CONFIANZA_MINIMA_GRAVISIMA` | 90 | Cobro inmediato y alto: hay que estar muy seguro |
+
+Poner cualquiera sobre 100 significa **siempre revisión humana** para esa
+gravedad, porque el clasificador nunca supera 100.
+
+Lo que no alcanza el umbral no se pierde: queda esperando que el comité lo
+tipifique, con el motivo escrito en el expediente.
+
+---
+
 ### Paso 5 — Programar los reintentos de notificación
 
 Este es el más importante de los dos, porque de él depende que una multa se

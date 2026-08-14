@@ -524,26 +524,41 @@ def aplicar_monto_con_reincidencia(multa, infraccion, monto_base=None):
     return factor_aplicado
 
 
+def confianza_minima_para(infraccion):
+    """
+    Cuanta certeza se exige para cursar sin revision, segun lo que pesa la falta.
+
+    Mientras mas caro sea el error, mas seguro hay que estar antes de actuar
+    solo: una leve termina en un aviso sin cobro, una gravisima en un cobro
+    inmediato sin cortesia.
+    """
+    from reglamentos.models import Gravedad
+
+    gravedad = getattr(infraccion, 'gravedad', None) or Gravedad.GRAVE
+    return settings.CURSE_CONFIANZA_MINIMA.get(
+        gravedad, settings.CURSE_CONFIANZA_MINIMA['GRAVE'],
+    )
+
+
 def puede_cursarse_sola(multa, confianza):
     """
     Decide si el expediente puede notificarse sin que un humano lo tipifique.
 
     El ciclo ya no tiene un filtro previo del comite: la denuncia va directo al
-    residente, que se defiende apelando. Para que eso sea legitimo, el encuadre
-    automatico tiene que ser solido, asi que se exige:
+    residente, que se defiende apelando. Para que eso sea legitimo se exige:
 
     - una infraccion del catalogo vigente,
     - un sujeto responsable identificado y con correo (sin contacto no hay
       notificacion valida, y sin notificacion no hay plazo de apelacion),
-    - confianza del clasificador sobre el umbral.
-
-    El umbral por defecto (70) deja fuera al respaldo por coincidencia de
-    terminos, que tope en 60: ese respaldo existe para que el sistema no se
-    caiga sin IA, no para sancionar a alguien por calzar palabras sueltas.
+    - que la propuesta venga del analisis con IA y no del respaldo por
+      terminos,
+    - confianza sobre el umbral que corresponda a la gravedad de la falta.
 
     Lo que no pasa este filtro no se pierde: queda EN_REVISION para que lo
     tipifique una persona.
     """
+    from .clasificador import ORIGEN_IA
+
     if multa.infraccion is None:
         return False, 'el reporte no calza con ninguna infraccion del catalogo vigente'
     persona = multa.persona_infractor
@@ -551,10 +566,23 @@ def puede_cursarse_sola(multa, confianza):
         return False, 'no hay un sujeto responsable identificado'
     if not persona.correo_electronico:
         return False, 'el sujeto responsable no tiene correo registrado'
-    if (confianza or 0) < settings.CURSE_AUTOMATICO_CONFIANZA_MINIMA:
+
+    # El respaldo por coincidencia de terminos existe para que el sistema no se
+    # caiga sin IA, no para sancionar a alguien por calzar palabras sueltas.
+    # Se bloquea por ORIGEN y no por umbral: antes la garantia dependia de que
+    # ese respaldo topara en 60 y el umbral fuera 70, o sea de una coincidencia
+    # numerica que se rompia en silencio si alguien bajaba el umbral.
+    if multa.propuesta_origen != ORIGEN_IA:
         return False, (
-            f'la propuesta automatica quedo en {confianza or 0} de confianza, bajo el '
-            f'minimo de {settings.CURSE_AUTOMATICO_CONFIANZA_MINIMA} para cursar sin revision'
+            'la propuesta salio del respaldo por coincidencia de terminos, que no '
+            'sanciona por si solo'
+        )
+
+    minimo = confianza_minima_para(multa.infraccion)
+    if (confianza or 0) < minimo:
+        return False, (
+            f'la propuesta automatica quedo en {confianza or 0} de confianza y una falta '
+            f'{multa.infraccion.gravedad.lower()} exige al menos {minimo} para cursar sin revision'
         )
     return True, ''
 

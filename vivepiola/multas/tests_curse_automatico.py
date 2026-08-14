@@ -161,7 +161,7 @@ class CurseAutomaticoTestCase(APITestCase):
 
         self.assertEqual(multa.estado, EstadoMulta.EN_REVISION)
         self.assertEqual(len(mail.outbox), 0, 'nadie puede ser notificado con un encuadre debil')
-        self.assertIn('bajo el minimo', multa.historial.first().comentario)
+        self.assertIn('exige al menos', multa.historial.first().comentario)
 
     def test_el_respaldo_por_coincidencia_nunca_sanciona_solo(self):
         """
@@ -208,6 +208,6 @@ class CurseAutomaticoTestCase(APITestCase):
         self.assertIn('No se pudo notificar', multa.historial.first().comentario)
 
     def test_el_umbral_es_configurable(self):
-        with override_settings(CURSE_AUTOMATICO_CONFIANZA_MINIMA=50):
+        with override_settings(CURSE_CONFIANZA_MINIMA={'LEVE': 50, 'GRAVE': 80, 'GRAVISIMA': 90}):
             multa = self._denunciar(confianza=55)
         self.assertEqual(multa.estado, EstadoMulta.NOTIFICADA)
