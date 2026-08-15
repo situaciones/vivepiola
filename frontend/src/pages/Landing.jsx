@@ -21,9 +21,9 @@ import './LandingMinimal.css';
  *
  * SOBRE LAS IMAGENES
  * ------------------
- * Cada pantalla tiene su lugar para una foto grande. Mientras no existan, el
- * degradado de marca ocupa ese lugar y la pagina se sostiene igual: se veria
- * incompleta con marcos vacios, no con color.
+ * Son la mitad del diseño, asi que van como <img> y no como fondo CSS: asi
+ * llevan alt, el navegador puede postergar las que estan mas abajo, y las
+ * medidas declaradas evitan que el texto salte cuando cargan.
  */
 
 const PANTALLAS = [
@@ -32,18 +32,21 @@ const PANTALLAS = [
     titulo: ['Las reglas', 'ya existen.'],
     bajada: 'Tu reglamento de copropiedad, tus actas, la ley chilena. Nada que el sistema invente.',
     imagen: 'reglamento',
+    alt: 'Un reglamento de copropiedad impreso, abierto sobre una superficie oscura.',
   },
   {
     id: 'iguales',
     titulo: ['Iguales', 'para todos.'],
     bajada: 'La misma norma, el mismo criterio, el mismo procedimiento. Siempre.',
     imagen: 'comunidad',
+    alt: 'Fachada de un edificio de noche, con balcones identicos repetidos en una grilla.',
   },
   {
     id: 'aviso',
     titulo: ['No toda falta', 'termina en multa.'],
     bajada: 'Las primeras veces se avisa. Sin cobro.',
     imagen: 'aviso',
+    alt: 'Un edificio a oscuras con una sola ventana encendida de luz calida.',
     destacada: true,
   },
   {
@@ -51,12 +54,14 @@ const PANTALLAS = [
     titulo: ['Notificar', 'no es enviar.'],
     bajada: 'El plazo para defenderse empieza cuando la persona confirma que recibio.',
     imagen: 'notificacion',
+    alt: 'Una mano sostiene un telefono encendido en el pasillo de un edificio.',
   },
   {
     id: 'respaldo',
     titulo: ['Si mañana preguntan', 'que paso, esta todo.'],
     bajada: 'Cada paso queda registrado y sellado.',
     imagen: 'expediente',
+    alt: 'Carpetas de archivo apiladas en la oscuridad, con los cantos iluminados.',
   },
 ];
 
@@ -87,7 +92,16 @@ function Pantalla({ pantalla, invertida }) {
         </h2>
         <p>{pantalla.bajada}</p>
       </div>
-      <div className={`pantalla-imagen img-${pantalla.imagen}`} aria-hidden="true" />
+      <div className={`pantalla-imagen tono-${pantalla.imagen}`}>
+        <img
+          src={`/img/${pantalla.imagen}.webp`}
+          alt={pantalla.alt}
+          width={1100}
+          height={1100}
+          loading="lazy"
+          decoding="async"
+        />
+      </div>
     </section>
   );
 }
@@ -125,7 +139,17 @@ export default function Landing() {
             Ver una demo <ArrowRight size={18} />
           </a>
         </div>
-        <div className="hero-min-imagen img-hero" aria-hidden="true" />
+        {/* La unica que carga de inmediato: es lo primero que se ve. */}
+        <div className="hero-min-imagen tono-hero">
+          <img
+            src="/img/hero.webp"
+            alt="Condominio residencial al anochecer, con sus patios iluminados."
+            width={1100}
+            height={1298}
+            fetchPriority="high"
+            decoding="async"
+          />
+        </div>
       </header>
 
       {/* ---------- UNA IDEA POR PANTALLA ---------- */}

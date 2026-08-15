@@ -8,8 +8,14 @@
    Usa las variables de marca de Landing.css. La pagina es OSCURA.
    ================================================================ */
 
-/* La base pone 82px de padding a cada section. Aqui el aire lo pone
-   cada pantalla segun su alto, asi que se anula. */
+/* La base pone 82px de padding a cada section. Aqui el aire lo pone cada
+   pantalla segun su alto, asi que se anula.
+
+   OJO con la especificidad: este selector es (0,1,1) y le gana a un .clase
+   suelta. Todo lo que declare padding propio y sea un <section> tiene que ir
+   prefijado con .vp-min o se lo come este reset. Paso: las cinco pantallas
+   quedaron con el titulo pegado al borde de la pantalla, y el hero no, solo
+   porque el hero es un <header>. */
 .vp-min section{padding:0}
 
 .vp-min .acento{
@@ -46,38 +52,39 @@
 
 .btn-grande{padding:15px 30px;font-size:1rem}
 
-/* ---------------- Imagenes ----------------
-   Cada bloque reserva su lugar para una foto grande. Mientras no
-   exista, --foto no esta definida y queda solo el degradado: la
-   pagina se ve intencional, no rota. Poner la foto es una linea. */
+/* ---------------- Imagenes ---------------- */
 
 .hero-min-imagen,
 .pantalla-imagen{
   position:relative;
   border-radius:26px;
-  background-color:var(--card);
-  background-image:var(--foto,none);
-  background-size:cover;
-  background-position:center;
-  box-shadow:var(--shadow-lg);
   overflow:hidden;
+  /* Degradado de espera mientras la foto viaja. Las fotos son oscuras y
+     el fondo tambien, asi que sin el hilo blanco el borde se pierde. */
+  background:var(--tono,var(--grad));
+  box-shadow:var(--shadow-lg);
 }
 
-/* El tono de marca vive detras de la foto: cuando la foto entra, este
-   degradado queda como fondo de sus zonas transparentes y como color
-   de espera mientras carga. */
+/* Las fotos son oscuras y el fondo tambien: sin un hilo de luz el borde de la
+   imagen se pierde contra la pagina. Va como capa aparte y no como inset del
+   box-shadow, que quedaria debajo del <img> y no se veria. */
 .hero-min-imagen::after,
 .pantalla-imagen::after{
-  content:"";position:absolute;inset:0;z-index:-1;
-  background:var(--tono,var(--grad));opacity:.5;
+  content:"";position:absolute;inset:0;pointer-events:none;
+  border-radius:inherit;box-shadow:inset 0 0 0 1px rgba(255,255,255,.09);
 }
 
-.img-hero{--tono:linear-gradient(140deg,#a855f7,#3b82f6)}
-.img-reglamento{--tono:linear-gradient(140deg,#3b82f6,#0a0a0f)}
-.img-comunidad{--tono:linear-gradient(140deg,#10b981,#3b82f6)}
-.img-aviso{--tono:linear-gradient(140deg,#ffc65c,#a855f7)}
-.img-notificacion{--tono:linear-gradient(140deg,#a855f7,#10b981)}
-.img-expediente{--tono:linear-gradient(140deg,#0a0a0f,#a855f7)}
+.hero-min-imagen img,
+.pantalla-imagen img{
+  display:block;width:100%;height:100%;object-fit:cover;
+}
+
+.tono-hero{--tono:linear-gradient(140deg,#241a3d,#0a0a0f)}
+.tono-reglamento{--tono:linear-gradient(140deg,#1b2540,#0a0a0f)}
+.tono-comunidad{--tono:linear-gradient(140deg,#0f2b2a,#0a0a0f)}
+.tono-aviso{--tono:linear-gradient(140deg,#2a2415,#0a0a0f)}
+.tono-notificacion{--tono:linear-gradient(140deg,#241a3d,#0a0a0f)}
+.tono-expediente{--tono:linear-gradient(140deg,#0a0a0f,#241a3d)}
 
 /* ---------------- Hero ---------------- */
 
@@ -96,7 +103,7 @@
 
 /* ---------------- Una idea por pantalla ---------------- */
 
-.pantalla{
+.vp-min .pantalla{
   display:grid;
   grid-template-columns:1fr 1fr;
   gap:clamp(32px,5vw,80px);
@@ -131,7 +138,7 @@
 .pantalla-imagen{aspect-ratio:1/1;min-height:300px}
 
 /* La pantalla clave del producto pesa mas que las otras. */
-.pantalla-clave{min-height:min(94vh,880px)}
+.vp-min .pantalla-clave{min-height:min(94vh,880px)}
 .pantalla-clave h2{font-size:clamp(2.7rem,6.4vw,5.4rem)}
 
 /* ---------------- Que hace y que no hace el software ----------------
@@ -196,7 +203,7 @@
    encontraria una foto sin saber todavia de que se trata. */
 
 @media(max-width:900px){
-  .hero-min,.pantalla{grid-template-columns:1fr;gap:34px;min-height:0}
+  .hero-min,.vp-min .pantalla{grid-template-columns:1fr;gap:34px;min-height:0}
   .pantalla.invertida .pantalla-texto{order:0}
 
   .hero-min-imagen{aspect-ratio:16/11;min-height:0}
