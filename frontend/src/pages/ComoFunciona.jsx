@@ -42,10 +42,15 @@ const PASOS = [
     // sola idea de esta pagina, ojala sea esta. Va con un caso concreto
     // porque en abstracto suena a leguleyada y con un auto sobre la rampa
     // se entiende sin explicacion.
-    frase: 'La IA mira las fotos y el video, y el hecho respaldado se califica: articulo, gravedad y monto.',
+    frase: 'La IA mira las fotos y el video. Con el hecho respaldado, recien ahi se califica segun tu reglamento.',
     contraste: {
+      // El hecho va con un caso concreto porque es un ejemplo cualquiera y no
+      // afirma nada. El otro lado va descrito y no citado: el articulo, la
+      // gravedad y el monto los pone el reglamento de cada comunidad, asi que
+      // inventar "Art. 24, 0,5 UF" seria dar por cierta una cifra que no
+      // existe y que ademas cambia en cada condominio.
       hecho: { et: 'La infraccion', titulo: 'El hecho', texto: 'Un auto estacionado sobre la rampa de acceso.' },
-      multa: { et: 'La multa', titulo: 'La consecuencia', texto: 'Art. 24 del reglamento. Grave. 0,5 UF.' },
+      multa: { et: 'La multa', titulo: 'La consecuencia', texto: 'El articulo que lo prohibe, su gravedad y el monto.' },
     },
     nota: 'Un hecho sin respaldo suficiente no se acredita. Y lo que no se acredita no se multa.',
   },
@@ -53,7 +58,10 @@ const PASOS = [
     n: '03',
     tab: 'Comunicacion',
     titulo: 'Se avisa hasta que confirme',
-    frase: 'Correo, WhatsApp y la aplicacion. Va el hecho, el articulo y el monto. Se insiste hasta que la persona acuse recibo.',
+    // Los canales son los que el sistema despacha hoy. La app existe, pero no
+    // manda notificaciones: ponerla como canal seria prometer un aviso que
+    // nunca llega.
+    frase: 'Correo y WhatsApp, con reintentos. Va el hecho, el articulo y el monto. Si nadie confirma, queda la constancia en el buzon de la unidad.',
     dato: { valor: '3', pie: 'canales, hasta que alguien confirme' },
     nota: 'El plazo corre desde el acuse y no desde el envio: un correo en spam no puede costarle a nadie su defensa.',
   },
