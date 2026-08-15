@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowRight, ArrowLeft } from 'lucide-react';
+import { ArrowRight, ArrowLeft, Camera, FileText } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { LogoVivePiola } from '../components/Marca';
 import './Landing.css';
@@ -37,16 +37,17 @@ const PASOS = [
   {
     n: '02',
     tab: 'Infraccion',
-    titulo: 'Primero el hecho. Despues la multa.',
+    titulo: 'La infraccion no es la multa',
     // La distincion que ordena todo lo demas. Si el visitante se lleva una
-    // sola idea de esta pagina, ojala sea esta.
-    frase: 'La infraccion es el hecho. La multa, su consecuencia. Primero se respalda el hecho: la IA mira las fotos y el video, y aparece el articulo con su gravedad.',
-    umbrales: [
-      { grado: 'Leve', valor: 65 },
-      { grado: 'Grave', valor: 80 },
-      { grado: 'Gravisima', valor: 90 },
-    ],
-    nota: 'Cuanta certeza se exige para darlo por acreditado. Sin respaldo no hay infraccion, y sin infraccion no hay multa.',
+    // sola idea de esta pagina, ojala sea esta. Va con un caso concreto
+    // porque en abstracto suena a leguleyada y con un auto sobre la rampa
+    // se entiende sin explicacion.
+    frase: 'La IA mira las fotos y el video, y el hecho respaldado se califica: articulo, gravedad y monto.',
+    contraste: {
+      hecho: { et: 'La infraccion', titulo: 'El hecho', texto: 'Un auto estacionado sobre la rampa de acceso.' },
+      multa: { et: 'La multa', titulo: 'La consecuencia', texto: 'Art. 24 del reglamento. Grave. 0,5 UF.' },
+    },
+    nota: 'Un hecho sin respaldo suficiente no se acredita. Y lo que no se acredita no se multa.',
   },
   {
     n: '03',
@@ -168,14 +169,21 @@ function Recorrido() {
               </div>
             )}
 
-            {p.umbrales && (
-              <div className="umbrales">
-                {p.umbrales.map((u) => (
-                  <div key={u.grado} className={`umbral u-${u.grado.toLowerCase()}`}>
-                    <b>{u.valor}</b>
-                    <span>{u.grado}</span>
-                  </div>
-                ))}
+            {p.contraste && (
+              <div className="contraste">
+                <div className="lado lado-hecho">
+                  <Camera size={19} />
+                  <span className="lado-et">{p.contraste.hecho.et}</span>
+                  <b>{p.contraste.hecho.titulo}</b>
+                  <span className="lado-txt">{p.contraste.hecho.texto}</span>
+                </div>
+                <ArrowRight className="contraste-flecha" size={20} aria-hidden="true" />
+                <div className="lado lado-multa">
+                  <FileText size={19} />
+                  <span className="lado-et">{p.contraste.multa.et}</span>
+                  <b>{p.contraste.multa.titulo}</b>
+                  <span className="lado-txt">{p.contraste.multa.texto}</span>
+                </div>
               </div>
             )}
 

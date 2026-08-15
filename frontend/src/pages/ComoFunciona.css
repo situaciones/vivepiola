@@ -130,24 +130,33 @@
 }
 .dato span{max-width:22ch;font-size:1rem;line-height:1.4;color:var(--muted)}
 
-/* ---- Los tres umbrales del paso 03 ---- */
+/* ---- El hecho y su consecuencia ----
+   Dos lados y una flecha. La distincion entre infraccion y multa en abstracto
+   suena a leguleyada; puesta como un auto sobre la rampa que se convierte en
+   un articulo y un monto, se entiende sin que nadie la explique. */
 
-.umbrales{display:flex;flex-wrap:wrap;gap:10px;margin:clamp(24px,3.4vh,34px) 0 0}
-
-.umbral{
-  flex:1 1 130px;padding:16px 18px;border-radius:13px;
-  background:rgba(255,255,255,.03);border:1px solid var(--border);border-top:3px solid;
+.contraste{
+  display:grid;grid-template-columns:1fr auto 1fr;align-items:stretch;
+  gap:clamp(10px,1.6vw,16px);margin:clamp(24px,3.4vh,34px) 0 0;
 }
-.u-leve{border-top-color:var(--green)}
-.u-grave{border-top-color:var(--amber)}
-.u-gravisima{border-top-color:#ef4444}
 
-.umbral b{display:block;font-size:2.4rem;font-weight:800;letter-spacing:-.04em;line-height:.9}
-.u-leve b{color:var(--green)}
-.u-grave b{color:var(--amber)}
-.u-gravisima b{color:#f87171}
+.lado{
+  display:flex;flex-direction:column;align-items:flex-start;gap:5px;
+  padding:17px 18px;border-radius:14px;
+  background:rgba(255,255,255,.03);border:1px solid var(--border);
+}
+.lado>svg{margin-bottom:5px}
 
-.umbral span{display:block;margin-top:8px;font-size:.88rem;color:var(--muted)}
+.lado-et{font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.12em}
+.lado b{font-size:1.05rem;font-weight:700;color:var(--ink);line-height:1.2}
+.lado-txt{font-size:.9rem;line-height:1.45;color:var(--muted)}
+
+/* El hecho es neutro; la consecuencia pesa, y se nota en el color. */
+.lado-hecho>svg,.lado-hecho .lado-et{color:var(--brand)}
+.lado-multa{border-color:rgba(168,85,247,.3);background:rgba(168,85,247,.07)}
+.lado-multa>svg,.lado-multa .lado-et{color:var(--purple)}
+
+.contraste-flecha{align-self:center;flex:0 0 auto;color:rgba(255,255,255,.26)}
 
 /* ---------------- Bandas ----------------
    Con tope de alto: a 21:9 sin tope, en una pantalla ancha una banda mide
@@ -213,10 +222,18 @@
   .panel-n{font-size:5rem;opacity:.7}
   .dato b{font-size:3.2rem}
 
-  /* Los tres umbrales en una sola fila. Con flex-basis de 130px se partian en
-     dos filas a 375px, y como los siete paneles comparten alto, esa fila de
-     mas se la comian los otros seis en tarjeta vacia. */
-  .umbral{flex:1 1 0;min-width:0;padding:14px 12px}
-  .umbral b{font-size:1.9rem}
-  .umbral span{font-size:.8rem}
+  /* Los dos lados uno sobre otro, con la flecha girada. A 375px lado a lado
+     quedan en 150px de ancho y "Un auto estacionado sobre la rampa de acceso"
+     se parte en siete lineas. */
+  .contraste{grid-template-columns:1fr;gap:8px}
+  .contraste-flecha{transform:rotate(90deg);justify-self:center}
+
+  /* Aca el alto NO se estabiliza, al reves que en escritorio.
+     Apilar los siete cuesta que el mas alto se lo cobre a los otros seis: la
+     etapa 02 fijaba 624px y a la 06 le quedaban 318 de tarjeta vacia. Y lo
+     que se compraba con eso —que no salte lo que viene debajo del panel— aca
+     no se ve: en una columna, debajo del panel no hay nada en pantalla.
+     Se paga una tarjeta vacia por un salto que nadie mira. */
+  .panel{display:none}
+  .panel.visible{display:block}
 }
