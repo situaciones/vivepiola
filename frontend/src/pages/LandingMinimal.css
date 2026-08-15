@@ -52,6 +52,40 @@
 
 .btn-grande{padding:15px 30px;font-size:1rem}
 
+/* ---------------- Lo que ancla el hero ----------------
+   Estas tres piezas existen porque el resto de la pagina es minimalista y el
+   minimalismo supone que ya sabes de que se trata. Apple puede escribir
+   "Titanium." porque nadie duda de que es un telefono; aca la categoria no
+   existe todavia, asi que la primera pantalla tiene que decirla. */
+
+.hero-et{
+  display:block;margin-bottom:clamp(18px,2.4vh,26px);
+  font-size:.76rem;font-weight:700;text-transform:uppercase;letter-spacing:.14em;
+  color:var(--purple);
+}
+
+/* La frase con los cuatro verbos. Mas ancha y mas clara que una bajada
+   cualquiera: es el unico lugar donde se explica que hace el producto. */
+/* Tres clases y no dos: la regla compartida de abajo es ".vp-min
+   .hero-min-texto p" —(0,2,1)— y le ganaria a un ".vp-min .hero-que". */
+.vp-min .hero-min-texto .hero-que{
+  max-width:42ch;
+  font-size:clamp(1.05rem,1.45vw,1.3rem);
+  line-height:1.55;
+  color:var(--ink-soft);
+}
+
+/* El mismo recorrido, para quien escanea en vez de leer. */
+.hero-flujo{
+  list-style:none;display:flex;flex-wrap:wrap;align-items:center;
+  gap:9px 13px;margin:clamp(24px,3.2vh,34px) 0 0;padding:0;
+  font-size:.87rem;font-weight:650;color:var(--muted);
+}
+.hero-flujo li{display:flex;align-items:center;gap:13px;white-space:nowrap}
+.hero-flujo li:not(:last-child)::after{
+  content:"";width:17px;height:1px;background:rgba(168,85,247,.55);
+}
+
 /* ---------------- Imagenes ---------------- */
 
 .hero-min-imagen,
@@ -183,7 +217,12 @@
   padding:clamp(80px,14vh,160px) 24px;
 }
 
-.form-min{display:grid;gap:12px;margin-top:clamp(32px,5vh,52px)}
+.cierre-quien{
+  max-width:34ch;margin:clamp(22px,3vh,30px) auto 0;
+  font-size:1rem;line-height:1.55;color:var(--muted);
+}
+
+.form-min{display:grid;gap:12px;margin-top:clamp(30px,4.4vh,46px)}
 
 .form-min input{
   padding:15px 18px;font-size:1rem;font-family:inherit;text-align:center;

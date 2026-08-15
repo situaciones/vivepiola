@@ -139,11 +139,32 @@ export default function Landing() {
       {/* ---------- HERO ---------- */}
       <header className="hero-min">
         <div className="hero-min-texto">
+          {/* Lo primero que se lee tiene que ser la categoria. La marca todavia
+              no le dice nada a nadie, y sin esto "Reglas claras" podria ser un
+              estudio de abogados, una mediadora o un chat de vecinos. */}
+          {/* Cabe en una linea a 375px. Con "· Condominios de Chile" no cabia
+              y partia dejando "Chile" solo en la segunda linea. Que es de
+              Chile lo dicen el pie, el titulo de la pagina y la ley citada. */}
+          <span className="hero-et">Convivencia y multas en condominios</span>
+
           <h1>
             Reglas claras.<br />
             <span className="acento">Menos conflictos.</span>
           </h1>
-          <p>Convivencia en condominios, con el reglamento que tu comunidad ya escribio.</p>
+
+          {/* La frase que faltaba: cuatro verbos y se entiende que hace. */}
+          <p className="hero-que">
+            Recibe los reclamos de tu comunidad, busca en tu reglamento la regla
+            que corresponde, notifica al responsable y deja constancia de todo.
+          </p>
+
+          <ol className="hero-flujo">
+            <li>Alguien reporta</li>
+            <li>Aparece la regla</li>
+            <li>Se notifica</li>
+            <li>Queda escrito</li>
+          </ol>
+
           <a href="#demo" className="btn btn-cyan btn-grande">
             Ver una demo <ArrowRight size={18} />
           </a>
@@ -184,6 +205,11 @@ export default function Landing() {
       <section id="demo" className="cierre">
         <div className="cierre-in">
           <h2>Empieza por ver<br /><span className="acento">un caso real.</span></h2>
+          {/* Quien llega hasta aca todavia puede dudar de si esto es para el. */}
+          <p className="cierre-quien">
+            Para administradores, comites, conserjes y residentes.
+            Funciona desde el celular, sin instalar nada.
+          </p>
 
           {enviado ? (
             <div className="ok-min">
