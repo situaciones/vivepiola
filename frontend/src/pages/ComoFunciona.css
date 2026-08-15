@@ -37,6 +37,29 @@
   font-size:clamp(1.05rem,1.5vw,1.35rem);line-height:1.5;color:var(--muted);
 }
 
+/* ---------------- Bandas panoramicas ----------------
+   Van de borde a borde. Contra una columna de texto de 760px, el contraste
+   es justo el punto: cortan la lectura sin pedir que las interpreten.
+   Se recortan en alto porque a 21:9 sin tope, en una pantalla ancha, una
+   banda mide 800px y deja de ser un respiro para volverse otra portada. */
+
+.banda{
+  position:relative;overflow:hidden;
+  height:clamp(180px,30vh,340px);
+  background:var(--tono,var(--card));
+  border-top:1px solid var(--border);
+  border-bottom:1px solid var(--border);
+}
+.banda img{display:block;width:100%;height:100%;object-fit:cover}
+
+.tono-pasillo{--tono:linear-gradient(180deg,#1a1430,#0a0a0f)}
+.tono-buzones{--tono:linear-gradient(180deg,#16121f,#0a0a0f)}
+
+/* La banda ya separa: la linea del bloque que sigue seria una raya doble.
+   Va prefijado con .vp-doc porque el borde lo pone ".vp-doc .bloque", y sin
+   el prefijo este selector pierde por especificidad y la doble linea queda. */
+.vp-doc .banda + .bloque{border-top:0}
+
 /* ---------------- Bloques ---------------- */
 
 .vp-doc .bloque{padding:clamp(46px,7vh,86px) 0;border-top:1px solid var(--border)}

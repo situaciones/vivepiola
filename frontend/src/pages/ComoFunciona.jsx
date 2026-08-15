@@ -75,6 +75,28 @@ const CANALES = [
   { titulo: 'Buzon de la unidad', texto: 'Constancia impresa cuando nadie confirma por los otros dos.' },
 ];
 
+/**
+ * Banda panoramica a todo el ancho.
+ *
+ * Son el respiro de una pagina larga: contra una columna de 760px de texto,
+ * una imagen de borde a borde corta la lectura sin pedir que la interpreten.
+ * Por eso van sin pie ni titulo.
+ */
+function Banda({ imagen, alt, tono }) {
+  return (
+    <div className={`banda ${tono}`}>
+      <img
+        src={`/img/${imagen}.webp`}
+        alt={alt}
+        width={1800}
+        height={771}
+        loading="lazy"
+        decoding="async"
+      />
+    </div>
+  );
+}
+
 function Bloque({ id, sobre, titulo, children, ancho }) {
   return (
     <section id={id} className={`bloque ${ancho ? 'bloque-ancho' : ''}`}>
@@ -114,6 +136,12 @@ export default function ComoFunciona() {
           Con los plazos y los numeros que el sistema usa de verdad.
         </p>
       </header>
+
+      <Banda
+        imagen="pasillo"
+        tono="tono-pasillo"
+        alt="Pasillo vacio de un edificio residencial de noche, alejandose hacia la oscuridad."
+      />
 
       {/* ---------- 1. De donde salen las reglas ---------- */}
       <Bloque sobre="Antes de todo" titulo="De donde salen las reglas">
@@ -223,6 +251,12 @@ export default function ComoFunciona() {
           notificacion por WhatsApp excluiria justo a quien no tiene la app.
         </p>
       </Bloque>
+
+      <Banda
+        imagen="buzones"
+        tono="tono-buzones"
+        alt="Fila de buzones metalicos en un hall a oscuras, uno entreabierto con un sobre."
+      />
 
       {/* ---------- 6. El plazo ---------- */}
       <Bloque sobre="Paso 06" titulo="El plazo corre desde el acuse">
