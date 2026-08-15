@@ -3,6 +3,7 @@ import { AuthProvider, useAuth } from './context/AuthContext';
 import ProtectedRoute from './components/ProtectedRoute';
 import AcuseNotificacion from './pages/AcuseNotificacion';
 import AtajoMulta from './pages/AtajoMulta';
+import ComoFunciona from './pages/ComoFunciona';
 import Landing from './pages/Landing';
 import Login from './pages/Login';
 import FiscalizadorDashboard from './pages/dashboards/FiscalizadorDashboard';
@@ -56,6 +57,7 @@ export default function App() {
       <AuthProvider>
         <Routes>
           <Route path="/" element={<Landing />} />
+          <Route path="/como-funciona" element={<ComoFunciona />} />
           <Route path="/login" element={<Login />} />
           {/* Atajo de los avisos de WhatsApp: /m/12 abre ese expediente. */}
           <Route path="/m/:id" element={<AtajoMulta />} />

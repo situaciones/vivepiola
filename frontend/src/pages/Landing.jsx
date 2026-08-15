@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowRight, CheckCircle2 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
@@ -112,6 +112,14 @@ export default function Landing() {
   const [form, setForm] = useState({ nombre: '', correo: '', empresa: '' });
   const [enviado, setEnviado] = useState(false);
 
+  // Al llegar desde otra pagina con /#demo, el router monta la landing pero no
+  // baja: sin esto el boton "Solicitar una demo" de Como funciona dejaba a la
+  // persona arriba de todo, buscando el formulario que le prometieron.
+  useEffect(() => {
+    const destino = window.location.hash && document.querySelector(window.location.hash);
+    if (destino) destino.scrollIntoView({ block: 'start' });
+  }, []);
+
   return (
     <div className="vp vp-min">
       <nav>
@@ -121,6 +129,7 @@ export default function Landing() {
             <span className="wordmark"><b>VIVE</b><b>PIOLA</b></span>
           </Link>
           <div className="nav-right">
+            <Link to="/como-funciona" className="nav-login">Como funciona</Link>
             <Link to={rutaApp} className="nav-login">Entrar</Link>
             <a href="#demo" className="btn btn-cyan">Ver una demo</a>
           </div>
@@ -165,6 +174,9 @@ export default function Landing() {
             Encuentra cual de tus reglas corresponde y la propone.
             Quien decide sigue siendo el comite.
           </p>
+          <Link to="/como-funciona" className="ver-proceso">
+            Ver el proceso completo <ArrowRight size={16} />
+          </Link>
         </div>
       </section>
 

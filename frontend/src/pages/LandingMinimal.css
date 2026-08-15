@@ -165,6 +165,17 @@
   font-size:clamp(1.02rem,1.35vw,1.28rem);line-height:1.55;color:var(--muted);
 }
 
+/* La puerta a la pagina del proceso. Va aqui y no en un boton grande: quien
+   acaba de leer que el sistema no decide es justo quien quiere saber como. */
+.ver-proceso{
+  display:inline-flex;align-items:center;gap:8px;margin-top:clamp(28px,4vh,40px);
+  padding-bottom:4px;font-size:1rem;font-weight:650;color:var(--ink);
+  border-bottom:1px solid rgba(168,85,247,.45);
+}
+.ver-proceso:hover{border-bottom-color:var(--purple)}
+.ver-proceso svg{transition:transform .18s}
+.ver-proceso:hover svg{transform:translateX(3px)}
+
 /* ---------------- Cierre ---------------- */
 
 .cierre-in{
