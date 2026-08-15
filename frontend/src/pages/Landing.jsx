@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowRight, CheckCircle2 } from 'lucide-react';
+import { ArrowRight, Building2, CheckCircle2, Landmark } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { LogoVivePiola } from '../components/Marca';
 import './Landing.css';
@@ -187,14 +187,39 @@ export default function Landing() {
         <Pantalla key={p.id} pantalla={p} invertida={i % 2 === 1} />
       ))}
 
-      {/* ---------- EL PAPEL DEL SOFTWARE ---------- */}
+      {/* ---------- EL PAPEL DEL SOFTWARE ----------
+          Quien acaba de leer que el sistema no decide es justo quien quiere
+          saber en que se apoya. Por eso las dos fuentes van aqui y no en otra
+          seccion: la afirmacion y su respaldo, juntos. */}
       <section className="claridad">
         <div className="claridad-in">
           <h2>El sistema no decide.</h2>
           <p>
-            Encuentra cual de tus reglas corresponde y la propone.
-            Quien decide sigue siendo el comite.
+            Propone. Y todo lo que propone sale de un texto que ya existe,
+            citado con su articulo.
           </p>
+
+          <div className="fuentes">
+            <div className="fuente">
+              <Landmark size={22} />
+              <span className="fuente-et">Lo cargamos nosotros</span>
+              <p>
+                La normativa vigente de Chile, que mantiene al dia nuestro
+                equipo legal.
+              </p>
+            </div>
+            <div className="fuente">
+              <Building2 size={22} />
+              <span className="fuente-et">Lo sube tu comunidad</span>
+              <p>
+                Reglamento de copropiedad, reglamento interno y actas de
+                asamblea.
+              </p>
+            </div>
+          </div>
+
+          <p className="claridad-cierre">Quien decide sigue siendo el comite.</p>
+
           <Link to="/como-funciona" className="ver-proceso">
             Ver el proceso completo <ArrowRight size={16} />
           </Link>
