@@ -1,31 +1,27 @@
 /* ================================================================
-   VIVEPIOLA — "El proceso, paso por paso".
+   VIVEPIOLA — "Del reclamo al expediente".
 
-   Hereda de LandingMinimal.css el tono y la escala. La diferencia es
-   que aqui SI hay que leer: el ancho de linea se cuida, los numeros
-   pesan visualmente, y el texto respira sin llegar a titular.
+   Hereda el tono y la escala de LandingMinimal.css. La pagina se
+   recorre, no se lee: el peso esta en la pista de siete pasos y en
+   el numero grande de cada panel.
    ================================================================ */
 
-/* Mismo reset que la landing y la misma trampa: este selector es (0,1,1)
-   y le gana a una .clase suelta. Todo <section> con padding propio va
-   prefijado con .vp-doc. */
+/* Mismo reset que la landing y la MISMA trampa: este selector es (0,1,1) y le
+   gana a una .clase suelta. Todo <section> con padding propio va prefijado
+   con .vp-doc, o se lo come esta linea. */
 .vp-doc section{padding:0}
 
 .vp-doc h1,.vp-doc h2{font-weight:800;letter-spacing:-.035em;line-height:1.04}
 
 /* ---------------- Portada ---------------- */
 
-/* Mismo ancho que .bloque-in a proposito: si la portada usa una tercera
-   medida, el titulo arranca unos setenta pixeles a la izquierda de todo lo
-   que viene abajo y se lee como un descuadre, no como una decision.
-   La pagina tiene dos anchos y nada mas: 760 para leer, 1000 para grillas. */
 .doc-portada{
-  max-width:760px;margin:0 auto;
-  padding:clamp(48px,8vh,90px) 24px clamp(46px,7vh,80px);
+  max-width:1060px;margin:0 auto;
+  padding:clamp(40px,6vh,72px) 24px clamp(34px,5vh,54px);
 }
 
 .volver{
-  display:inline-flex;align-items:center;gap:7px;margin-bottom:clamp(26px,4vh,44px);
+  display:inline-flex;align-items:center;gap:7px;margin-bottom:clamp(22px,3.4vh,38px);
   font-size:.88rem;font-weight:600;color:var(--muted);
 }
 .volver:hover{color:var(--ink)}
@@ -33,179 +29,150 @@
 .doc-portada h1{font-size:clamp(2.7rem,7vw,5.4rem)}
 
 .doc-portada>p{
-  max-width:44ch;margin:clamp(22px,3vh,32px) 0 0;
-  font-size:clamp(1.05rem,1.5vw,1.35rem);line-height:1.5;color:var(--muted);
+  margin:clamp(20px,2.6vh,28px) 0 0;
+  font-size:clamp(1.02rem,1.4vw,1.25rem);color:var(--muted);
 }
 
-/* ---------------- Bandas panoramicas ----------------
-   Van de borde a borde. Contra una columna de texto de 760px, el contraste
-   es justo el punto: cortan la lectura sin pedir que las interpreten.
-   Se recortan en alto porque a 21:9 sin tope, en una pantalla ancha, una
-   banda mide 800px y deja de ser un respiro para volverse otra portada. */
+/* ---------------- El recorrido ---------------- */
+
+.recorrido{max-width:1060px;margin:0 auto;padding:0 24px clamp(50px,8vh,90px)}
+
+/* ---- La pista de siete ---- */
+
+.pista{
+  display:grid;grid-template-columns:repeat(7,1fr);gap:6px;
+  margin-bottom:clamp(22px,3vh,32px);
+}
+
+.pista-paso{
+  display:flex;flex-direction:column;align-items:flex-start;gap:6px;
+  padding:13px 14px 12px;border-radius:12px;cursor:pointer;
+  font-family:inherit;text-align:left;
+  background:transparent;border:1px solid var(--border);
+  /* La barra de progreso vive en el borde de arriba: engorda y se pinta
+     cuando el paso es el activo, sin mover nada de lugar. */
+  border-top:3px solid var(--border);
+  transition:background .18s,border-color .18s;
+}
+.pista-paso:hover{background:rgba(255,255,255,.035)}
+.pista-paso:focus-visible{outline:2px solid var(--purple);outline-offset:2px}
+
+.pp-n{font-size:.72rem;font-weight:800;letter-spacing:.06em;color:var(--muted)}
+.pp-t{font-size:.86rem;font-weight:650;line-height:1.2;color:var(--ink-soft)}
+
+/* Los ya recorridos quedan marcados: se ve donde va uno de los siete. */
+.pista-paso.hecho{border-top-color:rgba(168,85,247,.42)}
+.pista-paso.hecho .pp-n{color:rgba(168,85,247,.8)}
+
+.pista-paso.activo{
+  background:var(--card);border-color:var(--border);border-top-color:var(--purple);
+}
+.pista-paso.activo .pp-n{color:var(--purple)}
+.pista-paso.activo .pp-t{color:var(--ink)}
+
+/* ---- El panel ---- */
+
+/* Los siete apilados en la misma celda: la caja mide siempre lo del mas alto
+   y no salta al cambiar de paso. visibility (y no display) es lo que hace que
+   los ocultos sigan contando para el tamaño de la grilla, y a la vez los saca
+   del orden de tabulacion y del arbol de accesibilidad. */
+.paneles{display:grid}
+
+.panel{
+  grid-area:1/1;visibility:hidden;
+  position:relative;
+  padding:clamp(30px,4.4vh,48px) clamp(26px,4vw,52px);
+  border-radius:20px;
+  background:var(--card);border:1px solid var(--border);
+  box-shadow:var(--shadow);
+}
+.panel.visible{visibility:visible;animation:entra .34s cubic-bezier(.22,1,.36,1) both}
+
+@keyframes entra{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+
+@media(prefers-reduced-motion:reduce){
+  .panel.visible{animation:none}
+}
+
+/* El numero del paso, enorme y detras del texto: ubica sin competir. */
+.panel-n{
+  position:absolute;top:8px;right:clamp(18px,3vw,34px);
+  font-size:clamp(5rem,13vw,9rem);font-weight:800;letter-spacing:-.06em;
+  line-height:1;color:rgba(255,255,255,.035);pointer-events:none;user-select:none;
+}
+
+.panel h3{
+  margin:0;font-size:clamp(1.6rem,3.4vw,2.6rem);font-weight:800;
+  letter-spacing:-.03em;line-height:1.06;color:var(--ink);
+}
+
+.panel-frase{
+  margin:clamp(16px,2.2vh,22px) 0 0;max-width:52ch;
+  font-size:clamp(1.02rem,1.4vw,1.2rem);line-height:1.6;color:var(--ink-soft);
+}
+
+.panel-nota{
+  margin:clamp(24px,3.2vh,32px) 0 0;padding-left:15px;max-width:52ch;
+  border-left:2px solid rgba(168,85,247,.4);
+  font-size:.95rem;line-height:1.55;color:var(--muted);
+}
+
+/* ---- El dato que cada paso deja ---- */
+
+.dato{
+  display:flex;align-items:baseline;gap:15px;flex-wrap:wrap;
+  margin:clamp(24px,3.4vh,34px) 0 0;
+}
+.dato b{
+  font-size:clamp(3rem,7vw,4.6rem);font-weight:800;letter-spacing:-.05em;line-height:.85;
+  background:var(--grad);-webkit-background-clip:text;background-clip:text;
+  -webkit-text-fill-color:transparent;
+}
+.dato span{max-width:22ch;font-size:1rem;line-height:1.4;color:var(--muted)}
+
+/* ---- Los tres umbrales del paso 03 ---- */
+
+.umbrales{display:flex;flex-wrap:wrap;gap:10px;margin:clamp(24px,3.4vh,34px) 0 0}
+
+.umbral{
+  flex:1 1 130px;padding:16px 18px;border-radius:13px;
+  background:rgba(255,255,255,.03);border:1px solid var(--border);border-top:3px solid;
+}
+.u-leve{border-top-color:var(--green)}
+.u-grave{border-top-color:var(--amber)}
+.u-gravisima{border-top-color:#ef4444}
+
+.umbral b{display:block;font-size:2.4rem;font-weight:800;letter-spacing:-.04em;line-height:.9}
+.u-leve b{color:var(--green)}
+.u-grave b{color:var(--amber)}
+.u-gravisima b{color:#f87171}
+
+.umbral span{display:block;margin-top:8px;font-size:.88rem;color:var(--muted)}
+
+/* ---------------- Bandas ----------------
+   Con tope de alto: a 21:9 sin tope, en una pantalla ancha una banda mide
+   800px y deja de ser un respiro para volverse otra portada. */
 
 .banda{
   position:relative;overflow:hidden;
-  height:clamp(180px,30vh,340px);
+  height:clamp(170px,26vh,300px);
   background:var(--tono,var(--card));
-  border-top:1px solid var(--border);
-  border-bottom:1px solid var(--border);
+  border-top:1px solid var(--border);border-bottom:1px solid var(--border);
 }
 .banda img{display:block;width:100%;height:100%;object-fit:cover}
 
 .tono-pasillo{--tono:linear-gradient(180deg,#1a1430,#0a0a0f)}
 .tono-buzones{--tono:linear-gradient(180deg,#16121f,#0a0a0f)}
 
-/* La banda ya separa: la linea del bloque que sigue seria una raya doble.
-   Va prefijado con .vp-doc porque el borde lo pone ".vp-doc .bloque", y sin
-   el prefijo este selector pierde por especificidad y la doble linea queda. */
-.vp-doc .banda + .bloque{border-top:0}
+/* ---------------- Que hace y que no hace la IA ---------------- */
 
-/* ---------------- Bloques ---------------- */
-
-.vp-doc .bloque{padding:clamp(46px,7vh,86px) 0;border-top:1px solid var(--border)}
-
-.bloque-in{max-width:760px;margin:0 auto;padding:0 24px}
-/* Los bloques con grilla necesitan mas caja que un parrafo. */
-.bloque-ancho .bloque-in{max-width:1000px}
-
-.sobre{
-  display:block;margin-bottom:16px;
-  font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.13em;
-  color:var(--purple);
-}
-
-.vp-doc .bloque h2{font-size:clamp(1.9rem,3.6vw,2.9rem)}
-
-.parrafo{
-  max-width:62ch;margin:clamp(20px,2.6vh,28px) 0 0;
-  font-size:1.06rem;line-height:1.68;color:var(--ink-soft);
-}
-.parrafo b{color:var(--ink);font-weight:650}
-
-/* Un cierre de bloque que matiza o acota. Se lee como nota al pie. */
-.parrafo.nota{
-  padding-left:16px;border-left:2px solid var(--border);
-  font-size:.98rem;color:var(--muted);
-}
-
-/* La cifra que manda el bloque. Va sola y grande: es el dato que la
-   persona se lleva aunque no lea el parrafo de abajo. */
-.cifra{
-  display:flex;align-items:baseline;gap:16px;flex-wrap:wrap;
-  margin:clamp(22px,3vh,34px) 0 0;
-  font-size:clamp(1.05rem,1.6vw,1.3rem);line-height:1.4;color:var(--ink-soft);
-}
-.cifra b{
-  font-size:clamp(3.4rem,8vw,5.4rem);font-weight:800;letter-spacing:-.05em;line-height:.85;
-  background:var(--grad);-webkit-background-clip:text;background-clip:text;
-  -webkit-text-fill-color:transparent;
-}
-
-/* ---------------- Listas ---------------- */
-
-.lista-num{
-  counter-reset:n;list-style:none;
-  margin:clamp(24px,3vh,34px) 0 0;padding:0;display:grid;gap:20px;
-}
-.lista-num li{
-  counter-increment:n;position:relative;padding-left:46px;
-  max-width:62ch;font-size:1.04rem;line-height:1.62;color:var(--ink-soft);
-}
-.lista-num li::before{
-  content:counter(n,decimal-leading-zero);position:absolute;left:0;top:1px;
-  font-size:.84rem;font-weight:800;letter-spacing:.04em;color:var(--purple);
-}
-.lista-num b{display:block;margin-bottom:3px;color:var(--ink);font-weight:650}
-
-.lista-marca{list-style:none;margin:clamp(24px,3vh,32px) 0 0;padding:0;display:grid;gap:16px}
-.lista-marca li{
-  position:relative;padding-left:26px;max-width:62ch;
-  font-size:1.04rem;line-height:1.62;color:var(--ink-soft);
-}
-.lista-marca li::before{
-  content:"";position:absolute;left:2px;top:.62em;
-  width:8px;height:8px;border-radius:50%;background:var(--purple);
-}
-
-/* ---------------- Los siete pasos ---------------- */
-
-.pasos{list-style:none;margin:clamp(28px,4vh,44px) 0 0;padding:0;display:grid;gap:4px}
-
-.pasos li{
-  display:grid;grid-template-columns:auto 1fr;gap:clamp(18px,3vw,34px);
-  align-items:start;padding:24px 0;border-top:1px solid var(--border);
-}
-.pasos li:first-child{border-top:0}
-
-.paso-n{
-  font-size:clamp(1.5rem,3.4vw,2.4rem);font-weight:800;letter-spacing:-.04em;
-  line-height:1;color:transparent;
-  background:var(--grad);-webkit-background-clip:text;background-clip:text;
-  -webkit-text-fill-color:transparent;
-  /* Ancho fijo para que los siete titulos arranquen en la misma vertical. */
-  min-width:2.2ch;
-}
-
-.pasos h3{margin:0 0 6px;font-size:clamp(1.1rem,1.9vw,1.4rem);font-weight:700;color:var(--ink)}
-.pasos p{margin:0;max-width:56ch;font-size:1.01rem;line-height:1.6;color:var(--muted)}
-
-/* ---------------- Umbrales de certeza ---------------- */
-
-.umbrales{
-  display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));
-  gap:14px;margin:clamp(26px,3.6vh,38px) 0 0;
-}
-
-.umbral{
-  padding:24px 22px 22px;border-radius:16px;
-  background:var(--card);border:1px solid var(--border);border-top:3px solid;
-}
-.u-leve{border-top-color:var(--green)}
-.u-grave{border-top-color:var(--amber)}
-.u-gravisima{border-top-color:#ef4444}
-
-.u-num{
-  display:block;font-size:3.2rem;font-weight:800;letter-spacing:-.05em;
-  line-height:.9;color:var(--ink);
-}
-.u-leve .u-num{color:var(--green)}
-.u-grave .u-num{color:var(--amber)}
-.u-gravisima .u-num{color:#f87171}
-
-.umbral b{display:block;margin:12px 0 7px;font-size:1.02rem;color:var(--ink)}
-.umbral p{margin:0;font-size:.92rem;line-height:1.5;color:var(--muted)}
-
-/* ---------------- Canales ---------------- */
-
-.canales{
-  display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));
-  gap:14px;margin:clamp(26px,3.6vh,38px) 0 0;
-}
-
-.canal{padding:22px;border-radius:16px;background:var(--card);border:1px solid var(--border)}
-
-.canal-n{
-  display:grid;place-items:center;width:30px;height:30px;border-radius:50%;
-  font-size:.85rem;font-weight:800;
-  color:var(--purple);background:rgba(168,85,247,.13);
-}
-.canal b{display:block;margin:14px 0 7px;font-size:1.02rem;color:var(--ink)}
-.canal p{margin:0;font-size:.92rem;line-height:1.5;color:var(--muted)}
-
-/* ---------------- Cierre sobre la IA ---------------- */
-
-.doc-cierre-ia{
-  border-top:1px solid var(--border);
-  background:linear-gradient(180deg,rgba(168,85,247,.06),transparent 70%);
-}
-
-.doc-cierre-in{max-width:1000px;margin:0 auto;padding:clamp(66px,10vh,120px) 24px}
-
-.vp-doc .doc-cierre-ia h2{font-size:clamp(2.1rem,4.4vw,3.4rem)}
+.doc-ia{background:linear-gradient(180deg,rgba(168,85,247,.06),transparent 70%)}
+.doc-ia-in{max-width:1000px;margin:0 auto;padding:clamp(58px,9vh,105px) 24px}
+.vp-doc .doc-ia h2{font-size:clamp(2rem,4.2vw,3.2rem)}
 
 .dos-col{
   display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));
-  gap:clamp(24px,4vw,54px);margin:clamp(34px,5vh,54px) 0 0;
+  gap:clamp(24px,4vw,54px);margin:clamp(32px,4.6vh,50px) 0 0;
 }
 
 .col-et{
@@ -217,12 +184,12 @@
 /* La primera columna es lo que si hace: se marca, la otra no. */
 .dos-col>div:first-child .col-et{color:var(--purple);border-bottom-color:rgba(168,85,247,.32)}
 
-.dos-col ul{list-style:none;margin:0;padding:0;display:grid;gap:14px}
-.dos-col li{font-size:1rem;line-height:1.58;color:var(--ink-soft)}
+.dos-col ul{list-style:none;margin:0;padding:0;display:grid;gap:13px}
+.dos-col li{font-size:1rem;line-height:1.55;color:var(--ink-soft)}
 
 .frase-final{
-  margin:clamp(40px,6vh,64px) 0 0;max-width:24ch;
-  font-size:clamp(1.5rem,3vw,2.2rem);font-weight:700;line-height:1.2;
+  margin:clamp(38px,5.6vh,60px) 0 0;max-width:24ch;
+  font-size:clamp(1.45rem,2.9vw,2.1rem);font-weight:700;line-height:1.2;
   letter-spacing:-.03em;
   background:var(--grad);-webkit-background-clip:text;background-clip:text;
   -webkit-text-fill-color:transparent;
@@ -230,10 +197,19 @@
 
 /* ---------------- Movil ---------------- */
 
-@media(max-width:640px){
-  /* El numero sobre el titulo: a 375px, dos columnas dejan el texto en una
-     canaleta de 40 caracteres que se lee peor que sin numero. */
-  .pasos li{grid-template-columns:1fr;gap:8px}
-  .paso-n{font-size:1.15rem}
-  .cifra{gap:10px}
+@media(max-width:820px){
+  /* Siete columnas a 375px dan cuarenta pixeles por paso: no cabe el nombre
+     y el numero queda ilegible. Se convierte en una tira que se arrastra, con
+     los pasos a su ancho natural. */
+  .pista{
+    display:flex;gap:8px;overflow-x:auto;scroll-snap-type:x mandatory;
+    /* Sangra hasta el borde para que se note que hay mas a la derecha. */
+    margin-left:-24px;margin-right:-24px;padding:2px 24px 10px;
+    scrollbar-width:none;
+  }
+  .pista::-webkit-scrollbar{display:none}
+  .pista-paso{flex:0 0 auto;scroll-snap-align:start}
+
+  .panel-n{font-size:5rem;opacity:.7}
+  .dato b{font-size:3.2rem}
 }
