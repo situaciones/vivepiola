@@ -28,63 +28,65 @@ import './ComoFunciona.css';
 const PASOS = [
   {
     n: '01',
-    tab: 'Reporte',
-    titulo: 'Alguien reporta',
-    frase: 'Un vecino, el conserje o el comite. Con fotos o video, y tambien de forma anonima.',
-    dato: { valor: '1', pie: 'hecho, aunque lo reporten cinco personas' },
-    nota: 'El sistema reconoce cuando varios reportes hablan de lo mismo.',
+    tab: 'Configuracion',
+    titulo: 'Todo cargado antes de empezar',
+    frase: 'Nuestro equipo legal mantiene al dia la normativa de Chile. Tu comunidad sube la suya: reglamento de copropiedad, reglamento interno y actas.',
+    dato: { valor: '0', pie: 'reglas escribe el software' },
+    nota: 'El catalogo de infracciones sale de tus documentos, y lo aprueba una persona.',
   },
   {
     n: '02',
-    tab: 'Regla',
-    titulo: 'Aparece la regla',
-    frase: 'Se busca en tu reglamento de copropiedad, en las actas de asamblea y en la normativa de Chile.',
-    dato: { valor: 'Art.', pie: 'la cita exacta, no un resumen' },
-    nota: 'Ninguna regla la escribe el software.',
-  },
-  {
-    n: '03',
-    tab: 'Certeza',
-    titulo: 'Se mide la certeza',
-    frase: 'Un expediente solo avanza solo si la propuesta supera el umbral que corresponde al peso de la falta.',
+    tab: 'Infraccion',
+    titulo: 'Primero el hecho. Despues la multa.',
+    // La distincion que ordena todo lo demas. Si el visitante se lleva una
+    // sola idea de esta pagina, ojala sea esta.
+    frase: 'La infraccion es el hecho. La multa, su consecuencia. Primero se respalda el hecho: la IA mira las fotos y el video, y aparece el articulo con su gravedad.',
     umbrales: [
       { grado: 'Leve', valor: 65 },
       { grado: 'Grave', valor: 80 },
       { grado: 'Gravisima', valor: 90 },
     ],
-    nota: 'Debajo del umbral no se descarta: lo revisa una persona.',
+    nota: 'Cuanta certeza se exige para darlo por acreditado. Sin respaldo no hay infraccion, y sin infraccion no hay multa.',
+  },
+  {
+    n: '03',
+    tab: 'Comunicacion',
+    titulo: 'Se avisa hasta que confirme',
+    frase: 'Correo, WhatsApp y la aplicacion. Va el hecho, el articulo y el monto. Se insiste hasta que la persona acuse recibo.',
+    dato: { valor: '3', pie: 'canales, hasta que alguien confirme' },
+    nota: 'El plazo corre desde el acuse y no desde el envio: un correo en spam no puede costarle a nadie su defensa.',
   },
   {
     n: '04',
-    tab: 'Aviso',
-    titulo: 'Aviso o multa',
-    frase: 'Las primeras faltas de una unidad se avisan sin cobro. La falta queda en el registro, el monto va en cero.',
-    dato: { valor: '2', pie: 'cortesias antes de empezar a cobrar' },
-    nota: 'Las gravisimas y las de riesgo no esperan.',
+    tab: 'Apelacion',
+    titulo: 'Puede apelar, y con pruebas',
+    frase: 'Un formulario para sus descargos y para subir el material que lo respalde. Si prefiere hablarlo, agenda una reunion en linea o presencial.',
+    dato: { valor: '5', pie: 'dias para apelar, desde el acuse' },
+    nota: 'Lo que aporte entra al expediente, y el comite lo tiene que mirar.',
   },
   {
     n: '05',
-    tab: 'Notificacion',
-    titulo: 'Se notifica',
-    frase: 'Correo y WhatsApp, con reintentos. Si nadie confirma, queda la constancia en el buzon de la unidad.',
-    dato: { valor: '3', pie: 'canales, hasta que alguien confirme' },
-    nota: 'El enlace abre sin cuenta ni contraseña.',
+    tab: 'Resolucion',
+    titulo: 'Resuelve el comite',
+    frase: 'El sistema le pone las salidas sobre la mesa, cada una con su fundamento: cortesia, rebajar un porcentaje o anular. El comite vota segun sus reglas.',
+    dato: { valor: '15', pie: 'dias tiene el comite para resolver' },
+    nota: 'Propone. No decide. Quien firma sigue siendo el comite.',
   },
   {
     n: '06',
-    tab: 'Plazo',
-    titulo: 'Corre el plazo',
-    frase: 'Empieza cuando la persona confirma que recibio. No cuando el sistema envio.',
-    dato: { valor: '5', pie: 'dias para apelar, desde el acuse' },
-    nota: 'Si corriera desde el envio, un correo en spam costaria la defensa.',
+    tab: 'Cobro',
+    titulo: 'Recien ahora se cobra',
+    frase: 'Con la resolucion firme, la multa pasa al administrador y entra al proximo cobro de gastos comunes.',
+    dato: { valor: '1', pie: 'cobro, y solo al final del proceso' },
+    nota: 'Nada se cobra mientras el caso siga abierto.',
   },
   {
     n: '07',
-    tab: 'Resolucion',
-    titulo: 'Resuelve el comite',
-    frase: 'Puede acoger, rechazar o rebajar el monto. Si no hubo apelacion, la multa queda firme.',
-    dato: { valor: '15', pie: 'dias tiene el comite para responder' },
-    nota: 'El plazo tambien corre para quien resuelve.',
+    tab: 'Registro',
+    titulo: 'Todo queda escrito',
+    frase: 'Cada paso con su fecha, su hora y quien lo hizo: pruebas, cita del articulo, acuse, descargos, votos y resolucion. Si la falta se repite, queda el historial.',
+    dato: { valor: '0', pie: 'pasos se pueden borrar' },
+    nota: 'Se cierra sellado en cadena: alterar un paso pasado la rompe entera y se nota.',
   },
 ];
 
@@ -205,8 +207,8 @@ export default function ComoFunciona() {
 
       <header className="doc-portada">
         <Link to="/" className="volver"><ArrowLeft size={15} /> Volver</Link>
-        <h1>Del reclamo<br /><span className="acento">al expediente.</span></h1>
-        <p>Siete pasos. Tocalos para verlos.</p>
+        <h1>Del hecho<br /><span className="acento">al expediente.</span></h1>
+        <p>Siete etapas. Tocalas para verlas.</p>
       </header>
 
       <Recorrido />

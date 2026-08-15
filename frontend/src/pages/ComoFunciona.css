@@ -212,4 +212,11 @@
 
   .panel-n{font-size:5rem;opacity:.7}
   .dato b{font-size:3.2rem}
+
+  /* Los tres umbrales en una sola fila. Con flex-basis de 130px se partian en
+     dos filas a 375px, y como los siete paneles comparten alto, esa fila de
+     mas se la comian los otros seis en tarjeta vacia. */
+  .umbral{flex:1 1 0;min-width:0;padding:14px 12px}
+  .umbral b{font-size:1.9rem}
+  .umbral span{font-size:.8rem}
 }
