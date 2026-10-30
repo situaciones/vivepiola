@@ -45,6 +45,7 @@ INSTALLED_APPS = [
     'multas',
     'novedades',
     'gastos_comunes',
+    'asistente',
 ]
 
 MIDDLEWARE = [
@@ -198,6 +199,10 @@ REST_FRAMEWORK = {
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
     'PAGE_SIZE': 25,
     'DEFAULT_FILTER_BACKENDS': ('django_filters.rest_framework.DjangoFilterBackend',),
+    # Solo las vistas que declaran throttle_scope quedan limitadas.
+    'DEFAULT_THROTTLE_RATES': {
+        'asistente': config('ASISTENTE_LIMITE', default='40/hour'),
+    },
 }
 
 SIMPLE_JWT = {
@@ -231,6 +236,11 @@ DEFAULT_FROM_EMAIL = config('DEFAULT_FROM_EMAIL', default='notificaciones@sincon
 # Integracion IA (extraccion de infracciones desde reglamento en PDF)
 
 ANTHROPIC_API_KEY = config('ANTHROPIC_API_KEY', default='')
+
+# Asistente de consulta (chat en la app). Sin ANTHROPIC_API_KEY responde 503 y
+# la app muestra que no esta activado.
+ASISTENTE_MODELO = config('ASISTENTE_MODELO', default='claude-opus-5-5')
+ASISTENTE_ESFUERZO = config('ASISTENTE_ESFUERZO', default='medium')
 
 
 # Analisis de evidencia (fotos y videos).

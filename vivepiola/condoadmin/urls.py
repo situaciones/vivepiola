@@ -27,6 +27,7 @@ urlpatterns = [
     path('api/', include('multas.urls')),
     path('api/', include('novedades.urls')),
     path('api/', include('gastos_comunes.urls')),
+    path('api/', include('asistente.urls')),
 ]
 
 if settings.DEBUG:

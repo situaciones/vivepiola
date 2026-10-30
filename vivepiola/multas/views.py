@@ -203,6 +203,25 @@ class TicketViewSet(viewsets.ModelViewSet):
         return Response(EvidenciaFotoSerializer(evidencia).data, status=201)
 
 
+def multas_visibles(user):
+    """
+    Las multas que este usuario puede ver. Una sola definicion para la API y
+    para el asistente: lo que el chat responde nunca puede ir mas alla de lo
+    que la persona ya ve en su pantalla.
+    """
+    qs = Multa.objects.all()
+    if user.rol != Rol.SUPERADMIN:
+        qs = qs.filter(condominio_id=user.condominio_id)
+        actualizar_multas_vencidas(user.condominio)
+    if user.rol == Rol.RESIDENTE:
+        # Sin persona vinculada no hay "sus" multas. Filtrar por persona=None
+        # le mostraba todas las de la comunidad sin infractor identificado.
+        qs = qs.filter(persona_infractor=user.persona) if user.persona_id else qs.none()
+    elif user.rol == Rol.FISCALIZADOR:
+        qs = qs.filter(ticket__creado_por=user)
+    return qs
+
+
 class MultaViewSet(viewsets.ReadOnlyModelViewSet):
     """
     Flujo legal de la multa. Las multas NUNCA se crean ni editan directamente:
@@ -227,16 +246,7 @@ class MultaViewSet(viewsets.ReadOnlyModelViewSet):
         return [UsuarioAsignado()]
 
     def get_queryset(self):
-        user = self.request.user
-        qs = Multa.objects.all()
-        if user.rol != Rol.SUPERADMIN:
-            qs = qs.filter(condominio_id=user.condominio_id)
-            actualizar_multas_vencidas(user.condominio)
-        if user.rol == Rol.RESIDENTE:
-            qs = qs.filter(persona_infractor=user.persona)
-        elif user.rol == Rol.FISCALIZADOR:
-            qs = qs.filter(ticket__creado_por=user)
-        return qs
+        return multas_visibles(self.request.user)
 
     @action(detail=True, methods=['post'])
     def aprobar(self, request, pk=None):

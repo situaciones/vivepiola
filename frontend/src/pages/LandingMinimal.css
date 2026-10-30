@@ -284,6 +284,44 @@
    la alternancia: si en las invertidas quedara arriba, el pulgar
    encontraria una foto sin saber todavia de que se trata. */
 
+/* ---- La app en las tiendas ----
+   Los botones imitan la forma de los sellos de las tiendas (logo, linea
+   chica y nombre) porque asi los reconoce cualquiera de un vistazo. */
+
+.descarga{border-bottom:1px solid var(--border)}
+.descarga-in{
+  max-width:820px;margin:0 auto;text-align:center;
+  padding:clamp(70px,12vh,140px) 24px;
+}
+.descarga h2{
+  font-size:clamp(2rem,4.4vw,3.4rem);
+  font-weight:800;letter-spacing:-.03em;line-height:1.06;
+}
+.descarga-in>p{
+  margin:22px auto 0;max-width:36ch;
+  font-size:clamp(1.02rem,1.35vw,1.2rem);line-height:1.55;color:var(--muted);
+}
+.tiendas{
+  display:flex;flex-wrap:wrap;justify-content:center;gap:14px;
+  margin-top:clamp(30px,4.4vh,46px);
+}
+.tienda{
+  display:inline-flex;align-items:center;gap:12px;
+  min-width:196px;padding:11px 22px 11px 18px;border-radius:14px;
+  background:#000;color:#fff;border:1px solid rgba(255,255,255,.22);
+  text-decoration:none;text-align:left;
+  transition:transform .18s,border-color .18s;
+}
+.tienda:hover{transform:translateY(-2px);border-color:rgba(255,255,255,.5)}
+.tienda:focus-visible{outline:2px solid var(--purple);outline-offset:3px}
+.tienda span{display:flex;flex-direction:column;font-size:1.22rem;font-weight:650;line-height:1.1;letter-spacing:-.01em}
+.tienda small{font-size:.7rem;font-weight:500;letter-spacing:.02em;opacity:.85}
+.descarga .descarga-nota{margin-top:20px;max-width:none;font-size:.9rem}
+
+@media(max-width:640px){
+  .vp-min .nav-opcional{display:none}
+}
+
 @media(max-width:900px){
   .hero-min,.vp-min .pantalla{grid-template-columns:1fr;gap:34px;min-height:0}
   .pantalla.invertida .pantalla-texto{order:0}

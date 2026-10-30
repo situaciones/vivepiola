@@ -188,7 +188,10 @@ DEFAULT_FROM_EMAIL=notificaciones@sinconflicto.cl
 ### 1.3 Anthropic — 🟠 importante
 
 **Por qué:** lee el reglamento en PDF y propone la infracción de cada denuncia
-con su fundamento.
+con su fundamento. También mueve el **asistente** (el botón ✦ de la app): un
+chat que responde sobre el reglamento, la ley y los casos que cada persona ya
+puede ver. Es solo de consulta: no aprueba, apela ni notifica nada. Sin esta
+clave, el botón aparece pero avisa que el asistente no está activado.
 
 **Sin esta clave el sistema NO se cae:** cae a un respaldo por coincidencia de
 palabras. Ese respaldo acierta **2 de 8** casos reales (lo medimos); el agente
@@ -208,6 +211,16 @@ ANTHROPIC_API_KEY=sk-ant-...                🔒 Encrypt
 
 **Costo real:** ~US$0.02 por denuncia, ~US$0.12 por reglamento. Con US$5
 alcanza para miles de casos.
+El asistente cuesta del orden de US$0.02–0.06 por pregunta (usa
+`claude-opus-5-5` con esfuerzo `medium`) y tiene un tope de 40 preguntas por
+hora por persona. Se ajusta con `ASISTENTE_MODELO`, `ASISTENTE_ESFUERZO` y
+`ASISTENTE_LIMITE` (ej. `60/hour`).
+
+**En Google Cloud** (con el secreto `anthropic-api-key` ya creado):
+
+```bash
+gcloud run services update sinconflicto --project sinconflicto-cl --region southamerica-west1 --update-secrets ANTHROPIC_API_KEY=anthropic-api-key:latest
+```
 
 **Para verificar que funciona:**
 

@@ -26,6 +26,14 @@ import './LandingMinimal.css';
  * medidas declaradas evitan que el texto salte cuando cargan.
  */
 
+// Fichas de la app en las tiendas. La de Play sale del applicationId
+// (cl.sinconflicto.app); la de App Store la asigna Apple al crear la app en
+// App Store Connect: hay que reemplazar el id cuando exista.
+const TIENDAS = {
+  android: 'https://play.google.com/store/apps/details?id=cl.sinconflicto.app',
+  iphone: 'https://apps.apple.com/cl/app/sinconflicto/id0000000000',
+};
+
 const PANTALLAS = [
   {
     id: 'reglas',
@@ -64,6 +72,25 @@ const PANTALLAS = [
     alt: 'Carpetas de archivo apiladas en la oscuridad, con los cantos iluminados.',
   },
 ];
+
+function LogoApple() {
+  return (
+    <svg viewBox="0 0 24 24" width="26" height="26" aria-hidden="true" fill="currentColor">
+      <path d="M16.37 12.6c-.02-2.3 1.88-3.4 1.96-3.46-1.07-1.56-2.73-1.78-3.32-1.8-1.41-.14-2.76.83-3.47.83-.72 0-1.82-.81-2.99-.79-1.54.02-2.96.9-3.75 2.27-1.6 2.78-.41 6.88 1.15 9.13.76 1.1 1.67 2.34 2.86 2.3 1.15-.05 1.58-.74 2.97-.74 1.38 0 1.77.74 2.98.72 1.23-.02 2.01-1.12 2.76-2.23.87-1.28 1.23-2.52 1.25-2.58-.03-.01-2.39-.92-2.4-3.65zM14.1 5.86c.63-.77 1.06-1.83.94-2.89-.91.04-2.01.61-2.67 1.37-.58.67-1.1 1.76-.96 2.8 1.02.08 2.05-.52 2.69-1.28z" />
+    </svg>
+  );
+}
+
+function LogoPlay() {
+  return (
+    <svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true">
+      <path d="M4.2 2.5 13.6 12l-9.4 9.5c-.3-.2-.5-.6-.5-1.1V3.6c0-.5.2-.9.5-1.1z" fill="#00d7fe" />
+      <path d="M16.8 8.8 13.6 12 4.2 2.5c.3-.2.8-.2 1.2 0l11.4 6.3z" fill="#00f076" />
+      <path d="M16.8 15.2 5.4 21.5c-.4.2-.9.2-1.2 0l9.4-9.5 3.2 3.2z" fill="#ff3a44" />
+      <path d="M20.6 12c0 .5-.3.9-.7 1.1l-3.1 2.1-3.2-3.2 3.2-3.2 3.1 2.1c.4.2.7.6.7 1.1z" fill="#ffd400" />
+    </svg>
+  );
+}
 
 /**
  * Una pantalla completa: titulo grande, una linea, una imagen.
@@ -129,7 +156,10 @@ export default function Landing() {
             <span className="wordmark"><b>SIN</b><b>CONFLICTO</b></span>
           </Link>
           <div className="nav-right">
-            <Link to="/como-funciona" className="nav-login">Como funciona</Link>
+            {/* En el celular no caben todos: quedan Entrar y la demo, y "La app"
+                se encuentra bajando. */}
+            <Link to="/como-funciona" className="nav-login nav-opcional">Como funciona</Link>
+            <a href="#app" className="nav-login nav-opcional">La app</a>
             <Link to={rutaApp} className="nav-login">Entrar</Link>
             <a href="#demo" className="btn btn-cyan">Ver una demo</a>
           </div>
@@ -223,6 +253,30 @@ export default function Landing() {
           <Link to="/como-funciona" className="ver-proceso">
             Ver el proceso completo <ArrowRight size={16} />
           </Link>
+        </div>
+      </section>
+
+      {/* ---------- LA APP ----------
+          Despues de entender que hace y antes de pedir la demo: quien ya esta
+          convencido busca donde bajarla. */}
+      <section id="app" className="descarga">
+        <div className="descarga-in">
+          <h2>Lleva tu comunidad<br /><span className="acento">en el bolsillo.</span></h2>
+          <p>
+            Reporta, revisa y responde desde el celular. Con aviso cuando algo
+            te necesita.
+          </p>
+          <div className="tiendas">
+            <a className="tienda" href={TIENDAS.android} target="_blank" rel="noopener noreferrer">
+              <LogoPlay />
+              <span><small>Disponible en</small>Google Play</span>
+            </a>
+            <a className="tienda" href={TIENDAS.iphone} target="_blank" rel="noopener noreferrer">
+              <LogoApple />
+              <span><small>Descárgala en</small>App Store</span>
+            </a>
+          </div>
+          <p className="descarga-nota">Android y iPhone. También funciona desde el navegador.</p>
         </div>
       </section>
 

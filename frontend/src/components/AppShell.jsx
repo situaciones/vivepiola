@@ -4,6 +4,7 @@ import { Capacitor } from '@capacitor/core';
 import { LayoutGrid, LogOut } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useVocab } from '../vocab';
+import Asistente from './Asistente';
 import Marca from './Marca';
 
 // La navegacion inferior del telefono admite cinco destinos comodos para el
@@ -21,6 +22,7 @@ export default function AppShell({ tabs, active, onChange, onAtras, dark = false
   const rol = usuario?.rol ? t(`rol_${usuario.rol}`) : '';
   // null = cerrada; 'perfil' o 'mas' = que muestra la hoja inferior.
   const [hoja, setHoja] = useState(null);
+  const [chat, setChat] = useState(false);
 
   const desbordan = tabs.length > MAX_NAV_INFERIOR;
   const visibles = desbordan ? tabs.slice(0, MAX_NAV_INFERIOR - 1) : tabs;
@@ -35,7 +37,8 @@ export default function AppShell({ tabs, active, onChange, onAtras, dark = false
   useEffect(() => {
     if (!Capacitor.isNativePlatform()) return undefined;
     const escucha = AppNativa.addListener('backButton', () => {
-      if (hoja) setHoja(null);
+      if (chat) setChat(false);
+      else if (hoja) setHoja(null);
       else if (onAtras?.()) return;
       else if (tabs.length && active !== tabs[0].id) onChange(tabs[0].id);
       else AppNativa.minimizeApp();
@@ -43,7 +46,7 @@ export default function AppShell({ tabs, active, onChange, onAtras, dark = false
     return () => {
       escucha.then((e) => e.remove());
     };
-  }, [hoja, active, tabs, onChange, onAtras]);
+  }, [chat, hoja, active, tabs, onChange, onAtras]);
 
   const elegir = (id) => {
     setHoja(null);
@@ -128,6 +131,8 @@ export default function AppShell({ tabs, active, onChange, onAtras, dark = false
           </button>
         )}
       </nav>
+
+      <Asistente abierto={chat} onAbrir={() => setChat(true)} onCerrar={() => setChat(false)} />
 
       {hoja && (
         <div className="hoja-overlay" onClick={() => setHoja(null)}>
