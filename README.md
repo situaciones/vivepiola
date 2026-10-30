@@ -4,7 +4,7 @@ Sistema de debido proceso legal para multas y convivencia en condominios,
 basado en la Ley 21.442 (Chile). Separa estrictamente los roles del proceso
 sancionatorio:
 
-- **Fiscalizador (Conserje):** crea tickets con evidencia fotografica. No define monto ni aprueba.
+- **Fiscalizador:** crea tickets con evidencia fotografica. No define monto ni aprueba.
 - **Comite de Administracion:** revisa evidencia y es el UNICO que aprueba/rechaza multas, eligiendo la infraccion del catalogo del reglamento. Tambien confirma el catalogo de infracciones y resuelve descargos.
 - **Administrador:** notifica al residente (genera PDF + envia correo, el canal legal), gestiona el registro de copropietarios, carga el reglamento y exporta multas firmes a gastos comunes.
 - **Residente:** ve sus multas y evidencia, presenta descargos dentro del plazo, usa el Libro de Novedades.

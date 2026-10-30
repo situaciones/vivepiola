@@ -48,7 +48,7 @@ from .services import (
 
 class TicketViewSet(viewsets.ModelViewSet):
     """
-    El reporte lo puede levantar el conserje (Fiscalizador), el Comite o un
+    El reporte lo puede levantar el Fiscalizador, el Comite o un
     vecino (Residente), con opcion de anonimato. Quien reporta NO define monto
     ni aprueba nada: por eso no expone accion de aprobacion aqui. Los tickets no
     se editan ni eliminan una vez creados: son evidencia del debido proceso

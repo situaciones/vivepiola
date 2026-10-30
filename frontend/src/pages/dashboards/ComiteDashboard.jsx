@@ -378,7 +378,7 @@ export default function ComiteDashboard() {
 
                       {!activa.persona_nombre && (
                         <p className="alerta-reincidencia">
-                          Sin persona reportada: pide al conserje identificar al infractor antes de cursar.
+                          Sin persona reportada: pide al fiscalizador identificar al infractor antes de cursar.
                         </p>
                       )}
 

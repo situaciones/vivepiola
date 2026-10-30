@@ -11,7 +11,7 @@
  *
  * Lo que si se guarda es la cascara (HTML, JS, CSS): asi la app abre estando
  * sin señal y puede decir con claridad que no hay conexion, en vez de dejar
- * al conserje frente a una pantalla en blanco.
+ * al fiscalizador frente a una pantalla en blanco.
  */
 
 const VERSION = 'vivepiola-v1';

@@ -9,7 +9,7 @@ from django.utils import timezone
 class Rol(models.TextChoices):
     """Roles legales definidos por la Ley 21.442 (separacion de funciones)."""
 
-    FISCALIZADOR = 'FISCALIZADOR', 'Fiscalizador (Conserje)'
+    FISCALIZADOR = 'FISCALIZADOR', 'Fiscalizador'
     COMITE = 'COMITE', 'Comite de Administracion'
     ADMINISTRADOR = 'ADMINISTRADOR', 'Administrador'
     RESIDENTE = 'RESIDENTE', 'Residente'

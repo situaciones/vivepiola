@@ -4,7 +4,7 @@ import client from '../api/client';
 
 const ROLES = [
   { valor: 'RESIDENTE', etiqueta: 'Residente' },
-  { valor: 'FISCALIZADOR', etiqueta: 'Fiscalizador (Conserje)' },
+  { valor: 'FISCALIZADOR', etiqueta: 'Fiscalizador' },
   { valor: 'COMITE', etiqueta: 'Comite de Administracion' },
 ];
 

@@ -30,7 +30,7 @@ export const VOCAB_DEFAULTS = {
   contencion_titulo: 'Contencion inmediata',
   contenciones: 'Contenciones',
   destino_cobro: 'gastos comunes',
-  rol_FISCALIZADOR: 'Fiscalizador (Conserje)',
+  rol_FISCALIZADOR: 'Fiscalizador',
   rol_COMITE: 'Comite de Administracion',
   rol_ADMINISTRADOR: 'Administrador',
   rol_RESIDENTE: 'Residente',

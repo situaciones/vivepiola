@@ -232,7 +232,7 @@ export default function Landing() {
           <h2>Empieza por ver<br /><span className="acento">un caso real.</span></h2>
           {/* Quien llega hasta aca todavia puede dudar de si esto es para el. */}
           <p className="cierre-quien">
-            Para administradores, comites, conserjes y residentes.
+            Para administradores, comites, fiscalizadores y residentes.
             Funciona desde el celular, sin instalar nada.
           </p>
 

@@ -19,7 +19,7 @@ class EstadoTicket(models.TextChoices):
 
 class Ticket(models.Model):
     """
-    Reporte generado por el Fiscalizador (conserje). Solo evidencia: nunca
+    Reporte generado por el Fiscalizador. Solo evidencia: nunca
     define monto ni aprueba sancion, conforme al Art. de separacion de roles.
     """
 
