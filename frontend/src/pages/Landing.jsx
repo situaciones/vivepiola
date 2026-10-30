@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowRight, Building2, CheckCircle2, Landmark } from 'lucide-react';
+import client from '../api/client';
 import { useAuth } from '../context/AuthContext';
 import { LogoSinConflicto } from '../components/Marca';
 import './Landing.css';
@@ -136,8 +137,30 @@ function Pantalla({ pantalla, invertida }) {
 export default function Landing() {
   const { usuario } = useAuth();
   const rutaApp = usuario ? '/app' : '/login';
-  const [form, setForm] = useState({ nombre: '', correo: '', empresa: '' });
+  const [form, setForm] = useState({ nombre: '', correo: '', empresa: '', sitio_web: '' });
   const [enviado, setEnviado] = useState(false);
+  const [enviando, setEnviando] = useState(false);
+  const [error, setError] = useState('');
+
+  // Antes el boton solo mostraba "Gracias" y la solicitud se perdia: nadie
+  // se enteraba de que alguien habia pedido una demo.
+  const solicitarDemo = async (e) => {
+    e.preventDefault();
+    setEnviando(true);
+    setError('');
+    try {
+      await client.post('/contacto/demo/', form);
+      setEnviado(true);
+    } catch (err) {
+      setError(
+        err.response?.status === 429
+          ? 'Ya recibimos varias solicitudes desde aquí. Escríbenos a sinconflicto.cl@gmail.com.'
+          : 'No se pudo enviar. Revisa tu conexión e intenta de nuevo.',
+      );
+    } finally {
+      setEnviando(false);
+    }
+  };
 
   // Al llegar desde otra pagina con /#demo, el router monta la landing pero no
   // baja: sin esto el boton "Solicitar una demo" de Como funciona dejaba a la
@@ -296,10 +319,7 @@ export default function Landing() {
               <p>Gracias. Te escribimos a {form.correo}.</p>
             </div>
           ) : (
-            <form
-              className="form-min"
-              onSubmit={(e) => { e.preventDefault(); setEnviado(true); }}
-            >
+            <form className="form-min" onSubmit={solicitarDemo}>
               <input
                 required placeholder="Tu nombre" value={form.nombre}
                 onChange={(e) => setForm({ ...form, nombre: e.target.value })}
@@ -312,7 +332,16 @@ export default function Landing() {
                 placeholder="Condominio o administradora" value={form.empresa}
                 onChange={(e) => setForm({ ...form, empresa: e.target.value })}
               />
-              <button className="btn btn-cyan btn-grande" type="submit">Solicitar demo</button>
+              {/* Trampa para robots: una persona no la ve ni la llena. */}
+              <input
+                className="campo-trampa" tabIndex={-1} autoComplete="off" aria-hidden="true"
+                name="sitio_web" value={form.sitio_web}
+                onChange={(e) => setForm({ ...form, sitio_web: e.target.value })}
+              />
+              {error && <p className="form-min-error" role="alert">{error}</p>}
+              <button className="btn btn-cyan btn-grande" type="submit" disabled={enviando}>
+                {enviando ? 'Enviando...' : 'Solicitar demo'}
+              </button>
             </form>
           )}
         </div>

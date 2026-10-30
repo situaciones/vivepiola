@@ -1,0 +1,866 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>SINCONFLICTO · Flujos y procesos</title>
+<style>
+  @page { size: A4; margin: 13mm 14mm 13mm 14mm; }
+  :root {
+    --tinta: #15142b; --suave: #4a4a68; --tenue: #85869f;
+    --morado: #a855f7; --indigo: #4f46e5; --azul: #3b82f6; --menta: #10b981;
+    --rojo: #c0362c; --ambar: #b46d00; --verde: #1f8a5b;
+    --fondo: #f5f5fb; --borde: #e3e3ee; --indigo-suave: #eef0ff;
+  }
+  * { box-sizing: border-box; }
+  html { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  body { margin: 0; font-family: "Segoe UI", system-ui, -apple-system, Arial, sans-serif; color: var(--tinta); font-size: 9.7pt; line-height: 1.45; background: #fff; }
+  h1, h2, h3, h4 { line-height: 1.2; margin: 0; letter-spacing: -0.01em; }
+  h2 { font-size: 18pt; margin: 0 0 3mm; padding-top: 0; }
+  h2 .num { color: var(--indigo); margin-right: 6px; }
+  h3 { font-size: 12pt; margin: 4mm 0 1.8mm; color: var(--indigo); break-after: avoid; }
+  h4 { font-size: 10.8pt; margin: 4mm 0 1.5mm; }
+  p { margin: 0 0 2.6mm; }
+  ul, ol { margin: 0 0 3mm; padding-left: 5.5mm; }
+  li { margin: 0 0 1.2mm; }
+  strong { font-weight: 650; }
+  .salto { break-before: page; }
+  .sin-corte { break-inside: avoid; }
+  .bajada { color: var(--suave); font-size: 10.4pt; margin-bottom: 4mm; }
+
+  /* Portada */
+  .portada { height: 268mm; display: flex; flex-direction: column; justify-content: space-between; padding: 14mm 12mm; border-radius: 6mm;
+    background: radial-gradient(120% 80% at 100% 0%, #2a1b52 0%, #0b0b14 60%); color: #fff; }
+  .marca { display: flex; align-items: center; gap: 10px; }
+  .marca .logo { width: 44px; height: 44px; border-radius: 12px; background: #15142b; display: grid; place-items: center; border: 1px solid rgba(255,255,255,.15); }
+  .marca b { display: block; font-size: 12pt; letter-spacing: .06em; line-height: 1.05; }
+  .portada h1 { font-size: 38pt; font-weight: 800; letter-spacing: -0.03em; line-height: 1.02; }
+  .portada h1 span { background: linear-gradient(120deg, #a855f7, #3b82f6 55%, #10b981); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .portada .sub { font-size: 13pt; color: #c9c9e0; max-width: 125mm; margin-top: 6mm; }
+  .portada .pie { display: flex; justify-content: space-between; font-size: 9.5pt; color: #a5a5c2; border-top: 1px solid rgba(255,255,255,.15); padding-top: 4mm; }
+
+  /* Indice */
+  .indice { list-style: none; padding: 0; margin: 4mm 0 0; counter-reset: none; }
+  .indice li { display: flex; gap: 8px; padding: 2.4mm 0; border-bottom: 1px solid var(--borde); font-size: 11pt; }
+  .indice li span:first-child { color: var(--indigo); font-weight: 700; width: 9mm; }
+  .indice li small { margin-left: auto; color: var(--tenue); }
+
+  /* Cajas */
+  .caja { border: 1px solid var(--borde); border-radius: 3mm; padding: 3.2mm 4.2mm; margin: 2.5mm 0 3mm; background: #fff; break-inside: avoid; }
+  .caja.clave { background: var(--indigo-suave); border-color: #d4d8ff; }
+  .caja.alerta { background: #fff6e6; border-color: #f1d9a8; }
+  .caja.rojo { background: #fdf1f0; border-color: #f2c9c4; }
+  .caja.verde { background: #ebf8f1; border-color: #bfe6d1; }
+  .caja h4 { margin-top: 0; }
+  .caja p:last-child, .caja ul:last-child { margin-bottom: 0; }
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 3.5mm; break-inside: avoid; }
+  .grid3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 3mm; }
+
+  /* Roles */
+  .rol-cab { display: flex; align-items: center; gap: 4mm; padding: 3.2mm 4.5mm; border-radius: 3mm; color: #fff; margin-bottom: 3mm; }
+  .rol-cab .ico { width: 12mm; height: 12mm; border-radius: 3mm; background: rgba(255,255,255,.18); display: grid; place-items: center; font-size: 16pt; font-weight: 800; }
+  .rol-cab h2 { margin: 0; padding: 0; color: #fff; font-size: 18pt; }
+  .rol-cab p { margin: 1mm 0 0; color: rgba(255,255,255,.85); font-size: 10pt; }
+  .r-admin { background: linear-gradient(120deg, #3b2a8a, #4f46e5); }
+  .r-comite { background: linear-gradient(120deg, #6d28d9, #a855f7); }
+  .r-fisc { background: linear-gradient(120deg, #1e40af, #3b82f6); }
+  .r-resi { background: linear-gradient(120deg, #047857, #10b981); }
+  .r-super { background: linear-gradient(120deg, #15142b, #3a3a5a); }
+
+  /* Pasos */
+  .pasos { counter-reset: paso; list-style: none; padding: 0; }
+  .pasos > li { counter-increment: paso; position: relative; padding: 0 0 2.2mm 10mm; margin: 0; break-inside: avoid; }
+  .pasos > li::before { content: counter(paso); position: absolute; left: 0; top: 0.2mm; width: 6.4mm; height: 6.4mm; border-radius: 50%; background: var(--indigo); color: #fff; font-size: 8.6pt; font-weight: 700; display: grid; place-items: center; }
+  .pasos > li::after { content: ""; position: absolute; left: 3.1mm; top: 7.4mm; bottom: 0.6mm; width: 0.3mm; background: #d4d8ff; }
+  .pasos > li:last-child::after { display: none; }
+
+  /* Tablas */
+  table { width: 100%; border-collapse: collapse; margin: 1.5mm 0 3mm; font-size: 8.9pt; }
+  th { text-align: left; background: var(--fondo); color: var(--suave); font-weight: 650; padding: 1.5mm 2.2mm; border-bottom: 1px solid var(--borde); }
+  td { padding: 1.5mm 2.2mm; border-bottom: 1px solid var(--borde); vertical-align: top; }
+  tr { break-inside: avoid; }
+  td.c, th.c { text-align: center; }
+  .si { color: var(--verde); font-weight: 700; }
+  .no { color: #c9c9d8; }
+  .pill { display: inline-block; padding: 0.3mm 2mm; border-radius: 99px; font-size: 8.4pt; font-weight: 650; white-space: nowrap; }
+  .p-gris { background: #ececf4; color: #4a4a68; }
+  .p-ind { background: var(--indigo-suave); color: var(--indigo); }
+  .p-verde { background: #ebf8f1; color: var(--verde); }
+  .p-ambar { background: #fff6e6; color: var(--ambar); }
+  .p-rojo { background: #fdf1f0; color: var(--rojo); }
+  .p-morado { background: #f5ecfe; color: #7e22ce; }
+
+  .diagrama { border: 1px solid var(--borde); border-radius: 3mm; padding: 2mm; margin: 2mm 0 3mm; background: #fcfcff; break-inside: avoid; }
+  .diagrama svg { width: 100%; height: auto; display: block; }
+  .nota { font-size: 8.8pt; color: var(--tenue); }
+  .cita { border-left: 1mm solid var(--morado); padding: 1mm 0 1mm 4mm; color: var(--suave); font-style: italic; margin: 3mm 0; }
+</style>
+</head>
+<body>
+
+<!-- ================= PORTADA ================= -->
+<section class="portada">
+  <div class="marca">
+    <div class="logo">
+      <svg width="26" height="26" viewBox="0 0 64 64"><path d="M14 30 L28 46 L50 16" stroke="#3b82f6" stroke-width="8" fill="none" stroke-linecap="round" stroke-linejoin="round"/><circle cx="14" cy="30" r="6" fill="#a855f7"/><circle cx="50" cy="16" r="6" fill="#10b981"/></svg>
+    </div>
+    <div><b>SIN</b><b>CONFLICTO</b></div>
+  </div>
+  <div>
+    <h1>Flujos y procesos<br><span>de punta a punta.</span></h1>
+    <p class="sub">Cómo funciona SINCONFLICTO para cada rol: administración, comité, fiscalizador y residente. Desde que alguien reporta una falta hasta que se cobra o se cierra, con cada regla automática, plazo y control.</p>
+  </div>
+  <div class="pie">
+    <span>Repaso del sistema en producción · sinconflicto.cl</span>
+    <span>Octubre 2026 · versión 5</span>
+  </div>
+</section>
+
+<!-- ================= INDICE ================= -->
+<section class="salto">
+  <h2>Contenido</h2>
+  <ul class="indice">
+    <li><span>1</span>La idea central y los roles</li>
+    <li><span>2</span>El ciclo de vida de una multa</li>
+    <li><span>3</span>Las reglas automáticas</li>
+    <li><span>4</span>Administrador del sistema</li>
+    <li><span>5</span>Administrador de la comunidad</li>
+    <li><span>6</span>Comité de Administración</li>
+    <li><span>7</span>Fiscalizador</li>
+    <li><span>8</span>Residente</li>
+    <li><span>9</span>Medidas inmediatas (contención)</li>
+    <li><span>10</span>Procesos que corren solos</li>
+    <li><span>11</span>Trazabilidad y prueba</li>
+    <li><span>12</span>Matriz de permisos</li>
+    <li><span>13</span>Plazos y parámetros configurables</li>
+    <li><span>14</span>Estado actual y pendientes</li>
+  </ul>
+  <div class="caja clave" style="margin-top:8mm">
+    <h4>Cómo leer este documento</h4>
+    <p>Los capítulos 1 a 3 explican el sistema completo una sola vez. Del 4 al 8 hay un capítulo por rol, con lo que cada persona ve, hace y no puede hacer. Del 9 al 13 están los temas transversales y las tablas de consulta. El 14 resume lo que está funcionando hoy y lo que falta activar.</p>
+    <p>Todo lo descrito sale del código que corre hoy en sinconflicto.cl, no de un diseño en papel.</p>
+  </div>
+</section>
+
+<!-- ================= 1. IDEA Y ROLES ================= -->
+<section class="salto">
+  <h2><span class="num">1</span>La idea central y los roles</h2>
+  <p class="bajada">El sistema propone; la comunidad decide. Todo lo que propone sale de una norma que ya existe y queda sellado.</p>
+
+  <div class="grid2">
+    <div class="caja">
+      <h4>Cinco principios que explican todo lo demás</h4>
+      <ol>
+        <li><strong>Las reglas ya existen.</strong> El sistema encuentra en el reglamento de la comunidad (y en la ley) la norma que corresponde al hecho. No inventa faltas ni montos.</li>
+        <li><strong>Separación de funciones (Ley 21.442).</strong> Quien reporta no sanciona, quien notifica no aprueba y quien decide las apelaciones es solo el Comité.</li>
+        <li><strong>Notificar no es enviar.</strong> El plazo para defenderse corre recién cuando la persona confirma que recibió.</li>
+        <li><strong>No toda falta termina en multa.</strong> Las primeras faltas leves de una unidad se avisan sin cobro.</li>
+        <li><strong>Todo queda sellado.</strong> Cada acto queda en una cadena de actas con huella criptográfica, verificable por cualquiera con acceso al caso.</li>
+      </ol>
+    </div>
+    <div class="caja clave">
+      <h4>El cambio más importante del ciclo actual</h4>
+      <p>El Comité <strong>ya no revisa cada denuncia antes de notificarla</strong>. Si el análisis automático encuentra la infracción con seguridad suficiente, el caso se notifica de inmediato y el residente se defiende apelando.</p>
+      <p>El Comité interviene <strong>una sola vez</strong>, cuando hay apelación, y además en las excepciones: casos que el sistema no pudo cursar solo y cobros detenidos por una señal de indefensión.</p>
+      <p>Así el Comité deja de ser un cuello de botella sin perder el control de lo que importa.</p>
+    </div>
+  </div>
+
+  <h3>Los roles</h3>
+  <table>
+    <tr><th style="width:24%">Rol</th><th>Quién es</th><th style="width:34%">Qué hace, en una línea</th></tr>
+    <tr><td><span class="pill p-gris">Administrador del sistema</span></td><td>El equipo de SINCONFLICTO.</td><td>Da de alta comunidades y su primer administrador.</td></tr>
+    <tr><td><span class="pill p-ind">Administrador</span></td><td>La administración o administradora del condominio.</td><td>Prepara la comunidad, notifica, responde el Libro de Novedades y lleva los cobros.</td></tr>
+    <tr><td><span class="pill p-morado">Comité</span></td><td>Los miembros del Comité de Administración.</td><td>Decide: apelaciones, casos dudosos, cobros detenidos y medidas inmediatas.</td></tr>
+    <tr><td><span class="pill p-ind">Fiscalizador</span></td><td>Quien recorre la comunidad: conserje, guardia, supervisor (no tiene por qué ser conserje).</td><td>Reporta hechos con evidencia y activa medidas inmediatas.</td></tr>
+    <tr><td><span class="pill p-verde">Residente</span></td><td>Propietarios, arrendatarios y ocupantes.</td><td>Recibe sus avisos y multas, se defiende, reporta y usa el Libro de Novedades.</td></tr>
+    <tr><td><span class="pill p-ambar">Pendiente</span></td><td>Alguien que entró con Google sin invitación.</td><td>Espera que el Administrador le asigne un rol. No ve ningún módulo.</td></tr>
+  </table>
+  <p class="nota">Un usuario tiene un solo rol por comunidad. Las pantallas cambian completamente según el rol: no hay botones escondidos, cada uno ve solo lo suyo.</p>
+</section>
+
+<!-- ================= 2. CICLO DE VIDA ================= -->
+<section class="salto">
+  <h2><span class="num">2</span>El ciclo de vida de una multa</h2>
+  <p class="bajada">Del reporte al cobro. Las cajas de color son estados del caso; las blancas, pasos.</p>
+
+  <div class="diagrama">
+    <svg style="max-height:128mm" viewBox="0 0 720 700" xmlns="http://www.w3.org/2000/svg" font-family="Segoe UI, Arial, sans-serif">
+      <defs>
+        <marker id="f" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#6b6b8a"/></marker>
+      </defs>
+      <style>
+        .paso { fill:#fff; stroke:#cfd0e3; stroke-width:1.2; }
+        .t { font-size:12.5px; fill:#15142b; }
+        .tb { font-size:12.5px; fill:#15142b; font-weight:700; }
+        .ts { font-size:10.8px; fill:#4a4a68; }
+        .l { stroke:#6b6b8a; stroke-width:1.5; fill:none; marker-end:url(#f); }
+        .et { font-size:11px; font-weight:700; fill:#4f46e5; }
+      </style>
+
+      <!-- Reporte -->
+      <rect class="paso" x="30" y="10" width="300" height="52" rx="10"/>
+      <text class="tb" x="180" y="32" text-anchor="middle">Alguien reporta un hecho</text>
+      <text class="ts" x="180" y="50" text-anchor="middle">Fiscalizador, Comité o un vecino · con foto o video</text>
+      <path class="l" d="M180 62 V84"/>
+
+      <!-- Analisis -->
+      <rect class="paso" x="30" y="86" width="300" height="66" rx="10"/>
+      <text class="tb" x="180" y="106" text-anchor="middle">Análisis automático</text>
+      <text class="ts" x="180" y="124" text-anchor="middle">Busca la infracción en el catálogo, junta reportes</text>
+      <text class="ts" x="180" y="139" text-anchor="middle">del mismo hecho, aplica reincidencia y cortesía</text>
+      <path class="l" d="M180 152 V174"/>
+
+      <!-- Decision curse -->
+      <polygon points="180,176 300,214 180,252 60,214" fill="#eef0ff" stroke="#c9cdfb" stroke-width="1.2"/>
+      <text class="tb" x="180" y="210" text-anchor="middle">¿Se puede cursar</text>
+      <text class="tb" x="180" y="226" text-anchor="middle">sin revisión?</text>
+      <path class="l" d="M300 214 H388"/>
+      <text class="et" x="344" y="207" text-anchor="middle">No</text>
+      <path class="l" d="M180 252 V300"/>
+      <text class="et" x="194" y="280">Sí</text>
+
+      <!-- En revision -->
+      <rect x="390" y="182" width="300" height="64" rx="10" fill="#fff6e6" stroke="#f1d9a8"/>
+      <text class="tb" x="540" y="204" text-anchor="middle">EN REVISIÓN</text>
+      <text class="ts" x="540" y="222" text-anchor="middle">El Comité tipifica (elige infracción y monto)</text>
+      <text class="ts" x="540" y="237" text-anchor="middle">o rechaza el reporte</text>
+      <path class="l" d="M540 246 V268"/>
+      <rect x="390" y="270" width="140" height="44" rx="10" fill="#ececf4" stroke="#d6d6e4"/>
+      <text class="tb" x="460" y="290" text-anchor="middle">RECHAZADA</text>
+      <text class="ts" x="460" y="305" text-anchor="middle">se cierra</text>
+      <rect x="550" y="270" width="140" height="44" rx="10" fill="#eef0ff" stroke="#c9cdfb"/>
+      <text class="tb" x="620" y="290" text-anchor="middle">APROBADA</text>
+      <text class="ts" x="620" y="305" text-anchor="middle">Admin la notifica</text>
+      <path class="l" d="M620 314 V328 H316"/>
+
+      <!-- Notificada -->
+      <rect x="30" y="302" width="300" height="56" rx="10" fill="#eef0ff" stroke="#c9cdfb"/>
+      <text class="tb" x="180" y="324" text-anchor="middle">NOTIFICADA</text>
+      <text class="ts" x="180" y="342" text-anchor="middle">Correo + WhatsApp + copia al dueño si corresponde</text>
+      <path class="l" d="M180 358 V380"/>
+
+      <!-- Acuse -->
+      <rect class="paso" x="30" y="382" width="300" height="56" rx="10"/>
+      <text class="tb" x="180" y="404" text-anchor="middle">Acuse de recibo → arranca el plazo</text>
+      <text class="ts" x="180" y="422" text-anchor="middle">Sin acuse: 3 reintentos y luego constancia en buzón</text>
+      <path class="l" d="M180 438 V460"/>
+
+      <!-- Decision apelacion -->
+      <polygon points="180,462 300,500 180,538 60,500" fill="#eef0ff" stroke="#c9cdfb" stroke-width="1.2"/>
+      <text class="tb" x="180" y="496" text-anchor="middle">¿Apeló dentro</text>
+      <text class="tb" x="180" y="512" text-anchor="middle">del plazo?</text>
+      <path class="l" d="M300 500 H388"/>
+      <text class="et" x="344" y="493" text-anchor="middle">Sí</text>
+      <path class="l" d="M180 538 V560"/>
+      <text class="et" x="194" y="553">No</text>
+
+      <!-- Con descargo -->
+      <rect x="390" y="470" width="300" height="60" rx="10" fill="#f5ecfe" stroke="#e2c8fb"/>
+      <text class="tb" x="540" y="492" text-anchor="middle">CON DESCARGO (apelación)</text>
+      <text class="ts" x="540" y="510" text-anchor="middle">Puede sumar antecedentes · el Comité puede citar</text>
+      <text class="ts" x="540" y="524" text-anchor="middle">a reunión · plazo del Comité: 15 días</text>
+      <path class="l" d="M540 530 V552"/>
+      <rect class="paso" x="390" y="554" width="300" height="76" rx="10"/>
+      <text class="tb" x="540" y="574" text-anchor="middle">El Comité resuelve</text>
+      <text class="ts" x="540" y="592" text-anchor="middle">Acoge → ANULADA</text>
+      <text class="ts" x="540" y="607" text-anchor="middle">Rechaza → FIRME · Rebaja % → FIRME rebajada</text>
+      <text class="ts" x="540" y="622" text-anchor="middle">Falta acreditada sin cobro → CORTESÍA</text>
+
+      <!-- Vence -->
+      <rect class="paso" x="30" y="562" width="300" height="68" rx="10"/>
+      <text class="tb" x="180" y="582" text-anchor="middle">Vence el plazo sin apelación</text>
+      <text class="ts" x="180" y="600" text-anchor="middle">Normal → FIRME · Aviso sin cobro → CORTESÍA</text>
+      <text class="ts" x="180" y="615" text-anchor="middle">Señal de indefensión → POR CONFIRMAR (Comité)</text>
+
+      <!-- Cobro -->
+      <path class="l" d="M180 630 V650"/>
+      <path class="l" d="M540 630 V642 H330"/>
+      <rect x="30" y="652" width="660" height="40" rx="10" fill="#ebf8f1" stroke="#bfe6d1"/>
+      <text class="tb" x="360" y="677" text-anchor="middle">FIRME → la Administración la exporta al gasto común del mes → EXPORTADA</text>
+    </svg>
+  </div>
+
+  <h3>Los estados, uno por uno</h3>
+  <table>
+    <tr><th style="width:21%">Estado</th><th>Qué significa</th><th style="width:22%">Quién mueve el caso</th></tr>
+    <tr><td><span class="pill p-ambar">En revisión</span></td><td>El sistema no pudo cursarlo solo (no encontró la infracción, falta el infractor o su correo, o la seguridad del análisis no alcanzó el mínimo).</td><td>Comité: tipifica o rechaza.</td></tr>
+    <tr><td><span class="pill p-gris">Rechazada</span></td><td>El Comité descartó el reporte. Se cierra.</td><td>—</td></tr>
+    <tr><td><span class="pill p-ind">Aprobada</span></td><td>El Comité la tipificó; falta notificarla.</td><td>Administrador: notifica.</td></tr>
+    <tr><td><span class="pill p-ind">Notificada</span></td><td>Se envió. El plazo para apelar corre recién desde el acuse de recibo.</td><td>Residente: acusa recibo, apela o deja vencer.</td></tr>
+    <tr><td><span class="pill p-morado">Con descargo</span></td><td>El residente apeló. El Comité tiene su propio plazo para responder.</td><td>Comité: resuelve.</td></tr>
+    <tr><td><span class="pill p-ambar">Por confirmar</span></td><td>Venció sin apelación, pero hay una señal de que la persona pudo no poder defenderse. El cobro se detiene.</td><td>Comité: confirma el cobro o da cortesía.</td></tr>
+    <tr><td><span class="pill p-verde">Firme</span></td><td>Sin apelaciones pendientes. Lista para cobrar.</td><td>Administrador: exporta.</td></tr>
+    <tr><td><span class="pill p-verde">Cortesía</span></td><td>La falta queda acreditada y en el registro, pero no se cobra. Consume el cupo de avisos de la unidad.</td><td>—</td></tr>
+    <tr><td><span class="pill p-gris">Anulada</span></td><td>El Comité acogió la apelación: la falta se cae.</td><td>—</td></tr>
+    <tr><td><span class="pill p-gris">Exportada</span></td><td>Ya va como cargo en el gasto común del período.</td><td>—</td></tr>
+  </table>
+</section>
+
+<!-- ================= 3. REGLAS AUTOMATICAS ================= -->
+<section class="salto">
+  <h2><span class="num">3</span>Las reglas automáticas</h2>
+  <p class="bajada">Lo que el sistema hace solo, y los límites que se puso para no sancionar mal.</p>
+
+  <h3>3.1 Cuándo un caso se notifica sin revisión previa</h3>
+  <p>Se tienen que cumplir <strong>las cuatro</strong> condiciones. Si falta una, el caso queda <span class="pill p-ambar">En revisión</span> con el motivo anotado, para que el Comité lo vea. Nunca se pierde.</p>
+  <div class="grid2">
+    <div class="caja">
+      <ol>
+        <li>Se encontró una infracción del <strong>catálogo vigente</strong> (confirmada por una persona, nunca un borrador de IA).</li>
+        <li>Hay una <strong>persona responsable identificada</strong>…</li>
+        <li>…y tiene <strong>correo registrado</strong>: sin contacto no hay notificación válida.</li>
+        <li>La propuesta viene del <strong>análisis con IA</strong> y su seguridad alcanza el mínimo de la gravedad.</li>
+      </ol>
+    </div>
+    <div class="caja clave">
+      <h4>Seguridad mínima según gravedad</h4>
+      <table style="margin:0">
+        <tr><th>Gravedad</th><th class="c">Mínimo</th></tr>
+        <tr><td>Leve</td><td class="c">65 / 100</td></tr>
+        <tr><td>Grave</td><td class="c">80 / 100</td></tr>
+        <tr><td>Gravísima</td><td class="c">90 / 100</td></tr>
+      </table>
+      <p class="nota" style="margin-top:2mm">Mientras más caro el error, más seguro hay que estar. El respaldo por palabras clave (cuando no hay IA) nunca sanciona solo.</p>
+    </div>
+  </div>
+
+  <h3>3.2 Varios reportes del mismo hecho</h3>
+  <p>Si llega un reporte sobre la misma unidad dentro de <strong>24 horas</strong> (configurable) y por la misma falta, no se abre otro caso: se suma al existente como <strong>corroboración</strong>. Así nadie es sancionado dos veces por lo mismo, y el caso queda respaldado por más testigos. A quien reporta solo se le informa la etapa del caso, nunca el monto ni a quién se sancionó.</p>
+
+  <h3>3.3 Reincidencia</h3>
+  <p>Si la unidad ya tuvo la misma falta dentro de los últimos <strong>6 meses</strong>, el monto se multiplica por el factor de reincidencia definido en el catálogo para esa infracción (por ejemplo ×2). El factor aplicado queda sellado en el acta.</p>
+
+  <h3>3.4 Avisos de cortesía</h3>
+  <div class="caja verde">
+    <p>Las <strong>primeras 2 faltas</strong> de una unidad (configurable; 0 = se cobra desde la primera) se notifican <strong>sin cobro</strong>. El aviso le dice cuánto se le habría cobrado y cuántos avisos le quedan. La falta queda en el registro igual.</p>
+    <p><strong>Nunca hay cortesía</strong> para una falta <strong>gravísima</strong> ni para una que <strong>conlleva contención</strong> (riesgo real): avisar sin consecuencia sería el mensaje contrario.</p>
+  </div>
+
+  <h3>3.5 Notificación y acuse de recibo</h3>
+  <ul style="font-size:9.3pt">
+    <li><strong>Canales:</strong> correo con el PDF de la notificación (canal legal) y WhatsApp como aviso complementario. Ambos llevan un <strong>enlace personal al buzón del caso</strong>, que funciona sin cuenta ni contraseña.</li>
+    <li><strong>Copia al dueño:</strong> la ley hace al propietario el obligado al pago, así que recibe copia cuando el infractor podría no estar para defenderse (por ejemplo, un ocupante transitorio).</li>
+    <li><strong>El plazo arranca con el acuse,</strong> no con el envío: al abrir el enlace y confirmar, al entrar a la app o al apelar (apelar prueba que se enteró). El primer acuse manda; abrirlo diez veces no reinicia el plazo.</li>
+    <li><strong>Sin acuse:</strong> el sistema reenvía hasta <strong>3 veces, cada 5 minutos</strong>. Si nadie confirma, el caso queda listado para que la Administración imprima la notificación, la deje en el buzón de la unidad y lo registre en la app. Ese registro perfecciona la notificación y recién ahí arranca el plazo.</li>
+    <li>Mientras no hay acuse, <strong>la multa no puede quedar firme sola</strong>.</li>
+  </ul>
+
+  <h3>3.6 Cuando vence el plazo sin apelación</h3>
+  <table>
+    <tr><th style="width:40%">Situación</th><th>Resultado</th></tr>
+    <tr><td>Caso normal</td><td><span class="pill p-verde">Firme</span> automáticamente, lista para cobrar.</td></tr>
+    <tr><td>Era un aviso de cortesía</td><td><span class="pill p-verde">Cortesía</span>: no hay nada que cobrar.</td></tr>
+    <tr><td>La persona figura con una <strong>condición especial</strong> en el registro, o la notificación solo se perfeccionó por <strong>buzón</strong></td><td><span class="pill p-ambar">Por confirmar</span>: el Comité confirma el cobro o lo convierte en cortesía. No se reabre el fondo del caso.</td></tr>
+  </table>
+</section>
+
+<!-- ================= 4. SUPERADMIN ================= -->
+<section class="salto">
+  <div class="rol-cab r-super"><div class="ico">S</div><div><h2>4 · Administrador del sistema</h2><p>El equipo de SINCONFLICTO. Usuario <strong>admin</strong> en producción.</p></div></div>
+
+  <h3>Qué hace</h3>
+  <ol class="pasos">
+    <li><strong>Crea la comunidad</strong> desde el panel de control (en la dirección de Cloud Run, <em>/admin</em>): nombre, dirección, RUT de la administradora y sus parámetros (plazos, cortesías, quórum; ver capítulo 13). Al guardarla, el sistema genera su <strong>código único de comunidad</strong>.</li>
+    <li><strong>Crea el primer usuario Administrador</strong> de esa comunidad. Desde ahí, la comunidad se gestiona sola: el Administrador invita al resto.</li>
+    <li><strong>Carga la normativa chilena</strong> transversal (Ley 21.442, su reglamento, circulares) con el comando <em>cargar_normativa</em>. Sirve a todas las comunidades y la decide un abogado.</li>
+    <li><strong>Soporte:</strong> puede ver todas las comunidades. No participa del flujo de multas de ninguna.</li>
+  </ol>
+  <div class="caja alerta">
+    <p>Es el único rol que puede crear, editar o eliminar comunidades. Ningún Administrador de condominio puede crear otra comunidad.</p>
+  </div>
+
+  <h3>Alta de una comunidad nueva, resumida</h3>
+  <table>
+    <tr><th style="width:8%">#</th><th>Paso</th><th style="width:26%">Quién</th></tr>
+    <tr><td>1</td><td>Crear la comunidad y su primer Administrador</td><td>Administrador del sistema</td></tr>
+    <tr><td>2</td><td>Cargar el registro de copropietarios (Excel)</td><td>Administrador</td></tr>
+    <tr><td>3</td><td>Subir reglamento, reglamento interno y actas (PDF)</td><td>Administrador</td></tr>
+    <tr><td>4</td><td>Revisar y confirmar el catálogo de infracciones</td><td>Comité o Administrador</td></tr>
+    <tr><td>5</td><td>Invitar al Comité, fiscalizadores y residentes</td><td>Administrador</td></tr>
+    <tr><td>6</td><td>Prueba de humo: un reporte de prueba de punta a punta</td><td>Todos</td></tr>
+  </table>
+</section>
+
+<!-- ================= 5. ADMINISTRADOR ================= -->
+<section class="salto">
+  <div class="rol-cab r-admin"><div class="ico">A</div><div><h2>5 · Administrador de la comunidad</h2><p>Prepara la comunidad, ejecuta lo que el Comité decide y lleva los cobros. No aprueba ni resuelve.</p></div></div>
+
+  <h3>Sus pantallas</h3>
+  <table>
+    <tr><th style="width:26%">Sección</th><th>Para qué sirve</th></tr>
+    <tr><td><strong>Notificar multas</strong></td><td>Casos aprobados por el Comité que esperan notificación, y casos sin acuse que necesitan constancia en buzón.</td></tr>
+    <tr><td><strong>Firmas por delegación</strong></td><td>Solo aparece si el Comité le delegó la ratificación de medidas inmediatas.</td></tr>
+    <tr><td><strong>Equipo y accesos</strong></td><td>Invitaciones, código de comunidad y cuentas pendientes de rol.</td></tr>
+    <tr><td><strong>Registro</strong></td><td>Unidades y personas (el registro de copropietarios que exige la ley).</td></tr>
+    <tr><td><strong>Infracción y reglamento</strong></td><td>Documentos de la comunidad y catálogo de infracciones.</td></tr>
+    <tr><td><strong>Libro de Novedades</strong></td><td>Reclamos y solicitudes de los residentes, con su plazo legal.</td></tr>
+    <tr><td><strong>Cobros</strong></td><td>Exportación de multas firmes al gasto común.</td></tr>
+  </table>
+
+  <h3>5.1 Puesta en marcha (una vez)</h3>
+  <ol class="pasos">
+    <li><strong>Cargar el registro.</strong> Descarga la plantilla Excel oficial, la completa (unidad, nombre, RUT, rol de ocupación, correo, teléfono, condición especial si aplica) y la sube. También puede editar unidades y personas una por una.</li>
+    <li><strong>Subir los documentos.</strong> Reglamento de copropiedad, reglamento interno y actas de asamblea en PDF. El sistema extrae el texto.</li>
+    <li><strong>Generar borradores con IA.</strong> Desde cada documento puede pedir que la IA proponga infracciones (código, descripción, artículo, monto, gravedad). <strong>Todas nacen como borrador</strong> y no sirven para sancionar hasta que una persona las confirma.</li>
+    <li><strong>Confirmar el catálogo.</strong> Revisa cada borrador (o crea infracciones a mano), ajusta montos, gravedad, factor de reincidencia y si conlleva contención, y lo confirma. Este es el control humano obligatorio.</li>
+    <li><strong>Invitar al equipo</strong> (ver 5.2).</li>
+  </ol>
+
+  <h3>5.2 Equipo y accesos</h3>
+  <ul>
+    <li><strong>Invitación por correo:</strong> indica el correo, el rol y la unidad. Cuando la persona entra con Google con ese correo, su cuenta nace con ese rol en la comunidad. Las invitaciones no se editan: se revocan y se emite otra.</li>
+    <li><strong>Código de comunidad:</strong> un vecino puede entrar con Google y el código. Su cuenta queda <span class="pill p-ambar">Pendiente</span>, y el Administrador le asigna el rol desde la lista de pendientes.</li>
+    <li>Quien entra con Google sin invitación ni código queda sin comunidad hasta que lo asignen.</li>
+  </ul>
+</section>
+
+<section class="salto">
+  <h3>5.3 El día a día</h3>
+  <ol class="pasos">
+    <li><strong>Notificar lo aprobado.</strong> Cuando el Comité tipifica un caso que estaba en revisión, aparece en "Notificar". Un toque genera el PDF y lo envía por todos los canales. <em>La mayoría de los casos no pasa por aquí: se notifican solos.</em></li>
+    <li><strong>Constancia en buzón.</strong> Si un caso agotó los 3 reintentos sin acuse, imprime la notificación, la deja en el buzón de la unidad y registra la constancia. Desde ese momento corre el plazo, con su nombre y la fecha.</li>
+    <li><strong>Responder el Libro de Novedades.</strong> Los residentes registran reclamos, solicitudes y observaciones. Tiene <strong>20 días corridos</strong> para responder; los que están por vencer aparecen destacados y en el resumen diario.</li>
+    <li><strong>Exportar los cobros.</strong> Una vez al mes elige el período y genera el lote: todas las multas <span class="pill p-verde">Firmes</span> no exportadas pasan a un archivo CSV para el aviso de cobro de gastos comunes y quedan <span class="pill p-gris">Exportadas</span>. Si exporta dos veces en el mismo período, el archivo sale completo igual.</li>
+    <li><strong>Firmar por delegación</strong> (solo si tiene delegación vigente): ratifica medidas inmediatas dentro del límite de gravedad que le delegaron.</li>
+  </ol>
+
+  <div class="grid2">
+    <div class="caja">
+      <h4>Lo que recibe cada día</h4>
+      <p>Un único resumen (correo, y WhatsApp cuando esté activo) solo si hay algo pendiente: multas por notificar, reclamos por vencer, multas listas para cobro y apelaciones que el Comité dejó vencer ("recuérdaselo").</p>
+    </div>
+    <div class="caja rojo">
+      <h4>Lo que NO puede hacer</h4>
+      <ul>
+        <li>Aprobar, rechazar o modificar una multa.</li>
+        <li>Resolver apelaciones ni confirmar cobros detenidos.</li>
+        <li>Levantar una medida inmediata.</li>
+      </ul>
+      <p>La ley reserva esas decisiones al Comité. El sistema simplemente no le muestra esos botones.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ================= 6. COMITE ================= -->
+<section class="salto">
+  <div class="rol-cab r-comite"><div class="ico">C</div><div><h2>6 · Comité de Administración</h2><p>El único órgano que decide. Interviene en las excepciones y en las apelaciones.</p></div></div>
+
+  <h3>Sus pantallas</h3>
+  <table>
+    <tr><th style="width:26%">Sección</th><th>Qué hay ahí</th></tr>
+    <tr><td><strong>Bandeja de decisión</strong></td><td>Todo lo que espera una decisión: casos en revisión, apelaciones y cobros por confirmar.</td></tr>
+    <tr><td><strong>Medidas</strong></td><td>Medidas inmediatas activas que esperan ratificación o están escalando.</td></tr>
+    <tr><td><strong>Borradores IA</strong></td><td>Infracciones propuestas por la IA que esperan confirmación.</td></tr>
+    <tr><td><strong>Catálogo</strong></td><td>Las infracciones vigentes con monto, gravedad y artículo.</td></tr>
+  </table>
+  <p class="nota">En el teléfono, al abrir un caso se ve el expediente en pantalla completa; "← Bandeja" (o el botón atrás de Android) vuelve a la lista.</p>
+
+  <h3>6.1 Casos en revisión: tipificar o rechazar</h3>
+  <p>Llegan los casos que el sistema no cursó solo, con el motivo a la vista ("no hay sujeto responsable identificado", "la confianza quedó en 58 y una falta grave exige 80", etc.).</p>
+  <ul>
+    <li><strong>Tipificar (aprobar):</strong> elige la infracción del catálogo; el monto sale del catálogo, con reincidencia si corresponde. El caso pasa a <span class="pill p-ind">Aprobada</span> y la Administración lo notifica.</li>
+    <li><strong>Rechazar:</strong> con motivo escrito. El caso se cierra.</li>
+  </ul>
+
+  <h3>6.2 Apelaciones: el centro de su trabajo</h3>
+  <ol class="pasos">
+    <li><strong>Lee el expediente completo:</strong> lo reportado, la evidencia con su huella, la norma aplicada, la defensa del residente y los antecedentes que sumó después.</li>
+    <li><strong>Ve las propuestas de resolución.</strong> El sistema sugiere opciones con fundamento (por ejemplo, considerando el historial de la unidad). Son sugerencias: decide el Comité.</li>
+    <li><strong>Si hace falta, cita a reunión</strong> (en línea o presencial). Citar <strong>extiende el plazo del Comité</strong>: escuchar mejor no cuenta como demora. Después registra el acta, y lo que el residente explicó de palabra entra al expediente como antecedente.</li>
+    <li><strong>Resuelve</strong> con una de cuatro salidas:
+      <ul>
+        <li><strong>Acoger</strong>: la multa se anula.</li>
+        <li><strong>Rechazar</strong>: queda firme por su monto (si era un aviso de cortesía, sigue sin cobro).</li>
+        <li><strong>Rebajar</strong>: queda firme con un descuento porcentual; el monto original queda guardado.</li>
+        <li><strong>Cortesía</strong>: la falta queda acreditada y registrada, pero no se cobra. La próxima falta igual ya no admite cortesía.</li>
+      </ul>
+    </li>
+  </ol>
+  <div class="grid2">
+    <div class="caja clave">
+      <h4>Quórum</h4>
+      <p>Por defecto basta un miembro. Si la comunidad configura un quórum de 2 o más, cada miembro vota y la apelación se resuelve recién cuando <strong>ese número de miembros coincide en la misma salida</strong>. Cada voto queda sellado.</p>
+    </div>
+    <div class="caja alerta">
+      <h4>El plazo también corre para el Comité</h4>
+      <p><strong>15 días corridos</strong> para responder una apelación. Si vence, aparece como urgente en su resumen y también en el de la Administración, para que alguien empuje.</p>
+    </div>
+  </div>
+</section>
+
+<section class="salto">
+  <h3>6.3 Cobros por confirmar</h3>
+  <p>Casos que vencieron sin apelación pero traen una señal de indefensión: la persona figura con una condición especial, o la notificación solo se perfeccionó por buzón. <strong>Solo hay dos salidas:</strong> confirmar el cobro (queda firme) o dar cortesía (no se cobra, queda en el registro). No se reabre el fondo.</p>
+
+  <h3>6.4 Medidas inmediatas</h3>
+  <ul>
+    <li><strong>Ratificar:</strong> vota por la medida. Con el quórum de la infracción (por ejemplo, "si es grave firman 2"), la medida queda ratificada.</li>
+    <li><strong>Levantar:</strong> solo el Comité, con causal (corregida o desestimada) y fundamento escrito. Es el único camino para terminar una medida (capítulo 9).</li>
+  </ul>
+
+  <h3>6.5 Catálogo y borradores de IA</h3>
+  <p>Revisa las infracciones que la IA propuso desde los documentos y las <strong>confirma o rechaza</strong>. Puede crear y editar infracciones (igual que la Administración). Solo las confirmadas sirven para sancionar.</p>
+
+  <h3>6.6 Delegaciones</h3>
+  <p>Un miembro del Comité puede delegar su facultad de ratificar medidas inmediatas en otra persona de la comunidad (por ejemplo, la Administración un fin de semana), siempre que no sea residente:</p>
+  <ul>
+    <li>Con <strong>vencimiento obligatorio</strong> y un <strong>techo de gravedad</strong>.</li>
+    <li>El delegado <strong>no puede volver a delegar</strong>, y nadie puede delegarse a sí mismo.</li>
+    <li>Una delegación no se edita: se revoca y se otorga otra. Cada voto deja constancia de en virtud de qué delegación se firmó.</li>
+  </ul>
+
+  <div class="caja">
+    <h4>Lo que recibe cada día</h4>
+    <p>Un resumen solo si hay pendientes, en este orden de prioridad: medidas esperando ratificación, apelaciones con plazo vencido, casos por revisar, apelaciones por resolver y cobros detenidos. Si hay medidas o plazos vencidos, el resumen llega marcado <strong>URGENTE</strong>.</p>
+  </div>
+</section>
+
+<!-- ================= 7. FISCALIZADOR ================= -->
+<section class="salto">
+  <div class="rol-cab r-fisc"><div class="ico">F</div><div><h2>7 · Fiscalizador</h2><p>Reporta lo que ve, con evidencia. No define montos ni sanciona.</p></div></div>
+
+  <h3>Sus pantallas</h3>
+  <table>
+    <tr><th style="width:26%">Sección</th><th>Para qué sirve</th></tr>
+    <tr><td><strong>Nuevo reporte</strong></td><td>Levantar un reporte desde el teléfono.</td></tr>
+    <tr><td><strong>Medidas</strong></td><td>Activar una medida inmediata ante un hallazgo de riesgo y ver las activas.</td></tr>
+    <tr><td><strong>Mis tickets</strong></td><td>Sus reportes y en qué etapa va cada uno.</td></tr>
+  </table>
+
+  <h3>7.1 Levantar un reporte</h3>
+  <ol class="pasos">
+    <li>Elige la <strong>unidad</strong> y, si la sabe, la <strong>persona responsable</strong> (debe ser de esa unidad).</li>
+    <li>Describe el hecho con sus palabras y la <strong>fecha y hora en que ocurrió</strong>. No tiene que elegir artículo ni infracción: eso lo encuentra el sistema.</li>
+    <li>Adjunta <strong>fotos o videos</strong> (opcional, pero recomendado). Hay hechos que una imagen fija no prueba: un video también vale.</li>
+    <li>Envía. El reporte <strong>no se puede editar ni borrar</strong>: es evidencia del debido proceso.</li>
+  </ol>
+
+  <div class="grid2">
+    <div class="caja clave">
+      <h4>Qué pasa con la evidencia</h4>
+      <p>Cada archivo queda con su <strong>huella SHA-256</strong> al momento de subirlo. Si la foto trae fecha y GPS de la cámara, queda <strong>anclada físicamente</strong> al lugar y momento, que es la mejor defensa contra "esa foto no es de mi depto". Las fotos reenviadas por WhatsApp suelen perder esos datos.</p>
+    </div>
+    <div class="caja">
+      <h4>Qué le informa el sistema</h4>
+      <p>Solo la <strong>etapa</strong> del caso (por ejemplo, que su reporte se sumó a uno ya abierto sobre el mismo hecho). Nunca el monto, la infracción aplicada ni la persona: quien reporta no tiene por qué conocer la sanción de otra unidad.</p>
+    </div>
+  </div>
+
+  <h3>7.2 Medida inmediata (contención)</h3>
+  <p>Ante algo que no puede esperar (una fuga, una obra sin permiso, un riesgo para personas), indica el <strong>caso</strong>, el <strong>código del hallazgo</strong> y la evidencia. <strong>No decide si corresponde contención:</strong> eso lo define el catálogo, calificado en frío por la comunidad. Si el hallazgo la conlleva, la medida queda activa en ese instante y comienza a correr el plazo para ratificarla (capítulo 9).</p>
+
+  <h3>7.3 Lo que no puede hacer</h3>
+  <ul>
+    <li>Definir montos, aprobar, notificar ni resolver nada.</li>
+    <li>Ver casos que no reportó él.</li>
+  </ul>
+  <p class="nota">El Comité y los residentes también pueden reportar. Los residentes pueden hacerlo de forma anónima frente a la persona reportada.</p>
+</section>
+
+<!-- ================= 8. RESIDENTE ================= -->
+<section class="salto">
+  <div class="rol-cab r-resi"><div class="ico">R</div><div><h2>8 · Residente</h2><p>Recibe sus avisos, se defiende y también puede reportar y reclamar.</p></div></div>
+
+  <h3>Sus pantallas</h3>
+  <table>
+    <tr><th style="width:26%">Sección</th><th>Qué hay ahí</th></tr>
+    <tr><td><strong>Mis multas</strong></td><td>Sus casos con la línea de tiempo (reportado, tipificado, notificado, apelación, resolución, cobro), la evidencia, la norma aplicada y su plazo.</td></tr>
+    <tr><td><strong>Libro de Novedades</strong></td><td>Sus reclamos y solicitudes a la Administración, con el estado de la respuesta.</td></tr>
+  </table>
+
+  <h3>8.1 Cuando le llega una notificación</h3>
+  <ol class="pasos">
+    <li>Recibe un <strong>correo</strong> con el PDF (y un <strong>WhatsApp</strong>, cuando esté activo) con un enlace personal a su buzón del caso.</li>
+    <li>Al abrir el enlace ve <strong>el caso completo sin necesidad de cuenta</strong>: qué se reportó, la evidencia, la norma con su artículo y el monto (o que es un aviso sin cobro y cuántos le quedan).</li>
+    <li><strong>Confirma que lo recibió.</strong> Desde ese momento corre su plazo para apelar: <strong>5 días corridos</strong> por defecto. La fecha límite aparece en pantalla.</li>
+    <li>Puede <strong>descargar el documento</strong> las veces que quiera.</li>
+  </ol>
+
+  <h3>8.2 Defenderse (apelar)</h3>
+  <ol class="pasos">
+    <li>Escribe su defensa y adjunta lo que tenga. Puede hacerlo <strong>desde el enlace, sin cuenta</strong>, o desde la app. Si todavía no había confirmado recepción, apelar cuenta como acuse.</li>
+    <li>Mientras el Comité no resuelve, <strong>puede sumar antecedentes</strong> (una boleta, un certificado que llegó después).</li>
+    <li>El Comité puede <strong>citarlo a una reunión</strong> para exponer su caso; lo que diga queda en acta.</li>
+    <li>Recibe la <strong>resolución</strong>: anulada, firme, rebajada o cortesía, con el comentario del Comité.</li>
+  </ol>
+  <div class="grid2">
+    <div class="caja verde">
+      <h4>Sus garantías</h4>
+      <ul>
+        <li>El plazo no corre sin acuse.</li>
+        <li>No se cobra mientras su apelación esté pendiente.</li>
+        <li>Si tiene una condición especial registrada, nada se cobra sin que el Comité lo confirme.</li>
+        <li>Puede verificar la integridad de su expediente y descargar el certificado. La prueba también es su defensa.</li>
+      </ul>
+    </div>
+    <div class="caja">
+      <h4>Si no apela</h4>
+      <p>Al vencer el plazo la multa queda firme y se cobra en el siguiente gasto común de la unidad. Si era un aviso de cortesía, se cierra sin cobro.</p>
+    </div>
+  </div>
+</section>
+
+<section class="salto">
+  <h3>8.3 Reportar a otra unidad</h3>
+  <p>Un residente también puede levantar un reporte (igual que el fiscalizador), con opción de <strong>anonimato</strong> frente a la persona reportada. Solo se le informa la etapa del caso.</p>
+
+  <h3>8.4 Libro de Novedades</h3>
+  <ol class="pasos">
+    <li>Registra un <strong>reclamo, solicitud u observación</strong>. Queda asociado a su unidad.</li>
+    <li>La Administración tiene <strong>20 días corridos</strong> para responder (plazo legal). El vencimiento se ve en pantalla.</li>
+    <li>Ve la respuesta en la misma sección. Si vence sin respuesta, queda marcado <span class="pill p-rojo">Vencida</span>.</li>
+  </ol>
+
+  <h3>8.5 Cómo entra a la app</h3>
+  <ul>
+    <li>Con <strong>Google</strong>, usando la invitación de la Administración o el código de la comunidad, o con usuario y contraseña si se la crearon.</li>
+    <li>En el navegador (sinconflicto.cl) o en la <strong>app Android</strong>. La app de iPhone está pendiente.</li>
+    <li>El enlace del correo funciona aunque nunca haya creado cuenta.</li>
+  </ul>
+
+  <div class="caja clave">
+    <h4>Asistente (listo, pendiente de activar)</h4>
+    <p>En todos los paneles hay un botón ✦ que abre un chat de consulta: "¿tengo multas?", "¿hasta cuándo puedo apelar?", "¿qué dice el reglamento sobre mascotas?". Responde solo con lo que esa persona ya puede ver y <strong>no hace trámites</strong>: indica en qué pantalla se hace cada cosa. Hoy avisa que no está activado, porque falta conectar el proveedor de IA (Anthropic o Google).</p>
+  </div>
+</section>
+
+<!-- ================= 9. CONTENCION ================= -->
+<section class="salto">
+  <h2><span class="num">9</span>Medidas inmediatas (contención)</h2>
+  <p class="bajada">Un carril paralelo a la multa, para lo que no puede esperar. Regla de oro: <strong>nunca se levanta sola</strong>.</p>
+
+  <div class="diagrama">
+    <svg viewBox="0 0 720 300" xmlns="http://www.w3.org/2000/svg" font-family="Segoe UI, Arial, sans-serif">
+      <defs><marker id="g" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#6b6b8a"/></marker></defs>
+      <style>.tb{font-size:12.5px;font-weight:700;fill:#15142b}.ts{font-size:10.8px;fill:#4a4a68}.l{stroke:#6b6b8a;stroke-width:1.5;fill:none;marker-end:url(#g)}.et{font-size:10.8px;fill:#4f46e5;font-weight:700}</style>
+
+      <rect x="20" y="20" width="200" height="60" rx="10" fill="#fff" stroke="#cfd0e3"/>
+      <text class="tb" x="120" y="44" text-anchor="middle">Hallazgo reportado</text>
+      <text class="ts" x="120" y="62" text-anchor="middle">el catálogo dice si conlleva</text>
+      <text class="ts" x="120" y="75" text-anchor="middle">contención (no el fiscalizador)</text>
+      <path class="l" d="M220 50 H268"/>
+
+      <rect x="270" y="20" width="190" height="60" rx="10" fill="#fdf1f0" stroke="#f2c9c4"/>
+      <text class="tb" x="365" y="44" text-anchor="middle">EJECUTADA</text>
+      <text class="ts" x="365" y="62" text-anchor="middle">activa desde el segundo cero,</text>
+      <text class="ts" x="365" y="75" text-anchor="middle">corre plazo de ratificación</text>
+
+      <path class="l" d="M460 50 H508"/>
+      <text class="et" x="484" y="42" text-anchor="middle">quórum</text>
+      <rect x="510" y="20" width="190" height="60" rx="10" fill="#fff6e6" stroke="#f1d9a8"/>
+      <text class="tb" x="605" y="44" text-anchor="middle">RATIFICADA</text>
+      <text class="ts" x="605" y="62" text-anchor="middle">sigue activa,</text>
+      <text class="ts" x="605" y="75" text-anchor="middle">ahora con responsable</text>
+
+      <path class="l" d="M365 80 V128"/>
+      <text class="et" x="374" y="108">vence sin quórum</text>
+      <rect x="270" y="130" width="190" height="66" rx="10" fill="#fdf1f0" stroke="#f2c9c4"/>
+      <text class="tb" x="365" y="152" text-anchor="middle">EN ESCALAMIENTO</text>
+      <text class="ts" x="365" y="170" text-anchor="middle">sigue activa · cada omisión</text>
+      <text class="ts" x="365" y="184" text-anchor="middle">avisa un nivel más arriba</text>
+      <path class="l" d="M460 160 H560 V82"/>
+      <text class="et" x="540" y="152" text-anchor="middle">quórum</text>
+
+      <path class="l" d="M605 80 V228 H462" stroke-dasharray="4 3"/>
+      <path class="l" d="M365 196 V228" stroke-dasharray="4 3"/>
+      <rect x="230" y="230" width="270" height="56" rx="10" fill="#ebf8f1" stroke="#bfe6d1"/>
+      <text class="tb" x="365" y="252" text-anchor="middle">LEVANTADA</text>
+      <text class="ts" x="365" y="270" text-anchor="middle">solo Comité · causal + fundamento escrito</text>
+      <text class="ts" x="120" y="255" text-anchor="middle">desde cualquier estado activo</text>
+      <path class="l" d="M200 258 H228" stroke-dasharray="4 3"/>
+    </svg>
+  </div>
+
+  <div class="grid2">
+    <div class="caja">
+      <h4>Cómo funciona</h4>
+      <ul>
+        <li>La comunidad define <strong>en frío</strong>, en el catálogo, qué hallazgos conllevan contención, en cuántas horas deben ratificarse (24 por defecto) y cuántas firmas exigen.</li>
+        <li>Pueden activarla el Fiscalizador, el Comité o la Administración.</li>
+        <li>Ratifica el Comité, o quien tenga una <strong>delegación vigente</strong> que cubra esa gravedad.</li>
+        <li>Un mismo actor no cuenta dos veces para el quórum.</li>
+      </ul>
+    </div>
+    <div class="caja rojo">
+      <h4>Por qué nunca se levanta sola</h4>
+      <p>Si nadie ratifica a tiempo, el sistema <strong>no libera la medida</strong>: registra la omisión como un acto con nombre y escala al siguiente nivel de la cadena de aviso (o al Comité y la Administración si no hay cadena configurada). La omisión queda escrita; esa es la presión.</p>
+      <p>Levantarla exige que alguien firme que el riesgo se corrigió o que nunca existió.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ================= 10. PROCESOS AUTOMATICOS ================= -->
+<section class="salto">
+  <h2><span class="num">10</span>Procesos que corren solos</h2>
+  <p class="bajada">Tareas programadas en Google Cloud. Ninguna toma una decisión de fondo: avisan, reintentan y cierran plazos.</p>
+  <table>
+    <tr><th style="width:24%">Proceso</th><th style="width:18%">Frecuencia</th><th>Qué hace</th></tr>
+    <tr><td><strong>Reintento de notificaciones</strong></td><td>Cada pocos minutos</td><td>Reenvía las notificaciones sin acuse (hasta 3 veces, cada 5 minutos) y se detiene apenas el residente confirma. Agotados los intentos, el caso queda listado para constancia en buzón.</td></tr>
+    <tr><td><strong>Resumen diario</strong></td><td>Una vez al día</td><td>Un mensaje por rol (Comité y Administración) con lo pendiente. Si no hay nada pendiente, no envía nada. No repite si corre dos veces el mismo día.</td></tr>
+    <tr><td><strong>Escalamiento de medidas</strong></td><td>Cada 15–30 minutos</td><td>Barre las medidas inmediatas con plazo de ratificación vencido, registra la omisión y sube un nivel de aviso. Nunca levanta una medida.</td></tr>
+    <tr><td><strong>Cierre de plazos</strong></td><td>Cada vez que alguien abre la lista de casos</td><td>Pasa a Firme, Cortesía o Por confirmar los casos notificados cuyo plazo venció sin apelación.</td></tr>
+  </table>
+
+  <h3>Notificaciones que envía el sistema</h3>
+  <table>
+    <tr><th style="width:30%">Mensaje</th><th style="width:22%">A quién</th><th>Canal</th></tr>
+    <tr><td>Notificación de multa o aviso</td><td>Infractor (+ dueño en copia si corresponde)</td><td>Correo con PDF (legal) + WhatsApp (complementario, pendiente de activar)</td></tr>
+    <tr><td>Reintentos</td><td>Infractor sin acuse</td><td>Mismos canales</td></tr>
+    <tr><td>Resumen de pendientes</td><td>Comité y Administración</td><td>Correo + WhatsApp</td></tr>
+    <tr><td>Aviso de medida inmediata y escalamiento</td><td>Cadena de aviso de la comunidad</td><td>Según la cadena configurada</td></tr>
+  </table>
+</section>
+
+<!-- ================= 11. TRAZABILIDAD ================= -->
+<section class="salto">
+  <h2><span class="num">11</span>Trazabilidad y prueba</h2>
+  <p class="bajada">Si mañana preguntan qué pasó, está todo, y se puede demostrar que nadie lo alteró.</p>
+
+  <div class="grid2">
+    <div class="caja clave">
+      <h4>Actas selladas en cadena</h4>
+      <p>Cada acto importante genera un acta con quién lo hizo, cuándo, cómo se autenticó y los datos del momento. Cada acta incluye la huella de la anterior: alterar una rompe todas las siguientes.</p>
+      <p>Además, la base de datos impide modificar o borrar actas, y los archivos de evidencia no se pueden sobrescribir.</p>
+    </div>
+    <div class="caja">
+      <h4>Verificación y certificado</h4>
+      <p><strong>Cualquier persona con acceso al caso</strong>, incluido el residente sancionado, puede:</p>
+      <ul>
+        <li>verificar la integridad (recalcula la cadena y las huellas de cada archivo), y</li>
+        <li>descargar el <strong>certificado PDF de integridad</strong>, presentable ante tribunales o auditorías.</li>
+      </ul>
+    </div>
+  </div>
+
+  <h3>Actos que quedan sellados</h3>
+  <table>
+    <tr><th>Carril de la multa</th><th>Carril de contención</th></tr>
+    <tr><td>
+      Curse automático · Aprobación · Rechazo · Notificación (con cada canal y resultado) · Acuse de recibo · Descargo presentado · Antecedente aportado · Reunión convocada · Reunión realizada · Voto del Comité · Resolución · Firmeza automática · Confirmación antes del cobro
+    </td><td>
+      Medida ejecutada · Voto de ratificación (con la delegación usada, si aplica) · Medida ratificada · Escalamiento por omisión · Medida levantada
+    </td></tr>
+  </table>
+  <p class="cita">El sistema guarda lo necesario para reconstruir cualquier caso sin depender de la memoria de nadie.</p>
+</section>
+
+<!-- ================= 12. MATRIZ ================= -->
+<section class="salto">
+  <h2><span class="num">12</span>Matriz de permisos</h2>
+  <p class="bajada">Quién puede hacer qué. Lo que no aparece marcado, el sistema lo bloquea aunque alguien intente hacerlo por fuera de la app.</p>
+  <table>
+    <tr><th>Acción</th><th class="c">Fiscal.</th><th class="c">Comité</th><th class="c">Admin.</th><th class="c">Residente</th></tr>
+    <tr><td>Levantar un reporte y adjuntar evidencia</td><td class="c si">●</td><td class="c si">●</td><td class="c no">—</td><td class="c si">●</td></tr>
+    <tr><td>Ver casos</td><td class="c">los suyos</td><td class="c">todos</td><td class="c">todos</td><td class="c">los suyos</td></tr>
+    <tr><td>Tipificar (aprobar) o rechazar un caso en revisión</td><td class="c no">—</td><td class="c si">●</td><td class="c no">—</td><td class="c no">—</td></tr>
+    <tr><td>Notificar / registrar constancia en buzón</td><td class="c no">—</td><td class="c no">—</td><td class="c si">●</td><td class="c no">—</td></tr>
+    <tr><td>Apelar y sumar antecedentes</td><td class="c no">—</td><td class="c no">—</td><td class="c no">—</td><td class="c si">●</td></tr>
+    <tr><td>Resolver apelaciones, citar a reunión, registrar acta</td><td class="c no">—</td><td class="c si">●</td><td class="c no">—</td><td class="c no">—</td></tr>
+    <tr><td>Confirmar un cobro detenido</td><td class="c no">—</td><td class="c si">●</td><td class="c no">—</td><td class="c no">—</td></tr>
+    <tr><td>Exportar cobros al gasto común</td><td class="c no">—</td><td class="c no">—</td><td class="c si">●</td><td class="c no">—</td></tr>
+    <tr><td>Activar una medida inmediata</td><td class="c si">●</td><td class="c si">●</td><td class="c si">●</td><td class="c no">—</td></tr>
+    <tr><td>Ratificar una medida</td><td class="c">con delegación</td><td class="c si">●</td><td class="c">con delegación</td><td class="c no">—</td></tr>
+    <tr><td>Levantar una medida</td><td class="c no">—</td><td class="c si">●</td><td class="c no">—</td><td class="c no">—</td></tr>
+    <tr><td>Otorgar o revocar delegaciones</td><td class="c no">—</td><td class="c si">●</td><td class="c no">—</td><td class="c no">—</td></tr>
+    <tr><td>Crear, editar, confirmar infracciones</td><td class="c no">—</td><td class="c si">●</td><td class="c si">●</td><td class="c no">—</td></tr>
+    <tr><td>Subir reglamentos y generar borradores IA</td><td class="c no">—</td><td class="c no">—</td><td class="c si">●</td><td class="c no">—</td></tr>
+    <tr><td>Editar el registro de unidades y personas</td><td class="c no">—</td><td class="c no">—</td><td class="c si">●</td><td class="c no">—</td></tr>
+    <tr><td>Invitar y asignar roles</td><td class="c no">—</td><td class="c no">—</td><td class="c si">●</td><td class="c no">—</td></tr>
+    <tr><td>Registrar en el Libro de Novedades</td><td class="c si">●</td><td class="c si">●</td><td class="c si">●</td><td class="c si">●</td></tr>
+    <tr><td>Responder el Libro de Novedades</td><td class="c no">—</td><td class="c no">—</td><td class="c si">●</td><td class="c no">—</td></tr>
+    <tr><td>Verificar integridad y descargar certificado</td><td class="c si">●</td><td class="c si">●</td><td class="c si">●</td><td class="c si">●</td></tr>
+    <tr><td>Usar el asistente</td><td class="c si">●</td><td class="c si">●</td><td class="c si">●</td><td class="c si">●</td></tr>
+  </table>
+  <p class="nota">El Administrador del sistema puede hacer cualquier acción de cualquier rol y es el único que crea comunidades. Las cuentas Pendientes no acceden a ningún módulo. "Ver casos" siempre se limita a la propia comunidad.</p>
+</section>
+
+<!-- ================= 13. PARAMETROS ================= -->
+<section class="salto">
+  <h2><span class="num">13</span>Plazos y parámetros configurables</h2>
+  <p class="bajada">Valores por defecto. Los de la comunidad se ajustan por condominio; los generales, para toda la instalación.</p>
+
+  <h3>Por comunidad</h3>
+  <table>
+    <tr><th style="width:40%">Parámetro</th><th class="c" style="width:16%">Por defecto</th><th>Qué controla</th></tr>
+    <tr><td>Plazo para apelar</td><td class="c">5 días</td><td>Días corridos desde el acuse de recibo.</td></tr>
+    <tr><td>Plazo del Comité para resolver</td><td class="c">15 días</td><td>Días corridos desde la apelación. Se extiende si cita a reunión.</td></tr>
+    <tr><td>Quórum para resolver apelaciones</td><td class="c">1</td><td>Miembros que deben coincidir en la misma salida.</td></tr>
+    <tr><td>Avisos de cortesía antes de multar</td><td class="c">2</td><td>Faltas no graves que se avisan sin cobro. 0 = se cobra desde la primera.</td></tr>
+    <tr><td>Ventana de reportes duplicados</td><td class="c">24 horas</td><td>Reportes de la misma unidad dentro de esta ventana se suman al mismo caso.</td></tr>
+  </table>
+
+  <h3>Por infracción (catálogo)</h3>
+  <table>
+    <tr><th style="width:40%">Parámetro</th><th class="c" style="width:16%">Por defecto</th><th>Qué controla</th></tr>
+    <tr><td>Monto y unidad</td><td class="c">—</td><td>En pesos, UF o UTM.</td></tr>
+    <tr><td>Gravedad</td><td class="c">Leve</td><td>Leve, grave o gravísima. Define la seguridad mínima y si admite cortesía.</td></tr>
+    <tr><td>Factor de reincidencia</td><td class="c">×1,00</td><td>Multiplicador si la unidad repite la falta en la ventana.</td></tr>
+    <tr><td>Conlleva contención</td><td class="c">No</td><td>Si el hallazgo activa una medida inmediata.</td></tr>
+    <tr><td>Horas para ratificar</td><td class="c">24</td><td>Plazo antes de escalar por omisión.</td></tr>
+    <tr><td>Firmas para ratificar</td><td class="c">1</td><td>Quórum fijo por política de riesgo.</td></tr>
+  </table>
+
+  <h3>Generales de la instalación</h3>
+  <table>
+    <tr><th style="width:40%">Parámetro</th><th class="c" style="width:16%">Por defecto</th><th>Qué controla</th></tr>
+    <tr><td>Ventana de reincidencia</td><td class="c">6 meses</td><td>Cuánto atrás se mira para reincidencia y cortesías.</td></tr>
+    <tr><td>Plazo del Libro de Novedades</td><td class="c">20 días</td><td>Plazo legal de respuesta de la Administración.</td></tr>
+    <tr><td>Seguridad mínima para cursar sola</td><td class="c">65 / 80 / 90</td><td>Leve, grave y gravísima.</td></tr>
+    <tr><td>Reintentos de notificación</td><td class="c">3 × 5 min</td><td>Antes de pasar a constancia en buzón.</td></tr>
+    <tr><td>Preguntas al asistente</td><td class="c">40 por hora</td><td>Por persona.</td></tr>
+  </table>
+</section>
+
+<!-- ================= 14. ESTADO ================= -->
+<section class="salto">
+  <h2><span class="num">14</span>Estado actual y pendientes</h2>
+  <p class="bajada">Lo que está funcionando en producción hoy y lo que falta activar.</p>
+
+  <div class="grid2">
+    <div class="caja verde">
+      <h4>Funcionando</h4>
+      <ul>
+        <li>Sitio y app web en sinconflicto.cl, con HTTPS.</li>
+        <li>Ciclo completo de multas, apelaciones, contención y cobros.</li>
+        <li>Notificación por correo con buzón sin cuenta y acuse de recibo.</li>
+        <li>Actas selladas, verificación y certificado de integridad.</li>
+        <li>App Android firmada y conectada a producción.</li>
+        <li>Procesos programados: reintentos, resúmenes y escalamiento.</li>
+        <li>Respaldos automáticos de la base de datos.</li>
+      </ul>
+    </div>
+    <div class="caja alerta">
+      <h4>Pendiente de activar</h4>
+      <ul>
+        <li><strong>IA de clasificación y asistente:</strong> falta la clave de un proveedor (Anthropic o Google). Sin ella, los reportes quedan en revisión del Comité y el asistente avisa que no está activo.</li>
+        <li><strong>Envío de correo real:</strong> falta configurar el proveedor de correo.</li>
+        <li><strong>WhatsApp:</strong> conectado a Twilio en modo prueba; falta la cuenta pagada, el número propio (chip prepago) y la aprobación de las plantillas por Meta.</li>
+        <li><strong>Publicación en Google Play</strong> y desarrollo de la <strong>app de iPhone</strong>. El botón de App Store de la web apunta a un enlace provisorio.</li>
+      </ul>
+    </div>
+  </div>
+
+  <h3>Observaciones del repaso</h3>
+  <table>
+    <tr><th style="width:28%">Tema</th><th>Observación</th></tr>
+    <tr><td>Formulario "Solicitar demo" de la web (corregido)</td><td>Antes mostraba "Gracias" sin enviar nada. Ahora cada solicitud <strong>se guarda</strong> (panel de administración → "Solicitudes de demo", con casilla de atendida y notas) y se avisa por correo a sinconflicto.cl@gmail.com cuando el correo real esté configurado.</td></tr>
+    <tr><td>Sin IA activa</td><td>Mientras no haya clave de IA, <strong>ningún caso se cursa solo</strong>: todos quedan en revisión del Comité. El sistema funciona, pero el Comité vuelve a ser el filtro previo.</td></tr>
+    <tr><td>Sin correo real</td><td>Las notificaciones no salen a los residentes. Es el paso más urgente antes del primer condominio real.</td></tr>
+    <tr><td>Privacidad (corregido)</td><td>Un residente sin persona vinculada en el registro podía ver los casos sin infractor identificado de su comunidad. Se corrigió en la versión 5.</td></tr>
+    <tr><td>Cierre de plazos</td><td>Hoy ocurre cuando alguien abre la lista de casos. Funciona, pero si nadie entra en días, el paso a firme se registra con atraso. Conviene sumarlo a una tarea programada diaria.</td></tr>
+  </table>
+
+  <div class="caja clave" style="margin-top:6mm">
+    <h4>Orden recomendado para el primer condominio</h4>
+    <ol>
+      <li>Configurar el envío de correo real.</li>
+      <li>Activar la IA (Google o Anthropic) para que los casos se cursen solos.</li>
+      <li>Alta de la comunidad, registro, reglamento y catálogo confirmado.</li>
+      <li>Prueba de humo con un caso real de punta a punta.</li>
+      <li>Después: WhatsApp, Google Play e iPhone.</li>
+    </ol>
+  </div>
+</section>
+
+</body>
+</html>

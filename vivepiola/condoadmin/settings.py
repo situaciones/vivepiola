@@ -46,6 +46,7 @@ INSTALLED_APPS = [
     'novedades',
     'gastos_comunes',
     'asistente',
+    'contacto',
 ]
 
 MIDDLEWARE = [
@@ -202,6 +203,7 @@ REST_FRAMEWORK = {
     # Solo las vistas que declaran throttle_scope quedan limitadas.
     'DEFAULT_THROTTLE_RATES': {
         'asistente': config('ASISTENTE_LIMITE', default='40/hour'),
+        'demo': config('DEMO_LIMITE', default='5/hour'),
     },
 }
 
@@ -231,6 +233,8 @@ EMAIL_USE_TLS = config('EMAIL_USE_TLS', default=True, cast=bool)
 EMAIL_HOST_USER = config('EMAIL_HOST_USER', default='')
 EMAIL_HOST_PASSWORD = config('EMAIL_HOST_PASSWORD', default='')
 DEFAULT_FROM_EMAIL = config('DEFAULT_FROM_EMAIL', default='notificaciones@sinconflicto.cl')
+# A donde llegan las solicitudes de demo de la portada.
+CONTACTO_CORREO = config('CONTACTO_CORREO', default='sinconflicto.cl@gmail.com')
 
 
 # Integracion IA (extraccion de infracciones desde reglamento en PDF)

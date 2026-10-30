@@ -264,6 +264,10 @@
 .form-min input::placeholder{color:var(--muted)}
 .form-min input:focus{outline:2px solid var(--purple);outline-offset:1px}
 .form-min .btn{justify-content:center;margin-top:6px}
+.form-min .btn:disabled{opacity:.6;cursor:default}
+.form-min-error{margin:0;font-size:.9rem;color:#ff8a80;text-align:left}
+/* Fuera de la vista sin display:none: algunos robots se saltan los campos ocultos. */
+.campo-trampa{position:absolute;left:-10000px;width:1px;height:1px;opacity:0}
 
 .ok-min{
   display:grid;justify-items:center;gap:12px;margin-top:40px;padding:34px 24px;
