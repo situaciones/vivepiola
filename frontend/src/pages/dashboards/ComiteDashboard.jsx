@@ -302,10 +302,10 @@ export default function ComiteDashboard() {
   return (
     <AppShell
       tabs={[
-        { id: 'bandeja', label: 'Bandeja de decision', icon: Inbox, badge: pendientes.length },
-        { id: 'contenciones', label: t('contenciones'), icon: Siren, badge: medidas.filter((m) => m.estado === 'EJECUTADA' || m.estado === 'EN_ESCALAMIENTO').length },
-        { id: 'borradores', label: 'Borradores IA', icon: Sparkles, badge: borradores.length },
-        { id: 'catalogo', label: t('catalogo'), icon: BookMarked },
+        { id: 'bandeja', corto: 'Bandeja', label: 'Bandeja de decision', icon: Inbox, badge: pendientes.length },
+        { id: 'contenciones', corto: 'Medidas', label: t('contenciones'), icon: Siren, badge: medidas.filter((m) => m.estado === 'EJECUTADA' || m.estado === 'EN_ESCALAMIENTO').length },
+        { id: 'borradores', corto: 'Borradores', label: 'Borradores IA', icon: Sparkles, badge: borradores.length },
+        { id: 'catalogo', corto: 'Catalogo', label: t('catalogo'), icon: BookMarked },
       ]}
       active={tab}
       onChange={setTab}

@@ -118,7 +118,7 @@ export default function ResidenteDashboard() {
     <AppShell
       tabs={[
         { id: 'multas', label: t('mis_multas'), icon: ShieldCheck, badge: activas.length },
-        { id: 'novedades', label: 'Libro de Novedades', icon: MessageSquareText, badge: novedadesPendientes.length },
+        { id: 'novedades', corto: 'Novedades', label: 'Libro de Novedades', icon: MessageSquareText, badge: novedadesPendientes.length },
       ]}
       active={tab}
       onChange={setTab}

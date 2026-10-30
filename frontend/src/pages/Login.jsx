@@ -100,6 +100,14 @@ export default function Login() {
         </div>
       </div>
 
+      <div className="login-cabecera-movil">
+        <Marca size={40} />
+        <div>
+          <h2>Convivencia con <strong>respaldo</strong>.</h2>
+          <p>Reclamos, multas y notificaciones de tu comunidad, con cada paso a la vista.</p>
+        </div>
+      </div>
+
       <div className="login-panel-form">
         <form className="login-tarjeta" onSubmit={handleSubmit}>
           <div>
@@ -126,9 +134,7 @@ export default function Login() {
             </button>
           )}
 
-          <div className="texto-secundario" style={{ textAlign: 'center', fontSize: '0.8rem' }}>
-            — o con usuario y contrasena —
-          </div>
+          <div className="login-separador">o con usuario y contrasena</div>
 
           <label>
             Usuario

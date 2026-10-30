@@ -128,8 +128,8 @@ export default function FiscalizadorDashboard() {
       dark
       tabs={[
         { id: 'nuevo', label: t('reporte_corto'), icon: Camera },
-        { id: 'contencion', label: t('contencion'), icon: Siren, badge: medidasActivas.length },
-        { id: 'tickets', label: 'Mis tickets', icon: ListChecks, badge: tickets.length },
+        { id: 'contencion', corto: 'Medidas', label: t('contencion'), icon: Siren, badge: medidasActivas.length },
+        { id: 'tickets', corto: 'Tickets', label: 'Mis tickets', icon: ListChecks, badge: tickets.length },
       ]}
       active={tab}
       onChange={setTab}

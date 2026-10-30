@@ -154,13 +154,13 @@ export default function AdministradorDashboard() {
   return (
     <AppShell
       tabs={[
-        { id: 'notificar', label: `Notificar ${t('multa_plural').toLowerCase()}`, icon: BellRing, badge: aprobadas.length },
-        ...(tieneDelegacion ? [{ id: 'firmas', label: 'Firmas por delegacion', icon: KeyRound, badge: firmasPendientes }] : []),
-        { id: 'equipo', label: 'Equipo y accesos', icon: UserPlus },
-        { id: 'registro', label: t('registro_titulo'), icon: Users },
-        { id: 'reglamento', label: `${t('infraccion')} y reglamento`, icon: FileText },
-        { id: 'novedades', label: 'Libro de Novedades', icon: MessageSquareText, badge: novedadesPendientes.length },
-        { id: 'gastos', label: t('destino_cobro').charAt(0).toUpperCase() + t('destino_cobro').slice(1), icon: Wallet },
+        { id: 'notificar', corto: 'Notificar', label: `Notificar ${t('multa_plural').toLowerCase()}`, icon: BellRing, badge: aprobadas.length },
+        ...(tieneDelegacion ? [{ id: 'firmas', corto: 'Firmas', label: 'Firmas por delegacion', icon: KeyRound, badge: firmasPendientes }] : []),
+        { id: 'equipo', corto: 'Equipo', label: 'Equipo y accesos', icon: UserPlus },
+        { id: 'registro', corto: 'Registro', label: t('registro_titulo'), icon: Users },
+        { id: 'reglamento', corto: 'Reglamento', label: `${t('infraccion')} y reglamento`, icon: FileText },
+        { id: 'novedades', corto: 'Novedades', label: 'Libro de Novedades', icon: MessageSquareText, badge: novedadesPendientes.length },
+        { id: 'gastos', corto: 'Cobros', label: t('destino_cobro').charAt(0).toUpperCase() + t('destino_cobro').slice(1), icon: Wallet },
       ]}
       active={tab}
       onChange={setTab}
