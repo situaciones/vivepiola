@@ -1,3 +1,4 @@
+import { Capacitor } from '@capacitor/core';
 import { Navigate, Route, BrowserRouter, Routes } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import ProtectedRoute from './components/ProtectedRoute';
@@ -56,7 +57,11 @@ export default function App() {
     <BrowserRouter>
       <AuthProvider>
         <Routes>
-          <Route path="/" element={<Landing />} />
+          {/* En la app Android la portada de marketing sobra: se entra directo. */}
+          <Route
+            path="/"
+            element={Capacitor.isNativePlatform() ? <Navigate to="/app" replace /> : <Landing />}
+          />
           <Route path="/como-funciona" element={<ComoFunciona />} />
           <Route path="/login" element={<Login />} />
           {/* Atajo de los avisos de WhatsApp: /m/12 abre ese expediente. */}
