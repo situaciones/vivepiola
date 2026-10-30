@@ -182,7 +182,7 @@ export default function AdministradorDashboard() {
                     <strong>{t('multa')} #{m.id} - {m.unidad_identificador}</strong>
                     <EstadoBadge estado={m.estado} />
                   </div>
-                  <p>{m.infraccion_descripcion} - {m.monto}</p>
+                  <p>{m.infraccion_descripcion} - {m.monto} {m.infraccion_unidad_monto}</p>
                   {m.es_reincidencia && <p className="alerta-reincidencia">Reincidencia: {m.agravante_sugerido}</p>}
                   <button className="btn btn-primario" onClick={() => notificar(m.id)} style={{ marginTop: 10 }}>
                     Notificar al {t('residente').toLowerCase()}

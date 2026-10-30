@@ -14,7 +14,7 @@ function Badge({ valor }) {
   return typeof valor === 'number' && valor > 0 ? <span className="nav-badge">{valor > 99 ? '99+' : valor}</span> : null;
 }
 
-export default function AppShell({ tabs, active, onChange, dark = false, children }) {
+export default function AppShell({ tabs, active, onChange, onAtras, dark = false, children }) {
   const { usuario, logout } = useAuth();
   const t = useVocab();
   const nombre = usuario?.first_name || usuario?.username || '';
@@ -28,20 +28,22 @@ export default function AppShell({ tabs, active, onChange, dark = false, childre
   const activoEnResto = resto.some((tabItem) => tabItem.id === active);
   const badgeResto = resto.reduce((suma, tabItem) => suma + (tabItem.badge || 0), 0);
 
-  // Boton atras de Android: primero cierra la hoja, despues vuelve a la
-  // seccion principal y solo entonces deja la app en segundo plano. Sin esto,
-  // un toque de mas cerraba la app en medio de un caso.
+  // Boton atras de Android: primero cierra la hoja, despues deja que la
+  // seccion retroceda (onAtras, p. ej. del expediente a la bandeja), luego
+  // vuelve a la seccion principal y solo entonces deja la app en segundo
+  // plano. Sin esto, un toque de mas cerraba la app en medio de un caso.
   useEffect(() => {
     if (!Capacitor.isNativePlatform()) return undefined;
     const escucha = AppNativa.addListener('backButton', () => {
       if (hoja) setHoja(null);
+      else if (onAtras?.()) return;
       else if (tabs.length && active !== tabs[0].id) onChange(tabs[0].id);
       else AppNativa.minimizeApp();
     });
     return () => {
       escucha.then((e) => e.remove());
     };
-  }, [hoja, active, tabs, onChange]);
+  }, [hoja, active, tabs, onChange, onAtras]);
 
   const elegir = (id) => {
     setHoja(null);

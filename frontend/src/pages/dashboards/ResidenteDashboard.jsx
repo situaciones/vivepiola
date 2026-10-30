@@ -170,7 +170,7 @@ export default function ResidenteDashboard() {
                       </p>
                     </div>
                   ) : (
-                    m.monto && <p><strong>Monto:</strong> {m.monto}</p>
+                    m.monto && <p><strong>Monto:</strong> {m.monto} {m.infraccion_unidad_monto}</p>
                   )}
                   {m.infraccion && (
                     <div className="explicacion-ia">

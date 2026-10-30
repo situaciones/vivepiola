@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { AlertTriangle, BookMarked, CheckCircle2, Inbox, PenLine, ShieldCheck, Siren, Sparkles, UserPlus } from 'lucide-react';
+import { AlertTriangle, ArrowLeft, BookMarked, CheckCircle2, Inbox, PenLine, ShieldCheck, Siren, Sparkles, UserPlus } from 'lucide-react';
 import client, { MEDIA_BASE } from '../../api/client';
 import { useAuth } from '../../context/AuthContext';
 import EstadoBadge from '../../components/EstadoBadge';
@@ -299,6 +299,15 @@ export default function ComiteDashboard() {
     cargarTodo();
   };
 
+  // En el telefono el expediente es su propia pantalla: volver lo cierra y
+  // muestra la bandeja. Devuelve true si atendio el "atras" de Android.
+  const volverABandeja = () => {
+    if (tab !== 'bandeja' || seleccionId == null) return false;
+    setSeleccionId(null);
+    window.scrollTo({ top: 0 });
+    return true;
+  };
+
   return (
     <AppShell
       tabs={[
@@ -309,6 +318,7 @@ export default function ComiteDashboard() {
       ]}
       active={tab}
       onChange={setTab}
+      onAtras={volverABandeja}
     >
       <div className="contenedor">
         {mensaje && <div className="mensaje-info">{mensaje}</div>}
@@ -331,14 +341,17 @@ export default function ComiteDashboard() {
                 <EmptyState icon={CheckCircle2} mensaje="No hay casos pendientes de decision. La bandeja esta al dia." />
               </div>
             ) : (
-              <div className="split" style={{ marginTop: 24 }}>
+              <div className={`split${seleccionId != null ? ' con-detalle' : ''}`} style={{ marginTop: 24 }}>
                 <div className="split-lista">
                   {pendientes.map((m) => (
                     <button
                       key={m.id}
                       type="button"
                       className={`split-item${activa?.id === m.id ? ' activo' : ''}`}
-                      onClick={() => setSeleccionId(m.id)}
+                      onClick={() => {
+                        setSeleccionId(m.id);
+                        window.scrollTo({ top: 0 });
+                      }}
                     >
                       <span className="titulo">
                         {t('multa')} #{m.id} · {m.unidad_identificador}
@@ -351,6 +364,9 @@ export default function ComiteDashboard() {
 
                 {activa && (
                   <div className="split-detalle">
+                    <button type="button" className="btn btn-fantasma volver-bandeja" onClick={volverABandeja}>
+                      <ArrowLeft size={18} /> Bandeja
+                    </button>
                     <div className="tarjeta">
                       <div className="tarjeta-header">
                         <strong>{t('multa')} #{activa.id} - {activa.unidad_identificador}</strong>
@@ -552,7 +568,7 @@ export default function ComiteDashboard() {
                               <h4>Multa impugnada</h4>
                               <p><strong>{activa.infraccion_codigo}</strong> · {activa.infraccion_articulo}</p>
                               <p>{activa.infraccion_descripcion}</p>
-                              <p><strong>Monto:</strong> {activa.monto}</p>
+                              <p><strong>Monto:</strong> {activa.monto} {activa.infraccion_unidad_monto}</p>
                               {activa.es_reincidencia && <p className="alerta-reincidencia">{activa.agravante_sugerido}</p>}
                             </div>
                           </div>
@@ -642,7 +658,7 @@ export default function ComiteDashboard() {
                                 <b>Multa</b>
                                 <span>
                                   {activa.infraccion_codigo} · {activa.infraccion_descripcion}
-                                  {' '}— {activa.monto}
+                                  {' '}— {activa.monto} {activa.infraccion_unidad_monto}
                                 </span>
                               </li>
                             </ul>

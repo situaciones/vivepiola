@@ -141,6 +141,8 @@ class MultaSerializer(serializers.ModelSerializer):
     infraccion_codigo = serializers.CharField(source='infraccion.codigo', read_only=True)
     infraccion_articulo = serializers.CharField(source='infraccion.articulo_referencia', read_only=True)
     infraccion_texto_fuente = serializers.CharField(source='infraccion.texto_fuente', read_only=True)
+    # El monto de la multa se expresa en la unidad de su infraccion (UF o CLP).
+    infraccion_unidad_monto = serializers.CharField(source='infraccion.unidad_monto', read_only=True)
     unidad_identificador = serializers.CharField(source='unidad.identificador', read_only=True)
     persona_nombre = serializers.CharField(source='persona_infractor.nombre_completo', read_only=True)
     historial = HistorialMultaSerializer(many=True, read_only=True)
@@ -156,7 +158,8 @@ class MultaSerializer(serializers.ModelSerializer):
         fields = (
             'id', 'condominio', 'ticket', 'ticket_detalle', 'unidad', 'unidad_identificador',
             'persona_infractor', 'persona_nombre', 'infraccion', 'infraccion_descripcion',
-            'infraccion_codigo', 'infraccion_articulo', 'infraccion_texto_fuente', 'monto', 'estado',
+            'infraccion_codigo', 'infraccion_articulo', 'infraccion_texto_fuente', 'infraccion_unidad_monto',
+            'monto', 'estado',
             'monto_sin_cortesia', 'es_aviso_de_cortesia',
             'aprobada_por', 'fecha_aprobacion', 'motivo_rechazo',
             'notificada_por', 'fecha_notificacion', 'pdf_notificacion',
