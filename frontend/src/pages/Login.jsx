@@ -5,6 +5,9 @@ import { useAuth } from '../context/AuthContext';
 import Marca from '../components/Marca';
 
 const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || '';
+// Sin CLIENT_ID solo existe el modo simulado, que el backend de produccion
+// rechaza: en una version publicada no se ofrece un boton que no funciona.
+const CON_GOOGLE = Boolean(GOOGLE_CLIENT_ID) || import.meta.env.DEV;
 
 export default function Login() {
   const [username, setUsername] = useState('');
@@ -112,29 +115,35 @@ export default function Login() {
         <form className="login-tarjeta" onSubmit={handleSubmit}>
           <div>
             <h1>Iniciar sesion</h1>
-            <p className="texto-secundario">Entra con Google o con tu cuenta del condominio.</p>
+            <p className="texto-secundario">
+              {CON_GOOGLE ? 'Entra con Google o con tu cuenta del condominio.' : 'Entra con tu cuenta del condominio.'}
+            </p>
           </div>
 
-          <label>
-            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-              <KeyRound size={13} /> Codigo de invitacion o comunidad (opcional)
-            </span>
-            <input
-              value={codigo}
-              onChange={(e) => setCodigo(e.target.value)}
-              placeholder="Solo la primera vez, si te lo compartieron"
-            />
-          </label>
+          {CON_GOOGLE && (
+            <>
+              <label>
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                  <KeyRound size={13} /> Codigo de invitacion o comunidad (opcional)
+                </span>
+                <input
+                  value={codigo}
+                  onChange={(e) => setCodigo(e.target.value)}
+                  placeholder="Solo la primera vez, si te lo compartieron"
+                />
+              </label>
 
-          {GOOGLE_CLIENT_ID ? (
-            <div ref={botonGoogleRef} style={{ display: 'flex', justifyContent: 'center' }} />
-          ) : (
-            <button type="button" className="btn btn-secundario" onClick={googleSimulado} disabled={enviando}>
-              Continuar con Google (modo prueba)
-            </button>
+              {GOOGLE_CLIENT_ID ? (
+                <div ref={botonGoogleRef} style={{ display: 'flex', justifyContent: 'center' }} />
+              ) : (
+                <button type="button" className="btn btn-secundario" onClick={googleSimulado} disabled={enviando}>
+                  Continuar con Google (modo prueba)
+                </button>
+              )}
+
+              <div className="login-separador">o con usuario y contrasena</div>
+            </>
           )}
-
-          <div className="login-separador">o con usuario y contrasena</div>
 
           <label>
             Usuario

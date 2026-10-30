@@ -1,5 +1,13 @@
 apply plugin: 'com.android.application'
 
+// La llave de firma vive fuera del repositorio: android/keystore.properties
+// apunta al .jks y trae sus claves (ver PUESTA_EN_MARCHA.md, seccion de Android).
+def keystorePropiedades = new Properties()
+def keystoreArchivo = rootProject.file('keystore.properties')
+if (keystoreArchivo.exists()) {
+    keystoreArchivo.withInputStream { keystorePropiedades.load(it) }
+}
+
 android {
     namespace "cl.sinconflicto.app"
     compileSdk rootProject.ext.compileSdkVersion
@@ -16,8 +24,21 @@ android {
             ignoreAssetsPattern '!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~'
         }
     }
+    signingConfigs {
+        release {
+            if (keystoreArchivo.exists()) {
+                storeFile rootProject.file(keystorePropiedades['storeFile'])
+                storePassword keystorePropiedades['storePassword']
+                keyAlias keystorePropiedades['keyAlias']
+                keyPassword keystorePropiedades['keyPassword']
+            }
+        }
+    }
     buildTypes {
         release {
+            if (keystoreArchivo.exists()) {
+                signingConfig signingConfigs.release
+            }
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }

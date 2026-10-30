@@ -68,6 +68,41 @@ Plan piloto: Cloud SQL `db-f1-micro` y Cloud Run que se apaga sin uso, en
 torno a **US$15–20 al mes**. Para producción con clientes: subir la base a
 `db-g1-small` y dejar 1 instancia de Cloud Run siempre encendida (~US$55–60).
 
+### App Android
+
+La app (`frontend/android`, id `cl.sinconflicto.app`) habla con
+`https://sinconflicto.cl/api` (lo fija `frontend/.env.android`) y solo por
+HTTPS. Para compilar una versión:
+
+```bash
+cd frontend
+npm run build:android
+cd android
+./gradlew assembleRelease bundleRelease
+```
+
+Necesita `JAVA_HOME` (el `jbr` de Android Studio) y `ANDROID_HOME` (el SDK).
+Salen dos archivos firmados:
+
+- `app/build/outputs/apk/release/app-release.apk`: se instala directo en un
+  teléfono, para probar o repartir a mano.
+- `app/build/outputs/bundle/release/app-release.aab`: es el que se sube a
+  Google Play.
+
+Antes de cada versión nueva en Play, sube `versionCode` (y `versionName`) en
+`android/app/build.gradle`.
+
+**La llave de firma** es `android/sinconflicto-release.jks` y sus claves están
+en `android/keystore.properties`. Ninguno de los dos se versiona. **Respáldalos
+fuera de este PC**: sin esa llave, la app publicada en Play no se puede
+volver a actualizar. Huella SHA-256 del certificado:
+`DC:93:BD:E9:4C:00:3F:F9:C0:F8:B5:96:7C:D4:FB:65:A9:89:AC:82:71:EB:B7:CD:EB:E1:33:A4:A6:20:5B:68`.
+
+Al publicar en Play, activa *Play App Signing*. Así esta llave pasa a ser solo
+la de subida, y si se pierde, Google permite reemplazarla.
+
+Para probar la app contra un Django local, sigue `frontend/.env.android.example`.
+
 ---
 
 ## 1. Claves y servicios
