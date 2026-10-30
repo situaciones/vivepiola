@@ -1,4 +1,5 @@
 import io
+import json
 from datetime import timedelta
 from decimal import Decimal
 
@@ -457,6 +458,43 @@ def enviar_notificacion_email(multa, pdf_bytes):
     return copias
 
 
+def enviar_whatsapp(telefono, cuerpo, plantilla='', variables=()):
+    """
+    Envia un WhatsApp por Twilio. Best-effort: si el canal no esta configurado
+    o falla, devuelve False sin interrumpir nada.
+
+    Con `plantilla` (Content SID de una plantilla aprobada por Meta, "HX...")
+    se envia la plantilla con sus variables: fuera de la ventana de 24 horas
+    desde el ultimo mensaje de la persona, Meta solo acepta plantillas. Sin
+    plantilla se envia `cuerpo` como texto libre, que sirve en el sandbox de
+    Twilio y dentro de esa ventana.
+    """
+    sid = settings.TWILIO_ACCOUNT_SID
+    token = settings.TWILIO_AUTH_TOKEN
+    emisor = settings.TWILIO_WHATSAPP_FROM
+    telefono = (telefono or '').strip()
+    if not (sid and token and emisor and telefono):
+        return False
+
+    destino = telefono if telefono.startswith('whatsapp:') else f'whatsapp:{telefono}'
+    datos = {'From': emisor, 'To': destino}
+    if plantilla:
+        datos['ContentSid'] = plantilla
+        # Meta numera las variables desde 1 y no admite saltos de linea en ellas.
+        datos['ContentVariables'] = json.dumps(
+            {str(i): ' '.join(str(v).split()) for i, v in enumerate(variables, start=1)}
+        )
+    else:
+        datos['Body'] = cuerpo
+    resp = requests.post(
+        f'https://api.twilio.com/2010-04-01/Accounts/{sid}/Messages.json',
+        auth=(sid, token),
+        data=datos,
+        timeout=10,
+    )
+    return resp.status_code in (200, 201)
+
+
 def enviar_notificacion_whatsapp(multa):
     """
     Aviso COMPLEMENTARIO por WhatsApp (Twilio). El canal legal de la
@@ -464,12 +502,6 @@ def enviar_notificacion_whatsapp(multa):
     revisar. Best-effort: si el canal no esta configurado o falla, se omite sin
     interrumpir el debido proceso. Devuelve True solo si el mensaje se envio.
     """
-    sid = settings.TWILIO_ACCOUNT_SID
-    token = settings.TWILIO_AUTH_TOKEN
-    emisor = settings.TWILIO_WHATSAPP_FROM
-    if not (sid and token and emisor):
-        return False
-
     persona = multa.persona_infractor
     telefono = ((getattr(persona, 'telefono', '') or '').strip()) if persona else ''
     if not telefono:
@@ -492,14 +524,14 @@ def enviar_notificacion_whatsapp(multa):
         f'Aqui puede ver el caso completo, descargar el documento y apelar, sin '
         f'crear cuenta: {enlace}'
     )
-    destino = telefono if telefono.startswith('whatsapp:') else f'whatsapp:{telefono}'
-    resp = requests.post(
-        f'https://api.twilio.com/2010-04-01/Accounts/{sid}/Messages.json',
-        auth=(sid, token),
-        data={'From': emisor, 'To': destino, 'Body': cuerpo},
-        timeout=10,
+    # Variables de la plantilla "aviso_multa" (ver PUESTA_EN_MARCHA.md, 1.5).
+    # Ninguna puede ir vacia: Meta rechaza la plantilla completa.
+    variables = (
+        c.nombre, multa.id, multa.unidad.identificador, dias,
+        f'hasta el {limite}' if limite else 'desde que reciba la notificacion',
+        enlace,
     )
-    return resp.status_code in (200, 201)
+    return enviar_whatsapp(telefono, cuerpo, settings.TWILIO_PLANTILLA_AVISO_MULTA, variables)
 
 
 def aplicar_monto_con_reincidencia(multa, infraccion, monto_base=None):

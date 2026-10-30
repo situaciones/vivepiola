@@ -242,6 +242,31 @@ TWILIO_WHATSAPP_FROM=whatsapp:+14155238886
 > tipo de mensaje ("aviso de multa", "resumen de pendientes") y esperar
 > aprobación. Toma días y no depende de nosotros.
 
+**Plantillas a registrar** (Twilio → **Messaging → Content Template Builder**,
+tipo *Text*, categoría **Utility**, idioma **Spanish**). Copiar el texto tal
+cual: el sistema llena las variables en este orden.
+
+`aviso_multa` → variable `TWILIO_PLANTILLA_AVISO_MULTA`
+
+```
+Aviso de {{1}}: se registró una multa (#{{2}}) para la unidad {{3}}. La notificación formal, con su documento, está en su correo registrado. Tiene {{4}} días corridos para presentar su descargo ({{5}}). Puede ver el caso, descargar el documento y apelar sin crear cuenta en {{6}} . Este aviso no reemplaza la notificación formal.
+```
+
+`resumen_pendientes` → variable `TWILIO_PLANTILLA_RESUMEN`
+
+```
+Resumen de {{1}}: tienes pendientes. {{2}}. Para revisarlos entra a {{3}} . Recibes este resumen una vez al día, solo cuando hay algo que hacer.
+```
+
+Una vez aprobadas, Twilio muestra el **Content SID** de cada una (empieza con
+`HX`): ese valor va en la variable correspondiente. Mientras no estén, el
+sistema envía texto libre, que solo llega en el sandbox o a quien escribió en
+las últimas 24 horas.
+
+**En Google Cloud** las claves van en Secret Manager (`twilio-account-sid`,
+`twilio-auth-token`) y el emisor y las plantillas como variables del servicio
+y del job `sinconflicto-resumenes` (ver parte 0).
+
 ---
 
 ### 1.6 Google OAuth — 🟡 opcional

@@ -139,24 +139,17 @@ def redactar_mensaje(condominio, resumen):
     return cuerpo
 
 
-def _enviar_whatsapp(telefono, texto):
+def _enviar_whatsapp(telefono, texto, condominio, resumen):
     """Best-effort, igual que el aviso de multa: si no hay canal, se omite."""
-    import requests
+    from .services import enviar_whatsapp
 
-    sid, token, emisor = (
-        settings.TWILIO_ACCOUNT_SID, settings.TWILIO_AUTH_TOKEN, settings.TWILIO_WHATSAPP_FROM,
+    # Variables de la plantilla "resumen_pendientes" (ver PUESTA_EN_MARCHA.md, 1.5).
+    variables = (
+        condominio.nombre,
+        '; '.join(resumen['puntos']),
+        f'{settings.FRONTEND_URL.rstrip("/")}/app',
     )
-    telefono = (telefono or '').strip()
-    if not (sid and token and emisor and telefono):
-        return False
-    destino = telefono if telefono.startswith('whatsapp:') else f'whatsapp:{telefono}'
-    respuesta = requests.post(
-        f'https://api.twilio.com/2010-04-01/Accounts/{sid}/Messages.json',
-        auth=(sid, token),
-        data={'From': emisor, 'To': destino, 'Body': texto},
-        timeout=10,
-    )
-    return respuesta.status_code in (200, 201)
+    return enviar_whatsapp(telefono, texto, settings.TWILIO_PLANTILLA_RESUMEN, variables)
 
 
 def enviar_resumen(condominio, resumen, destinatarios):
@@ -179,7 +172,7 @@ def enviar_resumen(condominio, resumen, destinatarios):
             except Exception:
                 pass
         try:
-            _enviar_whatsapp(usuario.telefono, texto)
+            _enviar_whatsapp(usuario.telefono, texto, condominio, resumen)
         except Exception:
             pass  # el resumen es un recordatorio: su fallo nunca frena nada
     return enviados

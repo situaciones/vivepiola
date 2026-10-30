@@ -5,6 +5,7 @@ infraccion al denunciar, descuento parcial en la resolucion del descargo,
 multiplicador automatico por reincidencia y aviso complementario por WhatsApp.
 """
 
+import json
 import tempfile
 from datetime import timedelta
 from decimal import Decimal
@@ -182,6 +183,31 @@ class CapacidadesNuevasTestCase(APITestCase):
         acta = multa.actas_selladas.filter(tipo_acto=TipoActo.NOTIFICACION).first()
         entregas = acta.manifiesto['extra']['entregas']
         self.assertIn('WHATSAPP:+56911112222:ENVIADA', entregas)
+
+    @override_settings(
+        TWILIO_ACCOUNT_SID='ACtest',
+        TWILIO_AUTH_TOKEN='token',
+        TWILIO_WHATSAPP_FROM='whatsapp:+14155238886',
+        TWILIO_PLANTILLA_AVISO_MULTA='HXavisomulta',
+        FRONTEND_URL='https://sinconflicto.cl',
+    )
+    def test_whatsapp_con_plantilla_envia_la_plantilla_aprobada(self):
+        """
+        Fuera del sandbox Meta solo acepta plantillas aprobadas para escribirle
+        a quien no escribio en 24 horas. Con la plantilla configurada se envia
+        esa, con sus 6 variables completas y sin texto libre.
+        """
+        with patch('multas.services.requests.post', return_value=Mock(status_code=201)) as mock_post:
+            multa = self._aprobar_y_notificar(self._denunciar())
+
+        datos = mock_post.call_args.kwargs['data']
+        self.assertEqual(datos['ContentSid'], 'HXavisomulta')
+        self.assertNotIn('Body', datos)
+        variables = json.loads(datos['ContentVariables'])
+        self.assertEqual(sorted(variables), ['1', '2', '3', '4', '5', '6'])
+        self.assertTrue(all(v.strip() for v in variables.values()), 'Meta rechaza variables vacias')
+        self.assertEqual(variables['2'], str(multa.id))
+        self.assertIn('https://sinconflicto.cl/acuse/', variables['6'])
 
     @override_settings(
         TWILIO_ACCOUNT_SID='ACtest',

@@ -263,6 +263,10 @@ VISION_MAX_CARACTERES = config('VISION_MAX_CARACTERES', default=1500, cast=int)
 TWILIO_ACCOUNT_SID = config('TWILIO_ACCOUNT_SID', default='')
 TWILIO_AUTH_TOKEN = config('TWILIO_AUTH_TOKEN', default='')
 TWILIO_WHATSAPP_FROM = config('TWILIO_WHATSAPP_FROM', default='')  # ej: whatsapp:+14155238886
+# Plantillas aprobadas por Meta (Content SID "HX..."). Vacias = texto libre,
+# que solo sirve en el sandbox o dentro de las 24 h desde el ultimo mensaje.
+TWILIO_PLANTILLA_AVISO_MULTA = config('TWILIO_PLANTILLA_AVISO_MULTA', default='')
+TWILIO_PLANTILLA_RESUMEN = config('TWILIO_PLANTILLA_RESUMEN', default='')
 
 
 # Ingreso con Google (Google Identity Services).
