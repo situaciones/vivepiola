@@ -1,0 +1,15 @@
+.git
+venv
+**/node_modules
+**/.env
+**/.env.*
+*.sqlite3
+*.log
+vivepiola/media
+vivepiola/staticfiles
+frontend/dist
+frontend/android
+documentacion
+juegarte-web
+aplicacion multas
+.claude

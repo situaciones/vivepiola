@@ -478,6 +478,8 @@ h2::before {
   background: var(--grad-marca);
 }
 h2:first-child { margin-top: 0; }
+/* La landing y "Como funciona" tienen su propia tipografia: sin acento. */
+.vp h2::before { content: none; }
 
 /* ---------- Tablas ---------- */
 

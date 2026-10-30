@@ -17,6 +17,12 @@ DEBUG = config('DEBUG', default=False, cast=bool)
 
 ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='localhost,127.0.0.1', cast=Csv())
 
+# En la nube Django corre detras del proxy HTTPS de Google: la conexion llega
+# como HTTP, y el proxy avisa en este encabezado que el cliente uso HTTPS.
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+# Origenes desde los que se aceptan formularios con sesion (el admin de Django).
+CSRF_TRUSTED_ORIGINS = config('CSRF_TRUSTED_ORIGINS', default='', cast=Csv())
+
 
 # Application definition
 
@@ -131,6 +137,12 @@ USE_TZ = True
 STATIC_URL = 'static/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
 
+# App web (React ya compilada). En la imagen de la nube se copia aqui y
+# whitenoise la sirve desde la raiz del dominio (/assets, /sw.js, iconos).
+FRONTEND_DIST = BASE_DIR / 'frontend_dist'
+WHITENOISE_ROOT = FRONTEND_DIST if FRONTEND_DIST.exists() else None
+WHITENOISE_INDEX_FILE = True
+
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
 
@@ -152,6 +164,9 @@ AWS_SECRET_ACCESS_KEY = config('AWS_SECRET_ACCESS_KEY', default='')
 AWS_S3_CUSTOM_DOMAIN = config('AWS_S3_CUSTOM_DOMAIN', default='')  # ej: cdn.sinconflicto.cl o <bucket>.<region>.cdn.digitaloceanspaces.com
 AWS_DEFAULT_ACL = None
 AWS_QUERYSTRING_AUTH = config('AWS_QUERYSTRING_AUTH', default=True, cast=bool)  # URLs firmadas: evidencias privadas por defecto
+# Nunca sobrescribir: dos fotos llamadas igual ("foto.jpg") deben convivir.
+# Una evidencia ya sellada con su SHA-256 no puede ser reemplazada por otra.
+AWS_S3_FILE_OVERWRITE = False
 
 _USA_SPACES = bool(AWS_STORAGE_BUCKET_NAME)
 
