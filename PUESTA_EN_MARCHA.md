@@ -1,14 +1,72 @@
 # SINCONFLICTO — Puesta en marcha
 
-Tres partes:
+Cuatro partes:
 
+0. [Infraestructura en Google Cloud](#0-infraestructura-en-google-cloud) (la que está en uso)
 1. [Claves y servicios](#1-claves-y-servicios)
 2. [Dominio sinconflicto.cl](#2-dominio-sinconflictocl)
 3. [Instructivo del primer condominio](#3-instructivo-del-primer-condominio)
 
-Todas las variables se cargan en **DigitalOcean → tu app → Settings →
-componente `vivepiola-backend` → Environment Variables**, marcando **Encrypt**
-en las que son secretas.
+> **Nota:** las partes 1 y 2 se escribieron para DigitalOcean. El sistema hoy
+> corre en Google Cloud (parte 0). Los servicios externos de la parte 1
+> (correo, Anthropic, Gemini, Twilio, Google OAuth) siguen valiendo; solo
+> cambia **dónde** se guardan sus claves: en Secret Manager, no en DigitalOcean.
+
+---
+
+## 0. Infraestructura en Google Cloud
+
+Proyecto **`sinconflicto-cl`** (cuenta `sinconflicto.cl@gmail.com`). Todo en
+la región **Santiago (`southamerica-west1`)**, salvo Cloud Scheduler, que no
+existe en Santiago: solo da la orden de ejecutar, los datos no salen de Chile.
+
+| Pieza | Nombre | Para qué |
+|---|---|---|
+| Cloud Run (servicio) | `sinconflicto` | API de Django **y** la app web compilada, en el mismo dominio. Público. |
+| Cloud SQL (MySQL 8.4) | `sinconflicto-db`, base `sinconflicto` | Datos. Respaldo diario (7 guardados), restauración a un punto en el tiempo, protección contra borrado. Flag `log_bin_trust_function_creators=on` para los triggers de las actas selladas. |
+| Cloud Storage | `sinconflicto-media` | Evidencias, PDFs y reglamentos. Privado; se abre solo con URLs firmadas. Django lo usa por la API compatible con S3. |
+| Secret Manager | `django-secret-key`, `db-password`, `gcs-access-key-id`, `gcs-secret-access-key` | Claves. Nunca en el código ni en variables visibles. |
+| Cloud Run (jobs) | `sinconflicto-migrate`, `-resumenes`, `-reintentos`, `-escalar` | Migraciones y tareas periódicas, con la misma imagen. |
+| Cloud Scheduler (São Paulo) | `sinconflicto-resumenes` (8:00), `-reintentos` (cada 5 min), `-escalar` (cada 15 min) | Dispara los jobs, en hora de Chile. |
+| Cloud DNS | zona `sinconflicto-cl` | Registros de `sinconflicto.cl`. En NIC Chile van los servidores `ns-cloud-a1` a `a4.googledomains.com`. |
+| Artifact Registry | `sinconflicto` | Imágenes construidas. |
+
+Cuentas de servicio: `sinconflicto-api` (corre Django: base, secretos y
+depósito) y `sinconflicto-scheduler` (solo puede lanzar los jobs).
+
+### Publicar una versión nueva
+
+Desde la raíz del repositorio (el `Dockerfile` arma la web y el backend juntos;
+`.gcloudignore` evita subir `.env` y bases locales):
+
+```bash
+gcloud builds submit . --project=sinconflicto-cl --region=southamerica-west1 --tag=southamerica-west1-docker.pkg.dev/sinconflicto-cl/sinconflicto/app:vN
+```
+
+```bash
+gcloud run services update sinconflicto --project=sinconflicto-cl --region=southamerica-west1 --image=southamerica-west1-docker.pkg.dev/sinconflicto-cl/sinconflicto/app:vN
+```
+
+Si la versión trae migraciones, actualiza la imagen del job
+`sinconflicto-migrate` igual que el servicio y ejecútalo:
+
+```bash
+gcloud run jobs execute sinconflicto-migrate --project=sinconflicto-cl --region=southamerica-west1 --wait
+```
+
+Los jobs `-resumenes`, `-reintentos` y `-escalar` también se actualizan a la
+imagen nueva con `gcloud run jobs update ... --image=...`.
+
+### Agregar una clave externa (correo, Anthropic, Twilio...)
+
+1. Crear el secreto: `gcloud secrets create NOMBRE --project=sinconflicto-cl --replication-policy=user-managed --locations=southamerica-west1 --data-file=-` y pegar el valor.
+2. Conectarlo al servicio (y a los jobs que lo usen) con `--update-secrets=VARIABLE=NOMBRE:latest`.
+
+### Costo de partida
+
+Plan piloto: Cloud SQL `db-f1-micro` y Cloud Run que se apaga sin uso, en
+torno a **US$15–20 al mes**. Para producción con clientes: subir la base a
+`db-g1-small` y dejar 1 instancia de Cloud Run siempre encendida (~US$55–60).
 
 ---
 
