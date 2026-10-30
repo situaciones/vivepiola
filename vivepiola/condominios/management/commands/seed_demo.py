@@ -39,7 +39,7 @@ class Command(BaseCommand):
         )
 
         usuarios = [
-            ('conserje', Rol.FISCALIZADOR, None),
+            ('fiscalizador', Rol.FISCALIZADOR, None),
             ('comite', Rol.COMITE, None),
             ('administrador', Rol.ADMINISTRADOR, None),
             ('residente', Rol.RESIDENTE, persona_302),
@@ -77,6 +77,6 @@ class Command(BaseCommand):
         )
 
         self.stdout.write(self.style.SUCCESS(
-            'Datos de demo creados. Usuarios: conserje/comite/administrador/residente '
+            'Datos de demo creados. Usuarios: fiscalizador/comite/administrador/residente '
             '(contrasena: Demo12345), condominio "Condominio Los Alerces".'
         ))

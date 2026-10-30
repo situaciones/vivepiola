@@ -58,7 +58,7 @@ Variables de entorno en `vivepiola/.env` (copiar de `.env.example`):
 - `ANTHROPIC_API_KEY`: necesaria solo para el boton "Generar borradores de infracciones con IA".
 
 Datos de demostracion (`python manage.py seed_demo`): crea el condominio
-"Condominio Los Alerces" con usuarios `conserje` / `comite` / `administrador` /
+"Condominio Los Alerces" con usuarios `fiscalizador` / `comite` / `administrador` /
 `residente` (contrasena `Demo12345`) y dos infracciones activas.
 
 Superusuario admin: `admin` / `Admin12345` (rol SUPERADMIN, acceso a `/admin/`).
