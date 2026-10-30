@@ -1,5 +1,5 @@
 /* ==========================================================================
-   VIVE PIOLA — Design System v3
+   SINCONFLICTO — Design System v3
    La misma marca de la landing (morado → azul → verde) dentro de la app:
    cromo oscuro para orientarse, contenido claro para leer y decidir.
    El color fuerte se reserva para lo que pide accion; el semaforo legal
@@ -129,7 +129,7 @@ svg { flex-shrink: 0; }
   box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.18);
 }
 
-/* Wordmark apilado: VIVE regular sobre PIOLA en negra. */
+/* Wordmark apilado: SIN regular sobre CONFLICTO en negra. */
 .marca-vp { display: inline-flex; align-items: center; gap: 10px; }
 .marca-wordmark {
   display: flex;

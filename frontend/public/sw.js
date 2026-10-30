@@ -1,5 +1,5 @@
 /**
- * Service worker de VIVE PIOLA.
+ * Service worker de SINCONFLICTO.
  *
  * Regla que manda sobre todas las demas: LA API NUNCA SE CACHEA.
  *
@@ -14,7 +14,7 @@
  * al fiscalizador frente a una pantalla en blanco.
  */
 
-const VERSION = 'vivepiola-v1';
+const VERSION = 'sinconflicto-v1';
 const CASCARA = `${VERSION}-cascara`;
 const RUTA_APP = '/index.html';
 

@@ -77,7 +77,7 @@ VOCABULARIO_CONSTRUCCION = {
 
 class Command(BaseCommand):
     help = (
-        'Crea la demo del vertical Construccion ("VIVEPIOLA Obras"): paquete de vertical con '
+        'Crea la demo del vertical Construccion ("SINCONFLICTO Obras"): paquete de vertical con '
         'vocabulario, una obra con subcontratistas, usuarios por rol y catalogo de no '
         'conformidades (incluye hallazgos criticos que detonan paralizacion).'
     )
@@ -169,6 +169,6 @@ class Command(BaseCommand):
             )
 
         self.stdout.write(self.style.SUCCESS(
-            'Demo "VIVEPIOLA Obras" creada. Usuarios: supervisor / admincontrato / oficinatecnica / '
+            'Demo "SINCONFLICTO Obras" creada. Usuarios: supervisor / admincontrato / oficinatecnica / '
             'contratista (contrasena Demo12345). Misma build, otra piel.'
         ))

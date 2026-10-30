@@ -24,7 +24,7 @@ from multas.models import EstadoMulta, Multa
 from multas.services import confianza_minima_para, puede_cursarse_sola
 from reglamentos.models import EstadoInfraccion, Gravedad, InfraccionCatalogo
 
-MEDIA_TEMP = tempfile.mkdtemp(prefix='vivepiola_umbral_')
+MEDIA_TEMP = tempfile.mkdtemp(prefix='sinconflicto_umbral_')
 
 
 def _respuesta_ia(codigo, confianza):

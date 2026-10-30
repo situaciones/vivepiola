@@ -22,7 +22,7 @@ from multas.models import Descargo, EstadoMulta, Multa, ResolucionDescargo, Tick
 from multas.services import proponer_resoluciones, verificar_reincidencia
 from reglamentos.models import EstadoInfraccion, InfraccionCatalogo
 
-MEDIA_TEMP = tempfile.mkdtemp(prefix='vivepiola_cortesia_')
+MEDIA_TEMP = tempfile.mkdtemp(prefix='sinconflicto_cortesia_')
 
 
 @override_settings(MEDIA_ROOT=MEDIA_TEMP)

@@ -21,7 +21,7 @@ from multas.models import EstadoMulta, Multa, ResolucionDescargo, Ticket, TipoAc
 from multas.services import enlace_acuse, notificar_multa, token_acuse
 from reglamentos.models import EstadoInfraccion, InfraccionCatalogo
 
-MEDIA_TEMP = tempfile.mkdtemp(prefix='vivepiola_buzon_')
+MEDIA_TEMP = tempfile.mkdtemp(prefix='sinconflicto_buzon_')
 
 
 @override_settings(MEDIA_ROOT=MEDIA_TEMP)

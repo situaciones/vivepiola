@@ -22,7 +22,7 @@ from multas.models import (
 )
 from reglamentos.models import EstadoInfraccion, InfraccionCatalogo
 
-MEDIA_TEMP = tempfile.mkdtemp(prefix='vivepiola_reunion_')
+MEDIA_TEMP = tempfile.mkdtemp(prefix='sinconflicto_reunion_')
 
 
 @override_settings(MEDIA_ROOT=MEDIA_TEMP)

@@ -23,7 +23,7 @@ from multas.models import EstadoMulta, Multa, Ticket
 from multas.vision import PROMPT_VISION, analizar_evidencias
 from reglamentos.models import EstadoInfraccion, Gravedad, InfraccionCatalogo
 
-MEDIA_TEMP = tempfile.mkdtemp(prefix='vivepiola_vision_')
+MEDIA_TEMP = tempfile.mkdtemp(prefix='sinconflicto_vision_')
 
 PNG_1PX = bytes.fromhex(
     '89504e470d0a1a0a0000000d49484452000000010000000108060000001f15c4'

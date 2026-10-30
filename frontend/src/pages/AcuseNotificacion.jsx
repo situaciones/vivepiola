@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import axios from 'axios';
 import { API_URL } from '../api/client';
-import { LogoVivePiola } from '../components/Marca';
+import { LogoSinConflicto } from '../components/Marca';
 import './AcuseNotificacion.css';
 
 /**
@@ -73,7 +73,7 @@ export default function AcuseNotificacion() {
   return (
     <div className="acuse">
       <div className="acuse-caja">
-        <LogoVivePiola size={44} />
+        <LogoSinConflicto size={44} />
 
         {error && <p className="acuse-error">{error}</p>}
         {!datos && !error && <p className="acuse-cargando">Abriendo tu caso...</p>}

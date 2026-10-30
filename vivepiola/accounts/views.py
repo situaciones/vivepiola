@@ -15,12 +15,12 @@ from .models import EstadoInvitacion, Invitacion, Rol, Usuario
 from .permissions import EsAdministrador
 from .serializers import (
     AsignarRolSerializer, GoogleLoginSerializer, InvitacionSerializer,
-    UsuarioPendienteSerializer, UsuarioSerializer, VivePiolaTokenObtainPairSerializer,
+    UsuarioPendienteSerializer, UsuarioSerializer, SinConflictoTokenObtainPairSerializer,
 )
 
 
-class VivePiolaTokenObtainPairView(TokenObtainPairView):
-    serializer_class = VivePiolaTokenObtainPairSerializer
+class SinConflictoTokenObtainPairView(TokenObtainPairView):
+    serializer_class = SinConflictoTokenObtainPairSerializer
 
 
 class MeView(RetrieveUpdateAPIView):
@@ -43,7 +43,7 @@ def _username_desde_email(email):
 
 
 def _tokens_para(usuario):
-    token = VivePiolaTokenObtainPairSerializer.get_token(usuario)
+    token = SinConflictoTokenObtainPairSerializer.get_token(usuario)
     return {'access': str(token.access_token), 'refresh': str(token)}
 
 
@@ -154,7 +154,7 @@ def _enviar_correo_invitacion(invitacion):
     """Best-effort: en dev el backend de consola lo imprime; nunca bloquea la creacion."""
     enlace = f'{settings.FRONTEND_URL}/login?codigo={invitacion.codigo}'
     cuerpo = (
-        f'Le han invitado a {invitacion.condominio.nombre} en VIVEPIOLA '
+        f'Le han invitado a {invitacion.condominio.nombre} en SINCONFLICTO '
         f'con el rol {invitacion.get_rol_sugerido_display()}.\n\n'
         f'Para aceptar, ingrese con su cuenta de Google desde:\n{enlace}\n\n'
         f'O use este codigo de invitacion al iniciar sesion: {invitacion.codigo}\n'
@@ -162,7 +162,7 @@ def _enviar_correo_invitacion(invitacion):
     )
     try:
         EmailMessage(
-            subject=f'Invitacion a {invitacion.condominio.nombre} - VIVEPIOLA',
+            subject=f'Invitacion a {invitacion.condominio.nombre} - SINCONFLICTO',
             body=cuerpo,
             from_email=settings.DEFAULT_FROM_EMAIL,
             to=[invitacion.correo],

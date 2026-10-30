@@ -149,7 +149,7 @@ AWS_S3_ENDPOINT_URL = config('AWS_S3_ENDPOINT_URL', default='')  # ej: https://n
 AWS_S3_REGION_NAME = config('AWS_S3_REGION_NAME', default='')
 AWS_ACCESS_KEY_ID = config('AWS_ACCESS_KEY_ID', default='')
 AWS_SECRET_ACCESS_KEY = config('AWS_SECRET_ACCESS_KEY', default='')
-AWS_S3_CUSTOM_DOMAIN = config('AWS_S3_CUSTOM_DOMAIN', default='')  # ej: cdn.vivepiola.cl o <bucket>.<region>.cdn.digitaloceanspaces.com
+AWS_S3_CUSTOM_DOMAIN = config('AWS_S3_CUSTOM_DOMAIN', default='')  # ej: cdn.sinconflicto.cl o <bucket>.<region>.cdn.digitaloceanspaces.com
 AWS_DEFAULT_ACL = None
 AWS_QUERYSTRING_AUTH = config('AWS_QUERYSTRING_AUTH', default=True, cast=bool)  # URLs firmadas: evidencias privadas por defecto
 
@@ -210,7 +210,7 @@ EMAIL_PORT = config('EMAIL_PORT', default=587, cast=int)
 EMAIL_USE_TLS = config('EMAIL_USE_TLS', default=True, cast=bool)
 EMAIL_HOST_USER = config('EMAIL_HOST_USER', default='')
 EMAIL_HOST_PASSWORD = config('EMAIL_HOST_PASSWORD', default='')
-DEFAULT_FROM_EMAIL = config('DEFAULT_FROM_EMAIL', default='notificaciones@vivepiola.cl')
+DEFAULT_FROM_EMAIL = config('DEFAULT_FROM_EMAIL', default='notificaciones@sinconflicto.cl')
 
 
 # Integracion IA (extraccion de infracciones desde reglamento en PDF)

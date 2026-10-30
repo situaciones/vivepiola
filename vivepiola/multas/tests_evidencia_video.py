@@ -20,7 +20,7 @@ from accounts.models import Rol, Usuario
 from condominios.models import Condominio, Persona, RolOcupacion, Unidad
 from multas.models import EvidenciaFoto, Ticket
 
-MEDIA_TEMP = tempfile.mkdtemp(prefix='vivepiola_video_')
+MEDIA_TEMP = tempfile.mkdtemp(prefix='sinconflicto_video_')
 
 # PNG minimo valido, para no depender de un archivo en disco.
 PNG_1PX = bytes.fromhex(

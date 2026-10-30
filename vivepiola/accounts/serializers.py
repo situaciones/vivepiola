@@ -68,7 +68,7 @@ class GoogleLoginSerializer(serializers.Serializer):
     codigo = serializers.CharField(required=False, allow_blank=True, default='')
 
 
-class VivePiolaTokenObtainPairSerializer(TokenObtainPairSerializer):
+class SinConflictoTokenObtainPairSerializer(TokenObtainPairSerializer):
     """Incluye el rol y el condominio en el JWT para que el frontend rutee el dashboard correcto."""
 
     @classmethod

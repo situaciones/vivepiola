@@ -2,7 +2,7 @@ import { useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowRight, ArrowLeft, Camera, FileText } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
-import { LogoVivePiola } from '../components/Marca';
+import { LogoSinConflicto } from '../components/Marca';
 import './Landing.css';
 import './LandingMinimal.css';
 import './ComoFunciona.css';
@@ -211,8 +211,8 @@ export default function ComoFunciona() {
       <nav>
         <div className="nav-in">
           <Link to="/" className="brand">
-            <LogoVivePiola size={34} className="mk" />
-            <span className="wordmark"><b>VIVE</b><b>PIOLA</b></span>
+            <LogoSinConflicto size={34} className="mk" />
+            <span className="wordmark"><b>SIN</b><b>CONFLICTO</b></span>
           </Link>
           <div className="nav-right">
             <Link to={usuario ? '/app' : '/login'} className="nav-login">Entrar</Link>
@@ -280,7 +280,7 @@ export default function ComoFunciona() {
 
       <footer>
         <div className="foot-min">
-          <LogoVivePiola size={26} className="mk" />
+          <LogoSinConflicto size={26} className="mk" />
           <span>Condominios de Chile · Ley 21.442</span>
         </div>
       </footer>

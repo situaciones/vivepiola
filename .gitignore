@@ -11,5 +11,5 @@ vivepiola/media/
 vivepiola/staticfiles/
 
 # Repo de GitHub vacio que quedo clonado dentro del proyecto: no es codigo
-# de VIVEPIOLA y no debe volver a entrar al indice como submodulo fantasma.
+# de SINCONFLICTO y no debe volver a entrar al indice como submodulo fantasma.
 aplicacion multas/

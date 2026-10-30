@@ -19,7 +19,7 @@ from condominios.models import Condominio, Persona, RolOcupacion, Unidad
 from multas.models import EstadoMulta, Multa, TipoActo
 from reglamentos.models import EstadoInfraccion, InfraccionCatalogo
 
-MEDIA_TEMP = tempfile.mkdtemp(prefix='vivepiola_test_media_')
+MEDIA_TEMP = tempfile.mkdtemp(prefix='sinconflicto_test_media_')
 
 
 @override_settings(MEDIA_ROOT=MEDIA_TEMP)
@@ -187,7 +187,7 @@ class CapacidadesNuevasTestCase(APITestCase):
         TWILIO_ACCOUNT_SID='ACtest',
         TWILIO_AUTH_TOKEN='token',
         TWILIO_WHATSAPP_FROM='whatsapp:+14155238886',
-        FRONTEND_URL='https://vivepiola.cl',
+        FRONTEND_URL='https://sinconflicto.cl',
     )
     def test_whatsapp_lleva_al_buzon_del_residente(self):
         """
@@ -200,7 +200,7 @@ class CapacidadesNuevasTestCase(APITestCase):
             multa = self._aprobar_y_notificar(self._denunciar())
 
         cuerpo = mock_post.call_args.kwargs['data']['Body']
-        self.assertIn('https://vivepiola.cl/acuse/', cuerpo)
+        self.assertIn('https://sinconflicto.cl/acuse/', cuerpo)
         self.assertNotIn(f'/m/{multa.id}', cuerpo)
         self.assertIn('apelar', cuerpo)
         # El link no debe cargar credenciales: los mensajes se reenvian.

@@ -23,7 +23,7 @@ from multas.resumenes import resumen_para_administracion, resumen_para_comite
 from novedades.models import EstadoNovedad, NovedadLibro, TipoNovedad
 from reglamentos.models import EstadoInfraccion, InfraccionCatalogo
 
-MEDIA_TEMP = tempfile.mkdtemp(prefix='vivepiola_res_')
+MEDIA_TEMP = tempfile.mkdtemp(prefix='sinconflicto_res_')
 
 
 @override_settings(MEDIA_ROOT=MEDIA_TEMP)

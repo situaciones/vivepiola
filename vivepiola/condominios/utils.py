@@ -94,7 +94,7 @@ def generar_plantilla_excel():
             'solid', fgColor='111827' if columna in OBLIGATORIAS else '6B7280',
         )
         marca, detalle = AYUDA_COLUMNAS[columna]
-        celda.comment = openpyxl.comments.Comment(f'{marca}. {detalle}', 'VIVEPIOLA')
+        celda.comment = openpyxl.comments.Comment(f'{marca}. {detalle}', 'SINCONFLICTO')
 
         rango = f'{letra}2:{letra}1000'
         if columna in LISTAS_DESPLEGABLES:

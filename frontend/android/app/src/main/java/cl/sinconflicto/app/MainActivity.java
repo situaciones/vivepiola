@@ -1,4 +1,4 @@
-package cl.vivepiola.app;
+package cl.sinconflicto.app;
 
 import com.getcapacitor.BridgeActivity;
 

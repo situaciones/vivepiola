@@ -22,7 +22,7 @@ from condominios.models import Condominio, Persona, RolOcupacion, Unidad
 from multas.models import EstadoMulta, Multa, TipoActo
 from reglamentos.models import EstadoInfraccion, InfraccionCatalogo
 
-MEDIA_TEMP = tempfile.mkdtemp(prefix='vivepiola_curse_')
+MEDIA_TEMP = tempfile.mkdtemp(prefix='sinconflicto_curse_')
 
 
 def _respuesta_ia(codigo, confianza):

@@ -25,7 +25,7 @@ from multas.models import EstadoMulta, Multa, TipoActo
 from multas.services import actualizar_multas_vencidas, corresponde_cortesia
 from reglamentos.models import EstadoInfraccion, Gravedad, InfraccionCatalogo
 
-MEDIA_TEMP = tempfile.mkdtemp(prefix='vivepiola_cortesia_auto_')
+MEDIA_TEMP = tempfile.mkdtemp(prefix='sinconflicto_cortesia_auto_')
 
 
 def _respuesta_ia(codigo, confianza=90):

@@ -1,9 +1,9 @@
-# VIVE PIOLA — Puesta en marcha
+# SINCONFLICTO — Puesta en marcha
 
 Tres partes:
 
 1. [Claves y servicios](#1-claves-y-servicios)
-2. [Dominio vivepiola.cl](#2-dominio-vivepiolacl)
+2. [Dominio sinconflicto.cl](#2-dominio-sinconflictocl)
 3. [Instructivo del primer condominio](#3-instructivo-del-primer-condominio)
 
 Todas las variables se cargan en **DigitalOcean → tu app → Settings →
@@ -71,7 +71,7 @@ detiene: el sistema se niega a notificar.
 **Recomendado: Brevo** (300 correos/día gratis)
 
 1. Crear cuenta en `brevo.com`
-2. **Settings → Senders, Domains & Dedicated IPs** → verificar `vivepiola.cl`
+2. **Settings → Senders, Domains & Dedicated IPs** → verificar `sinconflicto.cl`
    (agrega los registros SPF y DKIM que te indique en tu DNS)
 3. **SMTP & API → pestaña SMTP** → copiar servidor, login y clave
 
@@ -84,7 +84,7 @@ EMAIL_PORT=587
 EMAIL_USE_TLS=True
 EMAIL_HOST_USER=(tu login SMTP)
 EMAIL_HOST_PASSWORD=(tu clave SMTP)         🔒 Encrypt
-DEFAULT_FROM_EMAIL=notificaciones@vivepiola.cl
+DEFAULT_FROM_EMAIL=notificaciones@sinconflicto.cl
 ```
 
 > ⚠️ **Verificar el dominio no es opcional.** Sin SPF/DKIM las notificaciones
@@ -195,7 +195,7 @@ Sin esto, se entra con usuario y contraseña normal.
 
 1. `console.cloud.google.com/apis/credentials`
 2. **Create Credentials → OAuth client ID → Web application**
-3. En **Authorized JavaScript origins**: `https://vivepiola.cl`
+3. En **Authorized JavaScript origins**: `https://sinconflicto.cl`
 4. Copiar el **Client ID**
 
 **Variables** — el mismo valor va en dos lugares:
@@ -221,9 +221,9 @@ VITE_GOOGLE_CLIENT_ID=....apps.googleusercontent.com
 ```
 SECRET_KEY=(cadena larga y aleatoria)       🔒 Encrypt
 DEBUG=False
-ALLOWED_HOSTS=vivepiola.cl,www.vivepiola.cl
-CORS_ALLOWED_ORIGINS=https://vivepiola.cl,https://www.vivepiola.cl
-FRONTEND_URL=https://vivepiola.cl
+ALLOWED_HOSTS=sinconflicto.cl,www.sinconflicto.cl
+CORS_ALLOWED_ORIGINS=https://sinconflicto.cl,https://www.sinconflicto.cl
+FRONTEND_URL=https://sinconflicto.cl
 DB_NAME= DB_USER= DB_PASSWORD= DB_HOST= DB_PORT=   (de tu base administrada)
 ```
 
@@ -232,18 +232,18 @@ dominio viejo, los avisos apuntarán a `ondigitalocean.app`.
 
 ---
 
-## 2. Dominio vivepiola.cl
+## 2. Dominio sinconflicto.cl
 
 ### 2.1 Registrarlo
 
-1. Entrar a **nic.cl** → buscar `vivepiola.cl`
+1. Entrar a **nic.cl** → buscar `sinconflicto.cl`
 2. Registrar a nombre de tu empresa o RUT
 3. **Costo: ~$9.990 CLP al año** (hay descuento por varios años: ~10% a 2 años,
    ~20% a 5 años). Verifica la tarifa vigente en nic.cl
 
 ### 2.2 Apuntarlo a DigitalOcean
 
-1. En DigitalOcean: **Networking → Domains → Add Domain** → `vivepiola.cl`
+1. En DigitalOcean: **Networking → Domains → Add Domain** → `sinconflicto.cl`
 2. Copiar los tres servidores de nombres que te muestra:
    ```
    ns1.digitalocean.com
@@ -255,8 +255,8 @@ dominio viejo, los avisos apuntarán a `ondigitalocean.app`.
 
 ### 2.3 Conectarlo a la app
 
-1. Tu app → **Settings → Domains → Add Domain** → `vivepiola.cl`
-2. Agregar también `www.vivepiola.cl`
+1. Tu app → **Settings → Domains → Add Domain** → `sinconflicto.cl`
+2. Agregar también `www.sinconflicto.cl`
 3. El **certificado HTTPS es automático** (Let's Encrypt) y se renueva solo
 
 ### 2.4 Actualizar las variables
@@ -264,14 +264,14 @@ dominio viejo, los avisos apuntarán a `ondigitalocean.app`.
 Cuando el dominio responda, cambia:
 
 ```
-ALLOWED_HOSTS=vivepiola.cl,www.vivepiola.cl
-CORS_ALLOWED_ORIGINS=https://vivepiola.cl,https://www.vivepiola.cl
-FRONTEND_URL=https://vivepiola.cl
-DEFAULT_FROM_EMAIL=notificaciones@vivepiola.cl
+ALLOWED_HOSTS=sinconflicto.cl,www.sinconflicto.cl
+CORS_ALLOWED_ORIGINS=https://sinconflicto.cl,https://www.sinconflicto.cl
+FRONTEND_URL=https://sinconflicto.cl
+DEFAULT_FROM_EMAIL=notificaciones@sinconflicto.cl
 ```
 
 Y en Brevo, verifica el dominio para que los correos salgan desde
-`@vivepiola.cl` sin caer en spam.
+`@sinconflicto.cl` sin caer en spam.
 
 ---
 
@@ -290,7 +290,7 @@ Y en Brevo, verifica el dominio para que los correos salgan desde
 Django, que entonces no reconoce la ruta. *Preserve Full Path* se lo entrega
 completo.
 
-**Comprobación:** entrar a `https://vivepiola.cl/admin/` debe mostrar el
+**Comprobación:** entrar a `https://sinconflicto.cl/admin/` debe mostrar el
 formulario de acceso de Django, no un "Not Found".
 
 ---
@@ -299,7 +299,7 @@ formulario de acceso de Django, no un "Not Found".
 
 Esto se hace una vez por condominio, desde `/admin/`:
 
-1. Entrar a `https://vivepiola.cl/admin/` con el superusuario
+1. Entrar a `https://sinconflicto.cl/admin/` con el superusuario
 2. **Condominios → Add** → nombre, dirección, RUT de la administradora
    - `plazo_descargo_dias`: **5** (lo que exige la ley)
    - `ventana_duplicados_horas`: **24** (agrupa los reportes del mismo hecho)
@@ -316,7 +316,7 @@ Esto se hace una vez por condominio, desde `/admin/`:
 
 ### Paso 2 — El administrador prepara la comunidad
 
-Entra a `https://vivepiola.cl` con su usuario.
+Entra a `https://sinconflicto.cl` con su usuario.
 
 **a) Cargar el registro de copropietarios** → pestaña *Registro de copropietarios*
 

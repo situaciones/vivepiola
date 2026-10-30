@@ -165,7 +165,7 @@ def enviar_resumen(condominio, resumen, destinatarios):
         return 0
 
     texto = redactar_mensaje(condominio, resumen)
-    asunto = f'{condominio.nombre}: {resumen["total"]} pendientes en VIVEPIOLA'
+    asunto = f'{condominio.nombre}: {resumen["total"]} pendientes en SINCONFLICTO'
     enviados = 0
 
     for usuario in destinatarios:

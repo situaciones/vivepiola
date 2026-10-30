@@ -22,7 +22,7 @@ from reglamentos.models import InfraccionCatalogo, Reglamento, TipoNorma
 from reglamentos.tests import REGLAMENTO_TEXTO, pdf_con_texto
 from reglamentos.utils import INSTRUCCIONES_POR_TIPO
 
-MEDIA_TEMP = tempfile.mkdtemp(prefix='vivepiola_normas_')
+MEDIA_TEMP = tempfile.mkdtemp(prefix='sinconflicto_normas_')
 
 ACTA_TEXTO = """ACTA DE ASAMBLEA ORDINARIA
 Con fecha 12 de marzo de 2026 se reune la asamblea de copropietarios.

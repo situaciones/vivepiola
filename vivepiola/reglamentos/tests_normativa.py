@@ -29,7 +29,7 @@ from reglamentos.normativa import (
 )
 from reglamentos.tests import REGLAMENTO_TEXTO, pdf_con_texto
 
-MEDIA_TEMP = tempfile.mkdtemp(prefix='vivepiola_corpus_')
+MEDIA_TEMP = tempfile.mkdtemp(prefix='sinconflicto_corpus_')
 
 LEY_DEMO = """LEY 21.442 SOBRE COPROPIEDAD INMOBILIARIA
 

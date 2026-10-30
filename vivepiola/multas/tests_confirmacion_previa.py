@@ -21,7 +21,7 @@ from multas.models import CanalNotificacion, EstadoMulta, Multa, Ticket, TipoAct
 from multas.services import actualizar_multas_vencidas, motivo_para_confirmar
 from reglamentos.models import EstadoInfraccion, InfraccionCatalogo
 
-MEDIA_TEMP = tempfile.mkdtemp(prefix='vivepiola_confirma_')
+MEDIA_TEMP = tempfile.mkdtemp(prefix='sinconflicto_confirma_')
 
 
 @override_settings(MEDIA_ROOT=MEDIA_TEMP)

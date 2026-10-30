@@ -86,7 +86,7 @@ export default function Login() {
           <Marca size={34} />
         </Link>
         <div className="marca-claim">
-          <h2><strong>VIVEPIOLA</strong> proceso, sin atajos.</h2>
+          <h2><strong>SINCONFLICTO</strong> proceso, sin atajos.</h2>
           <p>
             Cada multa recorre el circuito que exige la Ley 21.442: evidencia del
             fiscalizador, aprobacion exclusiva del Comite, notificacion formal del

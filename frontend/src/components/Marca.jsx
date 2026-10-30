@@ -1,5 +1,5 @@
 /**
- * Identidad de marca VIVE PIOLA, en un solo lugar.
+ * Identidad de marca SINCONFLICTO, en un solo lugar.
  *
  * El simbolo es un visto de cumplimiento con los tres colores de la marca:
  * arranca en morado (#A855F7), traza en azul (#3B82F6) y remata en verde
@@ -7,7 +7,7 @@
  * para que nadie vea dos marcas distintas del mismo producto.
  */
 
-export function LogoVivePiola({ size = 32, className = 'logo-mark' }) {
+export function LogoSinConflicto({ size = 32, className = 'logo-mark' }) {
   return (
     <svg
       className={className}
@@ -31,14 +31,14 @@ export function LogoVivePiola({ size = 32, className = 'logo-mark' }) {
   );
 }
 
-/** Logo + wordmark apilado (VIVE regular sobre PIOLA en negra). */
+/** Logo + wordmark apilado (SIN regular sobre CONFLICTO en negra). */
 export default function Marca({ size = 32, className = '' }) {
   return (
     <span className={`marca-vp ${className}`.trim()}>
-      <LogoVivePiola size={size} />
+      <LogoSinConflicto size={size} />
       <span className="marca-wordmark">
-        <b>VIVE</b>
-        <b>PIOLA</b>
+        <b>SIN</b>
+        <b>CONFLICTO</b>
       </span>
     </span>
   );

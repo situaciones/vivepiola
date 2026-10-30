@@ -28,7 +28,7 @@ from multas.models import (
 from multas.services import actualizar_multas_vencidas, token_acuse
 from reglamentos.models import EstadoInfraccion, InfraccionCatalogo
 
-MEDIA_TEMP = tempfile.mkdtemp(prefix='vivepiola_notif_')
+MEDIA_TEMP = tempfile.mkdtemp(prefix='sinconflicto_notif_')
 
 
 @override_settings(MEDIA_ROOT=MEDIA_TEMP)

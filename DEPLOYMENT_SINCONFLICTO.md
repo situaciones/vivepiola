@@ -1,7 +1,7 @@
-# VIVEPIOLA.CL — Plan de Deployment a Producción
+# SINCONFLICTO.CL — Plan de Deployment a Producción
 
 **Fecha**: 20 de julio de 2026  
-**Dominio**: vivepiola.cl  
+**Dominio**: sinconflicto.cl  
 **Stack**: Django 6.0 + React 19 + MySQL 8.4  
 **Presupuesto**: $5-20 USD/mes
 
@@ -9,10 +9,10 @@
 
 ## Fase 1: Preparación (Hoy)
 
-### 1.1 Cambio de branding: Debido → VIVEPIOLA ✓
+### 1.1 Cambio de branding: Debido → SINCONFLICTO ✓
 - [x] Actualizar nombre en Frontend (React) ✓
 - [x] Actualizar nombre en Backend (Django) ✓
-- [x] Cambiar email de notificación a notificaciones@vivepiola.cl ✓
+- [x] Cambiar email de notificación a notificaciones@sinconflicto.cl ✓
 - [x] Compilar React build ✓
 
 ### 1.2 Configurar email real (SendGrid)
@@ -25,13 +25,13 @@
    ```
    EMAIL_BACKEND=sendgrid_backend.SendgridBackend
    SENDGRID_API_KEY=SG.xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
-   DEFAULT_FROM_EMAIL=notificaciones@vivepiola.cl
+   DEFAULT_FROM_EMAIL=notificaciones@sinconflicto.cl
    ```
 4. Instalar librería: `pip install sendgrid-django`
 
 **Alternativa barata**: AWS SES (aun más barato, pero más complejo)
 
-### 1.3 Dominio vivepiola.cl
+### 1.3 Dominio sinconflicto.cl
 **Por hacer**: Registrarlo en NIC.cl o tu registrador favorito (~$15-20 CLP/año)
 
 Datos que necesitarás después:
@@ -69,7 +69,7 @@ En el dashboard de App Platform, agregar:
 ```
 DEBUG=False
 SECRET_KEY=<generar con Django>
-ALLOWED_HOSTS=vivepiola.cl,www.vivepiola.cl,app.vivepiola.cl
+ALLOWED_HOSTS=sinconflicto.cl,www.sinconflicto.cl,app.sinconflicto.cl
 DB_ENGINE=mysql
 DB_NAME=<nombre de BD>
 DB_USER=<usuario de BD>
@@ -79,7 +79,7 @@ DB_PORT=3306
 EMAIL_BACKEND=sendgrid_backend.SendgridBackend
 SENDGRID_API_KEY=<clave de SendGrid>
 ANTHROPIC_API_KEY=<clave de Claude (opcional, para IA)>
-CORS_ALLOWED_ORIGINS=https://vivepiola.cl,https://www.vivepiola.cl,https://app.vivepiola.cl
+CORS_ALLOWED_ORIGINS=https://sinconflicto.cl,https://www.sinconflicto.cl,https://app.sinconflicto.cl
 ```
 
 ### 2.4 Archivos estáticos y media
@@ -111,19 +111,19 @@ DigitalOcean App Platform despliega automáticamente al hacer push a main.
 
 ## Fase 3: DNS y dominio
 
-**Una vez que vivepiola.cl esté registrado**:
+**Una vez que sinconflicto.cl esté registrado**:
 
 ### 3.1 Apuntar nameservers a DigitalOcean
-1. En DigitalOcean: **Networking** → **Domains** → Add Domain → vivepiola.cl
+1. En DigitalOcean: **Networking** → **Domains** → Add Domain → sinconflicto.cl
 2. Copiar los 3 nameservers de DigitalOcean
 3. En tu registrador (NIC.cl): cambiar los nameservers al de DigitalOcean
 4. Esperar ~24h para que se propague
 
 ### 3.2 Configurar subdominios
 En DigitalOcean Domains, crear:
-- `app.vivepiola.cl` → apunta a la App
-- `www.vivepiola.cl` → apunta al mismo lugar (landing)
-- `api.vivepiola.cl` → opcional, si quieres separar la API
+- `app.sinconflicto.cl` → apunta a la App
+- `www.sinconflicto.cl` → apunta al mismo lugar (landing)
+- `api.sinconflicto.cl` → opcional, si quieres separar la API
 
 ### 3.3 SSL automático
 DigitalOcean proporciona certificado Let's Encrypt gratis y lo renueva automáticamente.
@@ -148,15 +148,15 @@ vert, _ = Vertical.objects.get_or_create(
 
 # Crear condominio demo
 condo = Condominio.objects.create(
-    nombre='Condominio Demo - VIVEPIOLA',
+    nombre='Condominio Demo - SINCONFLICTO',
     vertical=vert,
     plazo_descargo_dias=5,
 )
 
 # Crear usuarios demo
 admin = Usuario.objects.create_user(
-    username='admin@vivepiola.cl',
-    password='VivePiola2026!',
+    username='admin@sinconflicto.cl',
+    password='SinConflicto2026!',
     rol=Rol.ADMINISTRADOR,
     condominio=condo,
 )
@@ -189,7 +189,7 @@ Cargar un reglamento PDF de prueba y crear infracciones típicas:
 - [ ] Backup automático de BD (DigitalOcean lo hace)
 - [ ] DEBUG = False
 - [ ] SECRET_KEY robusta (random, no hardcodeada)
-- [ ] ALLOWED_HOSTS correcto (vivepiola.cl, www, app)
+- [ ] ALLOWED_HOSTS correcto (sinconflicto.cl, www, app)
 - [ ] Logging configurado (para debuggear después)
 - [ ] Monitoreo mínimo (alertas si la app cae)
 
@@ -203,7 +203,7 @@ Cargar un reglamento PDF de prueba y crear infracciones típicas:
 | DigitalOcean MySQL Managed | $18 |
 | DigitalOcean Spaces (storage media) | $5 |
 | SendGrid (100 emails/día gratuito) | $0 |
-| Dominio vivepiola.cl (anual, amortizado) | ~$2 |
+| Dominio sinconflicto.cl (anual, amortizado) | ~$2 |
 | **TOTAL mensual** | **$30** |
 
 **Reducir a $15-20**: Usar VPS pequeño en vez de App (requiere config manual) o usar Railway/Render (Heroku alternativo).
@@ -213,7 +213,7 @@ Cargar un reglamento PDF de prueba y crear infracciones típicas:
 ## Próximos pasos inmediatos
 
 1. **HOY**:
-   - [ ] Registrar dominio vivepiola.cl en NIC.cl
+   - [ ] Registrar dominio sinconflicto.cl en NIC.cl
    - [ ] Crear cuenta SendGrid y obtener API Key
    - [ ] Crear cuenta DigitalOcean ($5 crédito inicial)
 

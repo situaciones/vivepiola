@@ -22,7 +22,7 @@ from condominios.models import Condominio, Persona, RolOcupacion, Unidad
 from multas.models import EstadoMulta, Multa
 from reglamentos.models import EstadoInfraccion, InfraccionCatalogo
 
-MEDIA_TEMP = tempfile.mkdtemp(prefix='vivepiola_clasif_')
+MEDIA_TEMP = tempfile.mkdtemp(prefix='sinconflicto_clasif_')
 
 
 def respuesta_modelo(texto):
