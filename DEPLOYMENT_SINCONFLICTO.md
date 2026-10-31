@@ -160,7 +160,7 @@ admin = Usuario.objects.create_user(
     rol=Rol.ADMINISTRADOR,
     condominio=condo,
 )
-# ... crear más usuarios (comité, fiscalizador, residentes)
+# ... crear más usuarios (comité, denunciante, residentes)
 ```
 
 ### 4.2 Infracciones de demostración
@@ -174,7 +174,7 @@ Cargar un reglamento PDF de prueba y crear infracciones típicas:
 ## Fase 5: Testing en producción
 
 ### 5.1 Flujo completo
-1. Fiscalizador sube foto de "ruido"
+1. Denunciante sube foto de "ruido"
 2. Comité aprueba la infracción
 3. Admin notifica
 4. **Verificar que el correo de verdad llegue** ✓

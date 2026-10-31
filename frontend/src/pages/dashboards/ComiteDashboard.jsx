@@ -394,13 +394,13 @@ export default function ComiteDashboard() {
 
                       {!activa.persona_nombre && (
                         <p className="alerta-reincidencia">
-                          Sin persona reportada: pide al fiscalizador identificar al infractor antes de cursar.
+                          Sin persona reportada: pide al denunciante identificar al infractor antes de cursar.
                         </p>
                       )}
 
                       <blockquote className="cita-reporte">
                         "{activa.ticket_detalle?.descripcion}"
-                        <footer>— {activa.ticket_detalle?.creado_por_nombre || 'Fiscalizador'}, reporte de fiscalizacion</footer>
+                        <footer>— {activa.ticket_detalle?.creado_por_nombre || 'Denunciante'}, denuncia</footer>
                       </blockquote>
 
                       {activa.estado === 'EN_REVISION' && activa.propuesta_fundamento && (

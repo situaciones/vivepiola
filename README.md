@@ -4,7 +4,7 @@ Sistema de debido proceso legal para multas y convivencia en condominios,
 basado en la Ley 21.442 (Chile). Separa estrictamente los roles del proceso
 sancionatorio:
 
-- **Fiscalizador:** crea tickets con evidencia fotografica. No define monto ni aprueba.
+- **Denunciante:** crea tickets con evidencia fotografica. No define monto ni aprueba.
 - **Comite de Administracion:** revisa evidencia y es el UNICO que aprueba/rechaza multas, eligiendo la infraccion del catalogo del reglamento. Tambien confirma el catalogo de infracciones y resuelve descargos.
 - **Administrador:** notifica al residente (genera PDF + envia correo, el canal legal), gestiona el registro de copropietarios, carga el reglamento y exporta multas firmes a gastos comunes.
 - **Residente:** ve sus multas y evidencia, presenta descargos dentro del plazo, usa el Libro de Novedades.
@@ -75,7 +75,7 @@ Configurar `frontend/.env` -> `VITE_API_URL=http://127.0.0.1:8000/api`.
 
 ## Flujo legal implementado
 
-1. Fiscalizador crea un **Ticket** con evidencia -> se genera automaticamente una **Multa** en estado `EN_REVISION`.
+1. Denunciante crea un **Ticket** con evidencia -> se genera automaticamente una **Multa** en estado `EN_REVISION`.
 2. Comite **aprueba** (elige infraccion del catalogo activo) o **rechaza**. Al aprobar, el sistema detecta **reincidencia** automaticamente (misma infraccion en los ultimos 6 meses) y sugiere el agravante.
 3. Administrador **notifica**: genera el PDF y envia el correo al residente (canal legal), fijando el plazo de descargo.
 4. Residente puede **presentar descargo** dentro del plazo.
@@ -251,7 +251,7 @@ trazabilidad (el prevencionista ratifica en terreno cuando el titular no esta).
 - **UI de gobernanza v1**: Django admin (`/admin/`) para el equipo de
   implementacion (verticales y cadenas); la criticidad de hallazgos se
   configura desde el propio catalogo del Comite en la app.
-- **UI de terreno**: pestaña "Contencion" del Fiscalizador con gesto
+- **UI de terreno**: pestaña "Contencion" del Denunciante con gesto
   mantener-para-confirmar (1.4s, `auth_metodo` sellado como
   `hold_to_confirm_1400ms+jwt`); pestaña "Contenciones" del Comite para
   ratificar o levantar con causal y fundamento.

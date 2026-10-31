@@ -7,12 +7,12 @@ from django.http import HttpResponse
 from django.utils import timezone
 from rest_framework import viewsets
 from rest_framework.decorators import action
-from rest_framework.exceptions import ValidationError
+from rest_framework.exceptions import PermissionDenied, ValidationError
 from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
 from accounts.permissions import UsuarioAsignado
 from rest_framework.response import Response
 
-from accounts.models import Rol
+from accounts.models import Rol, motivo_fuera_de_permiso
 from accounts.permissions import (
     EsAdministrador, EsComite, EsDenunciante, EsFiscalizadorOComiteOAdministrador, EsResidente,
 )
@@ -48,7 +48,7 @@ from .services import (
 
 class TicketViewSet(viewsets.ModelViewSet):
     """
-    El reporte lo puede levantar el Fiscalizador, el Comite o un
+    El reporte lo puede levantar el Denunciante, el Comite o un
     vecino (Residente), con opcion de anonimato. Quien reporta NO define monto
     ni aprueba nada: por eso no expone accion de aprobacion aqui. Los tickets no
     se editan ni eliminan una vez creados: son evidencia del debido proceso
@@ -84,6 +84,9 @@ class TicketViewSet(viewsets.ModelViewSet):
             raise ValidationError({'unidad': 'La entidad indicada no pertenece a la organizacion activa.'})
         if persona and persona.unidad_id != unidad.id:
             raise ValidationError({'persona_reportada': 'El sujeto responsable no pertenece a la entidad indicada.'})
+        motivo = motivo_fuera_de_permiso(self.request.user, unidad)
+        if motivo:
+            raise PermissionDenied(motivo)
 
         # El ticket nace CONVERTIDO en el mismo INSERT: todo reporte abre
         # expediente de inmediato. Antes se guardaba PENDIENTE y se sobrescribia
@@ -225,7 +228,7 @@ def multas_visibles(user):
 class MultaViewSet(viewsets.ReadOnlyModelViewSet):
     """
     Flujo legal de la multa. Las multas NUNCA se crean ni editan directamente:
-    nacen del ticket del Fiscalizador y solo cambian de estado a traves de las
+    nacen del ticket del Denunciante y solo cambian de estado a traves de las
     acciones tipadas de este ViewSet, cada una restringida al rol que la
     Ley 21.442 habilita (aprobar=Comite, notificar=Administrador, etc.).
     """
@@ -665,6 +668,10 @@ class MedidaInmediataViewSet(viewsets.ModelViewSet):
             )
         except Multa.DoesNotExist:
             return Response({'detail': 'El expediente no existe en la organizacion activa.'}, status=400)
+
+        motivo = motivo_fuera_de_permiso(request.user, multa.unidad)
+        if motivo:
+            return Response({'detail': motivo}, status=403)
 
         try:
             hallazgo = InfraccionCatalogo.objects.get(

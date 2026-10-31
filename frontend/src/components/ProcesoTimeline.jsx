@@ -6,7 +6,7 @@ import { Check, X } from 'lucide-react';
  * correo) la tipifica una persona, y eso es lo que refleja el segundo paso.
  */
 const pasosBase = (multa) => [
-  { id: 'reportado', label: 'Reportado', quien: 'Fiscalizador' },
+  { id: 'reportado', label: 'Reportado', quien: 'Denunciante' },
   {
     id: 'tipificacion',
     label: 'Tipificacion',

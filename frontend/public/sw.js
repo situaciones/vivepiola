@@ -11,7 +11,7 @@
  *
  * Lo que si se guarda es la cascara (HTML, JS, CSS): asi la app abre estando
  * sin señal y puede decir con claridad que no hay conexion, en vez de dejar
- * al fiscalizador frente a una pantalla en blanco.
+ * al denunciante frente a una pantalla en blanco.
  */
 
 const VERSION = 'sinconflicto-v1';

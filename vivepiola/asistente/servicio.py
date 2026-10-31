@@ -68,7 +68,7 @@ HERRAMIENTAS = [
         'description': (
             'Lista los casos (multas y avisos) que esta persona puede ver, del mas reciente al '
             'mas antiguo, con su estado, monto y plazo. Un residente ve los suyos; el comite y '
-            'la administracion, los de su comunidad; un fiscalizador, los que reporto.'
+            'la administracion, los de su comunidad; un denunciante, los que reporto.'
         ),
         'input_schema': {
             'type': 'object',

@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react';
 import { Copy, MailPlus, UserCheck } from 'lucide-react';
 import client from '../api/client';
+import PanelDenunciantes from './PanelDenunciantes';
 
 const ROLES = [
   { valor: 'RESIDENTE', etiqueta: 'Residente' },
-  { valor: 'FISCALIZADOR', etiqueta: 'Fiscalizador' },
+  { valor: 'FISCALIZADOR', etiqueta: 'Denunciante' },
   { valor: 'COMITE', etiqueta: 'Comite de Administracion' },
 ];
 
@@ -146,6 +147,8 @@ export default function PanelEquipo() {
           </div>
         ))}
       </div>
+
+      <PanelDenunciantes unidades={unidades} />
 
       <div className="tarjeta">
         <strong>Invitaciones pendientes ({invitacionesPendientes.length})</strong>

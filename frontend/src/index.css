@@ -7,7 +7,7 @@
    ========================================================================== */
 
 :root {
-  /* Cromo: barra superior, navegacion y fiscalizador en terreno */
+  /* Cromo: barra superior, navegacion y denunciante en terreno */
   --navy-950: #0b0b14;
   --navy-900: #12121f;
   --navy-800: #1d1b3a;
@@ -784,7 +784,7 @@ textarea { resize: vertical; }
 .metadatos-caso dt { font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--texto-tenue); font-weight: 700; margin: 0 0 3px; }
 .metadatos-caso dd { margin: 0; font-size: 0.87rem; color: var(--texto); font-weight: 500; }
 
-/* Cita textual del reporte del fiscalizador */
+/* Cita textual del reporte del denunciante */
 .cita-reporte { background: #f8f8fc; border-left: 3px solid var(--navy-800); border-radius: 0 var(--radio) var(--radio) 0; padding: 10px 14px; margin: 12px 0; font-size: 0.88rem; font-style: italic; color: var(--texto-suave); }
 .cita-reporte footer { margin-top: 5px; font-style: normal; font-size: 0.78rem; color: var(--texto-tenue); }
 

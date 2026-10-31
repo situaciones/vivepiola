@@ -5,6 +5,7 @@ import EstadoBadge from '../../components/EstadoBadge';
 import EmptyState from '../../components/EmptyState';
 import HoldToConfirm from '../../components/HoldToConfirm';
 import PageHeader from '../../components/PageHeader';
+import { resumenPermiso } from '../../components/PanelDenunciantes';
 import AppShell from '../../components/AppShell';
 import { useVocab } from '../../vocab';
 
@@ -21,6 +22,7 @@ export default function FiscalizadorDashboard() {
   const [form, setForm] = useState({ unidad: '', persona_reportada: '', descripcion: '', fecha_hecho: ahoraLocal(), ubicacion: '' });
   const [mensaje, setMensaje] = useState('');
   const [subiendoEvidencia, setSubiendoEvidencia] = useState(null);
+  const [permiso, setPermiso] = useState(null);
 
   // Carril de contencion
   const [multas, setMultas] = useState([]);
@@ -40,6 +42,9 @@ export default function FiscalizadorDashboard() {
 
   useEffect(() => {
     client.get('/unidades/').then((res) => setUnidades(res.data.results || res.data));
+    // Se pide al abrir y no se toma del login: el Administrador puede haber
+    // cambiado los limites desde entonces.
+    client.get('/auth/me/').then((res) => setPermiso(res.data.permiso_denuncia)).catch(() => {});
     cargarTickets();
     cargarContencion();
   }, []);
@@ -146,6 +151,13 @@ export default function FiscalizadorDashboard() {
                 { label: 'Pendientes de revision', valor: pendientesRevision },
               ]}
             />
+
+            {permiso && (
+              <div className={permiso.suspendido ? 'mensaje-error' : 'mensaje-info'} style={{ marginTop: 18 }}>
+                <strong>Tu permiso para denunciar:</strong> {resumenPermiso(permiso)}
+                {permiso.notas ? ` (${permiso.notas})` : ''}
+              </div>
+            )}
 
             <form className="tarjeta formulario" onSubmit={handleSubmit} style={{ marginTop: 24 }}>
               <div className="fila-formulario">

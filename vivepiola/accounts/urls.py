@@ -3,7 +3,8 @@ from rest_framework.routers import DefaultRouter
 from rest_framework_simplejwt.views import TokenRefreshView
 
 from .views import (
-    AsignarRolView, GoogleLoginView, InvitacionViewSet, MeView,
+    AsignarRolView, DenunciantesView, GoogleLoginView, InvitacionViewSet, MeView,
+    PermisoDenunciaView,
     UsuariosPendientesView, SinConflictoTokenObtainPairView,
 )
 
@@ -17,5 +18,10 @@ urlpatterns = [
     path('auth/me/', MeView.as_view(), name='me'),
     path('usuarios/pendientes/', UsuariosPendientesView.as_view(), name='usuarios_pendientes'),
     path('usuarios/<int:pk>/asignar-rol/', AsignarRolView.as_view(), name='asignar_rol'),
+    path('usuarios/denunciantes/', DenunciantesView.as_view(), name='denunciantes'),
+    path(
+        'usuarios/<int:pk>/permiso-denuncia/', PermisoDenunciaView.as_view(),
+        name='permiso_denuncia',
+    ),
     path('', include(router.urls)),
 ]

@@ -92,7 +92,7 @@ export default function Login() {
           <h2><strong>SINCONFLICTO</strong> proceso, sin atajos.</h2>
           <p>
             Cada multa recorre el circuito que exige la Ley 21.442: evidencia del
-            fiscalizador, aprobacion exclusiva del Comite, notificacion formal del
+            denunciante, aprobacion exclusiva del Comite, notificacion formal del
             Administrador y derecho a descargo del residente. El sistema bloquea
             cualquier accion fuera de rol.
           </p>

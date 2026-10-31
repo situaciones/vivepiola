@@ -37,7 +37,7 @@ CATALOGO_EJEMPLO = [
     ('HUMO-01', 'Fumar en espacios comunes cerrados', 'Art. 31', '2', Gravedad.GRAVE),
 ]
 
-# Casos redactados como los escribe un fiscalizador, NO como los dice el reglamento:
+# Casos redactados como los escribe un denunciante, NO como los dice el reglamento:
 # ahi esta la prueba. 'esperado' es el codigo correcto segun criterio humano.
 CASOS = [
     ('El perro del 707 andaba suelto por el pasillo del segundo piso', 'MASCOTA-01'),

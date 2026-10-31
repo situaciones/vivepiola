@@ -1,19 +1,28 @@
 from rest_framework import serializers
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 
-from .models import ROLES_ASIGNABLES, Invitacion, Usuario
+from .models import ROLES_ASIGNABLES, Invitacion, PermisoDenuncia, Usuario
 
 
 class UsuarioSerializer(serializers.ModelSerializer):
     vocabulario = serializers.SerializerMethodField()
+    permiso_denuncia = serializers.SerializerMethodField()
 
     class Meta:
         model = Usuario
         fields = (
             'id', 'username', 'email', 'first_name', 'last_name',
             'rol', 'condominio', 'persona', 'telefono', 'is_active', 'vocabulario',
+            'permiso_denuncia',
         )
         read_only_fields = ('id', 'rol', 'condominio', 'persona', 'vocabulario')
+
+    def get_permiso_denuncia(self, obj):
+        """Los limites que el Denunciante tiene, para que los vea en su panel."""
+        try:
+            return PermisoDenunciaSerializer(obj.permiso_denuncia).data
+        except PermisoDenuncia.DoesNotExist:
+            return None
 
     def get_vocabulario(self, obj):
         """Diccionario de etiquetas del vertical de la organizacion (la 'piel'
@@ -78,3 +87,55 @@ class SinConflictoTokenObtainPairSerializer(TokenObtainPairSerializer):
         token['condominio_id'] = user.condominio_id
         token['nombre'] = user.get_full_name() or user.username
         return token
+
+
+class PermisoDenunciaSerializer(serializers.ModelSerializer):
+    unidades_identificadores = serializers.SerializerMethodField()
+
+    class Meta:
+        model = PermisoDenuncia
+        fields = (
+            'suspendido', 'vigente_desde', 'vigente_hasta', 'dias', 'hora_desde', 'hora_hasta',
+            'unidades', 'unidades_identificadores', 'notas', 'actualizado_en',
+        )
+        read_only_fields = ('actualizado_en',)
+
+    def get_unidades_identificadores(self, obj):
+        return [u.identificador for u in obj.unidades.all()]
+
+    def validate_dias(self, value):
+        if not isinstance(value, list) or any(not isinstance(d, int) or not 0 <= d <= 6 for d in value):
+            raise serializers.ValidationError('Los dias van de 0 (lunes) a 6 (domingo).')
+        return sorted(set(value))
+
+    def validate_unidades(self, value):
+        condominio_id = self.context['condominio_id']
+        if any(u.condominio_id != condominio_id for u in value):
+            raise serializers.ValidationError('Alguna unidad no pertenece a su comunidad.')
+        return value
+
+    def validate(self, attrs):
+        desde, hasta = attrs.get('vigente_desde'), attrs.get('vigente_hasta')
+        if desde and hasta and hasta < desde:
+            raise serializers.ValidationError({'vigente_hasta': 'El termino no puede ser antes del inicio.'})
+        if bool(attrs.get('hora_desde')) != bool(attrs.get('hora_hasta')):
+            raise serializers.ValidationError({'hora_hasta': 'Indique la hora de inicio y la de termino, o ninguna.'})
+        return attrs
+
+
+class DenuncianteSerializer(serializers.ModelSerializer):
+    nombre = serializers.SerializerMethodField()
+    permiso = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Usuario
+        fields = ('id', 'nombre', 'email', 'is_active', 'permiso')
+
+    def get_nombre(self, obj):
+        return obj.get_full_name() or obj.username
+
+    def get_permiso(self, obj):
+        try:
+            return PermisoDenunciaSerializer(obj.permiso_denuncia).data
+        except PermisoDenuncia.DoesNotExist:
+            return None

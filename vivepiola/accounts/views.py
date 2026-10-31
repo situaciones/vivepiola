@@ -10,10 +10,11 @@ from rest_framework.views import APIView
 from rest_framework_simplejwt.views import TokenObtainPairView
 
 from .google import GoogleAuthError, verificar_credencial_google
-from .models import EstadoInvitacion, Invitacion, Rol, Usuario
+from .models import EstadoInvitacion, Invitacion, PermisoDenuncia, Rol, Usuario
 from .permissions import EsAdministrador
 from .serializers import (
-    AsignarRolSerializer, GoogleLoginSerializer, InvitacionSerializer,
+    AsignarRolSerializer, DenuncianteSerializer, GoogleLoginSerializer, InvitacionSerializer,
+    PermisoDenunciaSerializer,
     UsuarioPendienteSerializer, UsuarioSerializer, SinConflictoTokenObtainPairSerializer,
 )
 
@@ -269,3 +270,59 @@ class AsignarRolView(APIView):
 
         objetivo.save()
         return Response(UsuarioSerializer(objetivo).data)
+
+
+class DenunciantesView(APIView):
+    """Los Denunciantes de la comunidad con los limites de su permiso."""
+
+    permission_classes = [EsAdministrador]
+
+    def get(self, request):
+        qs = (
+            Usuario.objects.filter(rol=Rol.FISCALIZADOR, condominio_id=request.user.condominio_id)
+            .select_related('permiso_denuncia')
+            .order_by('first_name', 'username')
+        )
+        return Response(DenuncianteSerializer(qs, many=True).data)
+
+
+class PermisoDenunciaView(APIView):
+    """
+    El Administrador acota cuando y sobre que puede reportar un Denunciante.
+    PUT reemplaza todos los limites; DELETE los quita (vuelve a sin limites).
+    """
+
+    permission_classes = [EsAdministrador]
+
+    def _denunciante(self, request, pk):
+        try:
+            return Usuario.objects.get(
+                pk=pk, rol=Rol.FISCALIZADOR, condominio_id=request.user.condominio_id,
+            )
+        except Usuario.DoesNotExist:
+            return None
+
+    def get(self, request, pk):
+        usuario = self._denunciante(request, pk)
+        if usuario is None:
+            return Response({'detail': 'No es un Denunciante de su comunidad.'}, status=404)
+        return Response(DenuncianteSerializer(usuario).data)
+
+    def put(self, request, pk):
+        usuario = self._denunciante(request, pk)
+        if usuario is None:
+            return Response({'detail': 'No es un Denunciante de su comunidad.'}, status=404)
+        permiso = PermisoDenuncia.objects.filter(usuario=usuario).first()
+        datos = PermisoDenunciaSerializer(
+            permiso, data=request.data, context={'condominio_id': usuario.condominio_id},
+        )
+        datos.is_valid(raise_exception=True)
+        datos.save(usuario=usuario, actualizado_por=request.user)
+        return Response(DenuncianteSerializer(usuario).data)
+
+    def delete(self, request, pk):
+        usuario = self._denunciante(request, pk)
+        if usuario is None:
+            return Response({'detail': 'No es un Denunciante de su comunidad.'}, status=404)
+        PermisoDenuncia.objects.filter(usuario=usuario).delete()
+        return Response(status=204)

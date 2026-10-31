@@ -20,7 +20,7 @@ function PendienteAsignacion() {
       <p style={{ margin: '16px 0' }}>
         Hola {usuario?.first_name || usuario?.username}. Tu ingreso con Google quedo registrado,
         pero el Administrador de tu comunidad aun debe confirmar tu rol
-        (residente, fiscalizador o comite) antes de que puedas usar la plataforma.
+        (residente, denunciante o comite) antes de que puedas usar la plataforma.
       </p>
       <p className="texto-secundario">
         {usuario?.condominio

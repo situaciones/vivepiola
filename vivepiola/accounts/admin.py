@@ -1,7 +1,7 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
 
-from .models import Usuario
+from .models import PermisoDenuncia, Usuario
 
 
 @admin.register(Usuario)
@@ -11,3 +11,9 @@ class UsuarioAdmin(UserAdmin):
     fieldsets = UserAdmin.fieldsets + (
         ('Rol legal', {'fields': ('rol', 'condominio', 'persona', 'telefono')}),
     )
+
+
+@admin.register(PermisoDenuncia)
+class PermisoDenunciaAdmin(admin.ModelAdmin):
+    list_display = ('usuario', 'suspendido', 'vigente_desde', 'vigente_hasta', 'hora_desde', 'hora_hasta')
+    filter_horizontal = ('unidades',)

@@ -107,7 +107,7 @@
   </div>
   <div>
     <h1>Flujos y procesos<br><span>de punta a punta.</span></h1>
-    <p class="sub">Cómo funciona SINCONFLICTO para cada rol: administración, comité, fiscalizador y residente. Desde que alguien reporta una falta hasta que se cobra o se cierra, con cada regla automática, plazo y control.</p>
+    <p class="sub">Cómo funciona SINCONFLICTO para cada rol: administración, comité, denunciante y residente. Desde que alguien reporta una falta hasta que se cobra o se cierra, con cada regla automática, plazo y control.</p>
   </div>
   <div class="pie">
     <span>Repaso del sistema en producción · sinconflicto.cl</span>
@@ -125,7 +125,7 @@
     <li><span>4</span>Administrador del sistema</li>
     <li><span>5</span>Administrador de la comunidad</li>
     <li><span>6</span>Comité de Administración</li>
-    <li><span>7</span>Fiscalizador</li>
+    <li><span>7</span>Denunciante</li>
     <li><span>8</span>Residente</li>
     <li><span>9</span>Medidas inmediatas (contención)</li>
     <li><span>10</span>Procesos que corren solos</li>
@@ -171,7 +171,7 @@
     <tr><td><span class="pill p-gris">Administrador del sistema</span></td><td>El equipo de SINCONFLICTO.</td><td>Da de alta comunidades y su primer administrador.</td></tr>
     <tr><td><span class="pill p-ind">Administrador</span></td><td>La administración o administradora del condominio.</td><td>Prepara la comunidad, notifica, responde el Libro de Novedades y lleva los cobros.</td></tr>
     <tr><td><span class="pill p-morado">Comité</span></td><td>Los miembros del Comité de Administración.</td><td>Decide: apelaciones, casos dudosos, cobros detenidos y medidas inmediatas.</td></tr>
-    <tr><td><span class="pill p-ind">Fiscalizador</span></td><td>Quien recorre la comunidad: conserje, guardia, supervisor (no tiene por qué ser conserje).</td><td>Reporta hechos con evidencia y activa medidas inmediatas.</td></tr>
+    <tr><td><span class="pill p-ind">Denunciante</span></td><td>Quien recorre la comunidad: conserje, guardia, supervisor (no tiene por qué ser conserje).</td><td>Reporta hechos con evidencia y activa medidas inmediatas.</td></tr>
     <tr><td><span class="pill p-verde">Residente</span></td><td>Propietarios, arrendatarios y ocupantes.</td><td>Recibe sus avisos y multas, se defiende, reporta y usa el Libro de Novedades.</td></tr>
     <tr><td><span class="pill p-ambar">Pendiente</span></td><td>Alguien que entró con Google sin invitación.</td><td>Espera que el Administrador le asigne un rol. No ve ningún módulo.</td></tr>
   </table>
@@ -200,7 +200,7 @@
       <!-- Reporte -->
       <rect class="paso" x="30" y="10" width="300" height="52" rx="10"/>
       <text class="tb" x="180" y="32" text-anchor="middle">Alguien reporta un hecho</text>
-      <text class="ts" x="180" y="50" text-anchor="middle">Fiscalizador, Comité o un vecino · con foto o video</text>
+      <text class="ts" x="180" y="50" text-anchor="middle">Denunciante, Comité o un vecino · con foto o video</text>
       <path class="l" d="M180 62 V84"/>
 
       <!-- Analisis -->
@@ -377,7 +377,7 @@
     <tr><td>2</td><td>Cargar el registro de copropietarios (Excel)</td><td>Administrador</td></tr>
     <tr><td>3</td><td>Subir reglamento, reglamento interno y actas (PDF)</td><td>Administrador</td></tr>
     <tr><td>4</td><td>Revisar y confirmar el catálogo de infracciones</td><td>Comité o Administrador</td></tr>
-    <tr><td>5</td><td>Invitar al Comité, fiscalizadores y residentes</td><td>Administrador</td></tr>
+    <tr><td>5</td><td>Invitar al Comité, denunciantes y residentes</td><td>Administrador</td></tr>
     <tr><td>6</td><td>Prueba de humo: un reporte de prueba de punta a punta</td><td>Todos</td></tr>
   </table>
 </section>
@@ -516,9 +516,9 @@
   </div>
 </section>
 
-<!-- ================= 7. FISCALIZADOR ================= -->
+<!-- ================= 7. DENUNCIANTE ================= -->
 <section class="salto">
-  <div class="rol-cab r-fisc"><div class="ico">F</div><div><h2>7 · Fiscalizador</h2><p>Reporta lo que ve, con evidencia. No define montos ni sanciona.</p></div></div>
+  <div class="rol-cab r-fisc"><div class="ico">D</div><div><h2>7 · Denunciante</h2><p>Reporta lo que ve, con evidencia. No define montos ni sanciona.</p></div></div>
 
   <h3>Sus pantallas</h3>
   <table>
@@ -603,7 +603,7 @@
 
 <section class="salto">
   <h3>8.3 Reportar a otra unidad</h3>
-  <p>Un residente también puede levantar un reporte (igual que el fiscalizador), con opción de <strong>anonimato</strong> frente a la persona reportada. Solo se le informa la etapa del caso.</p>
+  <p>Un residente también puede levantar un reporte (igual que el denunciante), con opción de <strong>anonimato</strong> frente a la persona reportada. Solo se le informa la etapa del caso.</p>
 
   <h3>8.4 Libro de Novedades</h3>
   <ol class="pasos">
@@ -638,7 +638,7 @@
       <rect x="20" y="20" width="200" height="60" rx="10" fill="#fff" stroke="#cfd0e3"/>
       <text class="tb" x="120" y="44" text-anchor="middle">Hallazgo reportado</text>
       <text class="ts" x="120" y="62" text-anchor="middle">el catálogo dice si conlleva</text>
-      <text class="ts" x="120" y="75" text-anchor="middle">contención (no el fiscalizador)</text>
+      <text class="ts" x="120" y="75" text-anchor="middle">contención (no el denunciante)</text>
       <path class="l" d="M220 50 H268"/>
 
       <rect x="270" y="20" width="190" height="60" rx="10" fill="#fdf1f0" stroke="#f2c9c4"/>
@@ -677,7 +677,7 @@
       <h4>Cómo funciona</h4>
       <ul>
         <li>La comunidad define <strong>en frío</strong>, en el catálogo, qué hallazgos conllevan contención, en cuántas horas deben ratificarse (24 por defecto) y cuántas firmas exigen.</li>
-        <li>Pueden activarla el Fiscalizador, el Comité o la Administración.</li>
+        <li>Pueden activarla el Denunciante, el Comité o la Administración.</li>
         <li>Ratifica el Comité, o quien tenga una <strong>delegación vigente</strong> que cubra esa gravedad.</li>
         <li>Un mismo actor no cuenta dos veces para el quórum.</li>
       </ul>

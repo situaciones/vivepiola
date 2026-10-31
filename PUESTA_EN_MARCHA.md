@@ -504,7 +504,7 @@ Roles a repartir:
 
 | Rol | Quién | Qué hace |
 |---|---|---|
-| **Fiscalizador** | Quien fiscaliza en terreno | Reporta con foto. No fija montos |
+| **Denunciante** | Quien reporta en terreno | Reporta con foto. No fija montos |
 | **Comité** | Miembros del comité | Único que aprueba y resuelve descargos |
 | **Residente** | Copropietarios | Ve sus multas y presenta descargos |
 
@@ -514,8 +514,8 @@ Roles a repartir:
 
 Recorre el circuito completo con un caso de mentira:
 
-1. **Fiscalizador** → *Nuevo reporte*: unidad, persona, descripción → crear ticket
-2. **Fiscalizador** → *Mis tickets* → **Agregar foto de evidencia**
+1. **Denunciante** → *Nuevo reporte*: unidad, persona, descripción → crear ticket
+2. **Denunciante** → *Mis tickets* → **Agregar foto de evidencia**
 3. **Comité** → *Bandeja de decisión*: revisa la propuesta automática, marca la
    casilla de revisión y **Aprobar**
 4. **Administrador** → *Notificar multas*: **Notificar al residente**

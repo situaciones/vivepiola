@@ -9,7 +9,10 @@ from django.utils import timezone
 class Rol(models.TextChoices):
     """Roles legales definidos por la Ley 21.442 (separacion de funciones)."""
 
-    FISCALIZADOR = 'FISCALIZADOR', 'Fiscalizador'
+    # Se muestra como "Denunciante". La clave sigue siendo FISCALIZADOR porque
+    # es la que esta guardada en las cuentas y la que reconocen las apps ya
+    # instaladas; cambiarla dejaria sin panel a esos usuarios.
+    FISCALIZADOR = 'FISCALIZADOR', 'Denunciante'
     COMITE = 'COMITE', 'Comite de Administracion'
     ADMINISTRADOR = 'ADMINISTRADOR', 'Administrador'
     RESIDENTE = 'RESIDENTE', 'Residente'
@@ -104,3 +107,90 @@ class Invitacion(models.Model):
 
     def __str__(self):
         return f'Invitacion a {self.correo} ({self.rol_sugerido}) - {self.condominio.nombre}'
+
+
+DIAS_SEMANA = ('Lunes', 'Martes', 'Miercoles', 'Jueves', 'Viernes', 'Sabado', 'Domingo')
+
+
+class PermisoDenuncia(models.Model):
+    """
+    Limites que el Administrador pone a un Denunciante: desde cuando y hasta
+    cuando puede reportar, que dias, en que horario y sobre que unidades.
+
+    Sin esta ficha el Denunciante reporta sin limites, como siempre. Cada
+    campo vacio significa "sin limite" en ese aspecto, de modo que se puede
+    acotar solo lo que haga falta (por ejemplo, solo el turno de noche).
+    """
+
+    usuario = models.OneToOneField(Usuario, on_delete=models.CASCADE, related_name='permiso_denuncia')
+    suspendido = models.BooleanField(default=False, help_text='Suspende el permiso sin quitar el rol.')
+    vigente_desde = models.DateField(null=True, blank=True)
+    vigente_hasta = models.DateField(null=True, blank=True)
+    # 0 = lunes ... 6 = domingo. Vacio = todos los dias.
+    dias = models.JSONField(default=list, blank=True)
+    # Si hora_hasta es menor que hora_desde, el turno cruza la medianoche.
+    hora_desde = models.TimeField(null=True, blank=True)
+    hora_hasta = models.TimeField(null=True, blank=True)
+    unidades = models.ManyToManyField('condominios.Unidad', blank=True, related_name='denunciantes_permitidos')
+    notas = models.CharField(max_length=255, blank=True)
+    actualizado_por = models.ForeignKey(
+        Usuario, on_delete=models.SET_NULL, null=True, blank=True, related_name='+',
+    )
+    actualizado_en = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f'Permiso para denunciar de {self.usuario}'
+
+    def motivo_rechazo(self, momento, unidad=None):
+        """
+        Por que este permiso no cubre un reporte hecho en `momento` sobre
+        `unidad`; None si lo cubre. El mensaje se muestra tal cual al
+        Denunciante, asi que dice que limite fallo y cual es.
+        """
+        local = timezone.localtime(momento)
+        hoy = local.date()
+        if self.suspendido:
+            return 'Su permiso para denunciar esta suspendido por la administracion.'
+        if self.vigente_desde and hoy < self.vigente_desde:
+            return f'Su permiso para denunciar comienza el {self.vigente_desde:%d-%m-%Y}.'
+        if self.vigente_hasta and hoy > self.vigente_hasta:
+            return f'Su permiso para denunciar vencio el {self.vigente_hasta:%d-%m-%Y}.'
+        ahora = local.time()
+        cruza_medianoche = bool(self.hora_desde and self.hora_hasta and self.hora_hasta < self.hora_desde)
+        # En un turno de 22:00 a 06:00, la madrugada del sabado es el turno del
+        # viernes: el dia que cuenta es el dia en que empezo el turno.
+        dia_turno = local.weekday()
+        if cruza_medianoche and ahora <= self.hora_hasta:
+            dia_turno = (dia_turno - 1) % 7
+        if self.dias and dia_turno not in self.dias:
+            permitidos = ', '.join(DIAS_SEMANA[d] for d in sorted(self.dias))
+            return f'Hoy no esta dentro de sus dias para denunciar ({permitidos}).'
+        if self.hora_desde and self.hora_hasta:
+            if cruza_medianoche:
+                dentro = ahora >= self.hora_desde or ahora <= self.hora_hasta
+            else:
+                dentro = self.hora_desde <= ahora <= self.hora_hasta
+            if not dentro:
+                return (
+                    f'Esta fuera de su horario para denunciar '
+                    f'({self.hora_desde:%H:%M} a {self.hora_hasta:%H:%M}).'
+                )
+        if unidad is not None and self.pk:
+            permitidas = list(self.unidades.values_list('id', flat=True))
+            if permitidas and unidad.id not in permitidas:
+                return f'No tiene permiso para denunciar {unidad.identificador}.'
+        return None
+
+
+def motivo_fuera_de_permiso(usuario, unidad=None, momento=None):
+    """
+    None si el usuario puede reportar ahora sobre esa unidad. Solo limita al
+    Denunciante: Comite y Residentes reportan por derecho propio (Ley 21.442).
+    """
+    if usuario.rol != Rol.FISCALIZADOR:
+        return None
+    try:
+        permiso = usuario.permiso_denuncia
+    except PermisoDenuncia.DoesNotExist:
+        return None
+    return permiso.motivo_rechazo(momento or timezone.now(), unidad)
