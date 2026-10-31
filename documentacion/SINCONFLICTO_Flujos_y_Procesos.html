@@ -339,6 +339,7 @@
   <h3>3.5 Notificación y acuse de recibo</h3>
   <ul style="font-size:9.3pt">
     <li><strong>Canales:</strong> correo con el PDF de la notificación (canal legal) y WhatsApp como aviso complementario. Ambos llevan un <strong>enlace personal al buzón del caso</strong>, que funciona sin cuenta ni contraseña.</li>
+    <li><strong>Remitente y formato:</strong> todos los correos salen desde <em>notificaciones@sinconflicto.cl</em>, con el nombre de la comunidad en el asunto ("Notificación de multa #12 - Edificio Los Robles"), un botón para abrir el caso y el PDF adjunto. Si el residente pulsa "Responder", la respuesta llega a la Administración de su comunidad.</li>
     <li><strong>Copia al dueño:</strong> la ley hace al propietario el obligado al pago, así que recibe copia cuando el infractor podría no estar para defenderse (por ejemplo, un ocupante transitorio).</li>
     <li><strong>El plazo arranca con el acuse,</strong> no con el envío: al abrir el enlace y confirmar, al entrar a la app o al apelar (apelar prueba que se enteró). El primer acuse manda; abrirlo diez veces no reinicia el plazo.</li>
     <li><strong>Sin acuse:</strong> el sistema reenvía hasta <strong>3 veces, cada 5 minutos</strong>. Si nadie confirma, el caso queda listado para que la Administración imprima la notificación, la deje en el buzón de la unidad y lo registre en la app. Ese registro perfecciona la notificación y recién ahí arranca el plazo.</li>
@@ -822,7 +823,7 @@
       <ul>
         <li>Sitio y app web en sinconflicto.cl, con HTTPS.</li>
         <li>Ciclo completo de multas, apelaciones, contención y cobros.</li>
-        <li>Correo real desde notificaciones@sinconflicto.cl (Brevo, dominio autenticado), con buzón sin cuenta y acuse de recibo.</li>
+        <li>Correo real desde notificaciones@sinconflicto.cl (Brevo, dominio autenticado), con diseño de marca, nombre de la comunidad en el asunto, respuestas a la Administración, buzón sin cuenta y acuse de recibo.</li>
         <li>Actas selladas, verificación y certificado de integridad.</li>
         <li>App Android firmada y conectada a producción.</li>
         <li>Procesos programados: reintentos, resúmenes y escalamiento.</li>
@@ -844,7 +845,8 @@
     <tr><th style="width:28%">Tema</th><th>Observación</th></tr>
     <tr><td>Formulario "Solicitar demo" de la web (corregido)</td><td>Antes mostraba "Gracias" sin enviar nada. Ahora cada solicitud <strong>se guarda</strong> (panel de administración → "Solicitudes de demo", con casilla de atendida y notas) y se avisa por correo a sinconflicto.cl@gmail.com cuando el correo real esté configurado.</td></tr>
     <tr><td>Sin IA activa</td><td>Mientras no haya clave de IA, <strong>ningún caso se cursa solo</strong>: todos quedan en revisión del Comité. El sistema funciona, pero el Comité vuelve a ser el filtro previo.</td></tr>
-    <tr><td>Correo real (resuelto)</td><td>Configurado con Brevo el 30-10-2026: las notificaciones salen desde notificaciones@sinconflicto.cl con el dominio autenticado (SPF, DKIM y DMARC). Plan gratuito de 300 correos al día.</td></tr>
+    <tr><td>Correo real (resuelto)</td><td>Configurado con Brevo el 30-10-2026: las notificaciones salen desde notificaciones@sinconflicto.cl con el dominio autenticado (SPF, DKIM y DMARC), probado de punta a punta hasta Gmail. Plan gratuito de 300 correos al día.</td></tr>
+    <tr><td>Correo de la Administración</td><td>El "Responder" de cada notificación usa el correo del usuario Administrador de la comunidad. Al crear ese usuario hay que registrarle el correo real de la administración; si no tiene, la respuesta no llega a nadie.</td></tr>
     <tr><td>Privacidad (corregido)</td><td>Un residente sin persona vinculada en el registro podía ver los casos sin infractor identificado de su comunidad. Se corrigió en la versión 5.</td></tr>
     <tr><td>Cierre de plazos</td><td>Hoy ocurre cuando alguien abre la lista de casos. Funciona, pero si nadie entra en días, el paso a firme se registra con atraso. Conviene sumarlo a una tarea programada diaria.</td></tr>
   </table>
