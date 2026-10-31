@@ -10,6 +10,7 @@
     "dev": "vite",
     "build": "vite build",
     "build:android": "vite build --mode android && cap sync android",
+    "build:ios": "vite build --mode android && cap sync ios",
     "lint": "oxlint",
     "preview": "vite preview"
   },
@@ -17,6 +18,7 @@
     "@capacitor/android": "^7.6.10",
     "@capacitor/app": "^7.1.2",
     "@capacitor/core": "^7.6.10",
+    "@capacitor/ios": "^7.6.10",
     "axios": "^1.18.1",
     "jwt-decode": "^4.0.0",
     "lucide-react": "^1.23.0",
