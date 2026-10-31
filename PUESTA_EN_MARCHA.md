@@ -152,7 +152,18 @@ AWS_QUERYSTRING_AUTH=True
 
 ---
 
-### 1.2 Correo — 🔴 crítico
+### 1.2 Correo — ✅ configurado (30-10-2026)
+
+**Estado:** funcionando en producción con Brevo (plan gratuito, 300 correos al
+día). `sinconflicto.cl` está autenticado (código Brevo, DKIM `brevo1`/`brevo2`,
+DMARC y SPF en Cloud DNS) y el remitente es
+`SINCONFLICTO <notificaciones@sinconflicto.cl>`. La clave SMTP está en el
+secreto `brevo-smtp-key` y la usan el servicio y los jobs de resúmenes,
+reintentos y escalamiento. La cuenta de Brevo es la de `sinconflicto.cl@gmail.com`;
+los envíos se revisan en **Transaccional → Logs**.
+
+Si se cambia la clave: generar una nueva en Brevo (**SMTP y API → SMTP**),
+agregarla como versión nueva del secreto y volver a desplegar.
 
 **Por qué:** es **el canal legal** de la Ley 21.442. El correo con el PDF es lo
 que se muestra si alguien dice "nunca me avisaron". Sin esto, el flujo se

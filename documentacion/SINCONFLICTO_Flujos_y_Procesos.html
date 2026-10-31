@@ -822,7 +822,7 @@
       <ul>
         <li>Sitio y app web en sinconflicto.cl, con HTTPS.</li>
         <li>Ciclo completo de multas, apelaciones, contención y cobros.</li>
-        <li>Notificación por correo con buzón sin cuenta y acuse de recibo.</li>
+        <li>Correo real desde notificaciones@sinconflicto.cl (Brevo, dominio autenticado), con buzón sin cuenta y acuse de recibo.</li>
         <li>Actas selladas, verificación y certificado de integridad.</li>
         <li>App Android firmada y conectada a producción.</li>
         <li>Procesos programados: reintentos, resúmenes y escalamiento.</li>
@@ -833,7 +833,6 @@
       <h4>Pendiente de activar</h4>
       <ul>
         <li><strong>IA de clasificación y asistente:</strong> falta la clave de un proveedor (Anthropic o Google). Sin ella, los reportes quedan en revisión del Comité y el asistente avisa que no está activo.</li>
-        <li><strong>Envío de correo real:</strong> falta configurar el proveedor de correo.</li>
         <li><strong>WhatsApp:</strong> conectado a Twilio en modo prueba; falta la cuenta pagada, el número propio (chip prepago) y la aprobación de las plantillas por Meta.</li>
         <li><strong>Publicación en Google Play</strong> y desarrollo de la <strong>app de iPhone</strong>. El botón de App Store de la web apunta a un enlace provisorio.</li>
       </ul>
@@ -845,7 +844,7 @@
     <tr><th style="width:28%">Tema</th><th>Observación</th></tr>
     <tr><td>Formulario "Solicitar demo" de la web (corregido)</td><td>Antes mostraba "Gracias" sin enviar nada. Ahora cada solicitud <strong>se guarda</strong> (panel de administración → "Solicitudes de demo", con casilla de atendida y notas) y se avisa por correo a sinconflicto.cl@gmail.com cuando el correo real esté configurado.</td></tr>
     <tr><td>Sin IA activa</td><td>Mientras no haya clave de IA, <strong>ningún caso se cursa solo</strong>: todos quedan en revisión del Comité. El sistema funciona, pero el Comité vuelve a ser el filtro previo.</td></tr>
-    <tr><td>Sin correo real</td><td>Las notificaciones no salen a los residentes. Es el paso más urgente antes del primer condominio real.</td></tr>
+    <tr><td>Correo real (resuelto)</td><td>Configurado con Brevo el 30-10-2026: las notificaciones salen desde notificaciones@sinconflicto.cl con el dominio autenticado (SPF, DKIM y DMARC). Plan gratuito de 300 correos al día.</td></tr>
     <tr><td>Privacidad (corregido)</td><td>Un residente sin persona vinculada en el registro podía ver los casos sin infractor identificado de su comunidad. Se corrigió en la versión 5.</td></tr>
     <tr><td>Cierre de plazos</td><td>Hoy ocurre cuando alguien abre la lista de casos. Funciona, pero si nadie entra en días, el paso a firme se registra con atraso. Conviene sumarlo a una tarea programada diaria.</td></tr>
   </table>
@@ -853,7 +852,6 @@
   <div class="caja clave" style="margin-top:6mm">
     <h4>Orden recomendado para el primer condominio</h4>
     <ol>
-      <li>Configurar el envío de correo real.</li>
       <li>Activar la IA (Google o Anthropic) para que los casos se cursen solos.</li>
       <li>Alta de la comunidad, registro, reglamento y catálogo confirmado.</li>
       <li>Prueba de humo con un caso real de punta a punta.</li>
