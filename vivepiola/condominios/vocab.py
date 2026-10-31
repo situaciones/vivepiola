@@ -30,7 +30,10 @@ TERMINOS_DEFAULT = {
 # Frases completas parametrizables. `{X}` se reemplaza con el TERMINO resuelto
 # del vertical o con datos del caso pasados por kwargs.
 FRASES_DEFAULT = {
-    'notificacion_asunto': 'Notificacion de multa #{numero} - {organizacion_cap}',
+    # Todas las comunidades envian desde la misma direccion, asi que el nombre
+    # de la comunidad tiene que verse ya en el asunto: con la palabra generica
+    # ("- Condominio") nadie sabia de donde venia el correo sin abrirlo.
+    'notificacion_asunto': 'Notificacion de multa #{numero} - {org_nombre}',
     'notificacion_saludo': 'Estimado(a) {nombre},',
     # El catalogo guarda la referencia completa ("Art. 4"), por eso la frase
     # NO antepone "Art.": hacerlo producia "(Art. Art. 4)" en la notificacion.
@@ -54,7 +57,7 @@ FRASES_DEFAULT = {
     # El aviso de cortesia tiene que decir tres cosas: que no se cobra, cuanto
     # se habria cobrado (sin ese numero el aviso no dice nada), y que la
     # proxima vez si se cobra. Si no, se lee como una multa y asusta igual.
-    'notificacion_asunto_cortesia': 'Aviso de {organizacion} #{numero} - sin cobro',
+    'notificacion_asunto_cortesia': 'Aviso sin cobro #{numero} - {org_nombre}',
     # Un aviso de cortesia no puede empezar diciendo "se ha cursado una multa"
     # y terminar diciendo que no hay cobro: se contradice y se lee como multa.
     'notificacion_cuerpo_cortesia': (

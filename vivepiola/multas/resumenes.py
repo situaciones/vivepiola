@@ -12,7 +12,6 @@ el comite lo que debe decidir, la administracion lo que debe ejecutar.
 from datetime import timedelta
 
 from django.conf import settings
-from django.core.mail import EmailMessage
 from django.utils import timezone
 
 from accounts.models import Rol
@@ -157,15 +156,27 @@ def enviar_resumen(condominio, resumen, destinatarios):
     if not resumen['puntos'] or not destinatarios:
         return 0
 
+    from .correo_html import correo_con_html, html_correo
+
     texto = redactar_mensaje(condominio, resumen)
     asunto = f'{condominio.nombre}: {resumen["total"]} pendientes en SINCONFLICTO'
+    html = html_correo(
+        comunidad=condominio.nombre,
+        titulo='Urgente: tienes pendientes' if resumen['urgente'] else 'Tienes pendientes',
+        parrafos=[
+            'Esto es lo que espera de ti en tu comunidad:',
+            '\n'.join(f'- {p}' for p in resumen['puntos']),
+        ],
+        boton=('Entrar a resolverlo', f'{settings.FRONTEND_URL.rstrip("/")}/app'),
+        pie='Recibes un solo resumen al dia, y solo cuando hay algo pendiente.',
+    )
     enviados = 0
 
     for usuario in destinatarios:
         if usuario.email:
             try:
-                EmailMessage(
-                    subject=asunto, body=texto,
+                correo_con_html(
+                    asunto=asunto, texto=texto, html=html,
                     from_email=settings.DEFAULT_FROM_EMAIL, to=[usuario.email],
                 ).send(fail_silently=True)
                 enviados += 1

@@ -15,6 +15,7 @@ from xhtml2pdf import pisa
 
 from condominios.vocab import frase, termino
 
+from .correo_html import correo_con_html, html_correo
 from .models import Descargo, EstadoMulta, HistorialMulta, TipoActo
 from .sellado import sellar_acto
 
@@ -378,6 +379,22 @@ def despachar_notificacion(multa, pdf_bytes=None, intento=1):
     return enviados, copias
 
 
+def correos_administracion(condominio):
+    """
+    Correos de la administracion de la comunidad, para el "Responder" de lo
+    que envia el sistema. Vacio si no hay ninguno: entonces el correo sale sin
+    direccion de respuesta, igual que antes.
+    """
+    from accounts.models import Rol, Usuario
+
+    return sorted(set(
+        Usuario.objects
+        .filter(condominio=condominio, rol=Rol.ADMINISTRADOR, is_active=True)
+        .exclude(email='')
+        .values_list('email', flat=True)
+    ))
+
+
 def enviar_notificacion_email(multa, pdf_bytes):
     """
     Envia la notificacion legal al correo registrado del sujeto responsable:
@@ -411,47 +428,63 @@ def enviar_notificacion_email(multa, pdf_bytes):
         clave_cuerpo = 'notificacion_cuerpo'
     else:
         clave_cuerpo = 'notificacion_cuerpo_automatica'
-    cuerpo = '\n\n'.join([
-        frase(c, 'notificacion_saludo', nombre=persona.nombre_completo),
-        frase(
-            c, clave_cuerpo,
-            org_nombre=c.nombre,
-            unidad_id=multa.unidad.identificador,
-            infraccion=inf.descripcion,
-            articulo=inf.articulo_referencia,
-        ),
-        # En un aviso de cortesia decir "Monto: 0.00" seria absurdo: lo que hay
-        # que decir es que no se cobra y cuanto se habria cobrado.
+    saludo = frase(c, 'notificacion_saludo', nombre=persona.nombre_completo)
+    hecho = frase(
+        c, clave_cuerpo,
+        org_nombre=c.nombre,
+        unidad_id=multa.unidad.identificador,
+        infraccion=inf.descripcion,
+        articulo=inf.articulo_referencia,
+    )
+    # En un aviso de cortesia decir "Monto: 0.00" seria absurdo: lo que hay
+    # que decir es que no se cobra y cuanto se habria cobrado.
+    monto = (
         frase(
             c, 'notificacion_cortesia_sin_cobro',
             monto_evitado=multa.monto_sin_cortesia, unidad_monto=inf.unidad_monto,
         )
         if es_cortesia
-        else frase(c, 'notificacion_monto', monto=multa.monto, unidad_monto=inf.unidad_monto),
-        # Antes del acuse no hay fecha de vencimiento que anunciar: prometer una
-        # que todavia no existe seria confundir a quien lee.
+        else frase(c, 'notificacion_monto', monto=multa.monto, unidad_monto=inf.unidad_monto)
+    )
+    # Antes del acuse no hay fecha de vencimiento que anunciar: prometer una
+    # que todavia no existe seria confundir a quien lee.
+    plazo = (
         frase(c, 'notificacion_plazo', dias=dias, fecha_limite=fecha_limite)
         if multa.fecha_limite_descargo
-        else frase(c, 'notificacion_plazo_sin_acuse', dias=dias),
-        # El acuse es lo que hace correr el plazo, asi que la instruccion va
-        # antes del cierre legal y no perdida al final.
-        frase(c, 'notificacion_pide_acuse', enlace=enlace_acuse(multa)),
-        frase(c, 'notificacion_canal_legal'),
-    ])
+        else frase(c, 'notificacion_plazo_sin_acuse', dias=dias)
+    )
+    # El acuse es lo que hace correr el plazo, asi que la instruccion va
+    # antes del cierre legal y no perdida al final.
+    enlace = enlace_acuse(multa)
+    pide_acuse = frase(c, 'notificacion_pide_acuse', enlace=enlace)
+    canal_legal = frase(c, 'notificacion_canal_legal')
+
     copia = copropietario_en_copia(multa)
     copias = [copia.correo_electronico] if copia else []
-    if copia:
-        cuerpo += '\n\n' + frase(
-            c, 'notificacion_copia_copropietario',
-            nombre=copia.nombre_completo, unidad_id=multa.unidad.identificador,
-        )
+    nota_copia = frase(
+        c, 'notificacion_copia_copropietario',
+        nombre=copia.nombre_completo, unidad_id=multa.unidad.identificador,
+    ) if copia else ''
 
-    email = EmailMessage(
-        subject=asunto,
-        body=cuerpo,
+    cuerpo = '\n\n'.join([saludo, hecho, monto, plazo, pide_acuse, canal_legal])
+    if nota_copia:
+        cuerpo += '\n\n' + nota_copia
+
+    html = html_correo(
+        comunidad=c.nombre,
+        titulo=asunto.rsplit(' - ', 1)[0],
+        parrafos=[p for p in (saludo, hecho, plazo, pide_acuse, nota_copia) if p],
+        destacado=monto,
+        boton=('Ver mi caso y confirmar recepcion', enlace),
+        pie=canal_legal,
+    )
+    # "Responder" llega a la administracion de la comunidad: la direccion de
+    # envio es compartida por todas y nadie la lee.
+    email = correo_con_html(
+        asunto=asunto, texto=cuerpo, html=html,
         from_email=settings.DEFAULT_FROM_EMAIL,
-        to=[persona.correo_electronico],
-        cc=copias,
+        to=[persona.correo_electronico], cc=copias,
+        reply_to=correos_administracion(c),
     )
     email.attach(f'notificacion_{multa.id}.pdf', pdf_bytes, 'application/pdf')
     email.send(fail_silently=False)

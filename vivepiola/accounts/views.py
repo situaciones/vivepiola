@@ -1,5 +1,4 @@
 from django.conf import settings
-from django.core.mail import EmailMessage
 from django.utils import timezone
 from rest_framework import viewsets
 from rest_framework.decorators import action
@@ -160,12 +159,29 @@ def _enviar_correo_invitacion(invitacion):
         f'O use este codigo de invitacion al iniciar sesion: {invitacion.codigo}\n'
         f'La invitacion vence el {invitacion.expira_en:%d-%m-%Y}.'
     )
+    from multas.correo_html import correo_con_html, html_correo
+    from multas.services import correos_administracion
+
+    comunidad = invitacion.condominio.nombre
+    html = html_correo(
+        comunidad=comunidad,
+        titulo=f'Te invitaron a {comunidad}',
+        parrafos=[
+            f'Le han invitado a {comunidad} en SINCONFLICTO con el rol '
+            f'{invitacion.get_rol_sugerido_display()}.',
+            'Para aceptar, ingrese con su cuenta de Google desde el boton.',
+            f'Si se lo piden, su codigo de invitacion es: {invitacion.codigo}',
+        ],
+        boton=('Aceptar invitacion', enlace),
+        pie=f'La invitacion vence el {invitacion.expira_en:%d-%m-%Y}.',
+    )
     try:
-        EmailMessage(
-            subject=f'Invitacion a {invitacion.condominio.nombre} - SINCONFLICTO',
-            body=cuerpo,
+        correo_con_html(
+            asunto=f'Invitacion a {comunidad} - SINCONFLICTO',
+            texto=cuerpo, html=html,
             from_email=settings.DEFAULT_FROM_EMAIL,
             to=[invitacion.correo],
+            reply_to=correos_administracion(invitacion.condominio),
         ).send(fail_silently=True)
     except Exception:
         pass
