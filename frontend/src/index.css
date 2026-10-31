@@ -441,6 +441,47 @@ svg { flex-shrink: 0; }
   .stat-valor { font-size: 1.5rem; }
 }
 
+/* ---------- Mi cuenta (dialogo centrado; en el telefono, hoja inferior) ---------- */
+
+.cuenta-overlay {
+  position: fixed; inset: 0; z-index: 60;
+  display: flex; align-items: center; justify-content: center; padding: 16px;
+  background: rgba(11, 11, 20, 0.45);
+  animation: aparecer 0.2s ease;
+}
+.cuenta-dialogo {
+  width: 100%; max-width: 440px; max-height: 90vh; overflow-y: auto;
+  background: var(--superficie); color: var(--texto);
+  border-radius: 18px; padding: 16px 20px 20px;
+  box-shadow: var(--sombra-lg); text-align: left;
+}
+.cuenta-dialogo p { margin: 0 0 4px; }
+.cuenta-cabecera { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+.cuenta-cabecera strong { font-size: 1.1rem; }
+.cuenta-enlace {
+  display: flex; align-items: center; gap: 12px; width: 100%;
+  margin-top: 8px; padding: 12px 10px; border-radius: 12px;
+  background: none; border: none; cursor: pointer; text-decoration: none;
+  font: inherit; font-size: 0.95rem; font-weight: 500; color: var(--texto); text-align: left;
+}
+.cuenta-enlace:hover { background: var(--superficie-2); }
+.cuenta-enlace.peligro { color: var(--rojo); }
+.cuenta-eliminar {
+  display: flex; flex-direction: column; gap: 12px;
+  margin-top: 12px; padding-top: 14px; border-top: 1px solid var(--borde);
+}
+.cuenta-eliminar p { font-size: 0.9rem; color: var(--texto-suave); }
+.cuenta-acciones { display: flex; justify-content: flex-end; gap: 10px; flex-wrap: wrap; }
+
+@media (max-width: 560px) {
+  .cuenta-overlay { align-items: flex-end; padding: 0; }
+  .cuenta-dialogo {
+    max-width: none; border-radius: 22px 22px 0 0;
+    padding-bottom: calc(20px + env(safe-area-inset-bottom));
+    animation: subir 0.28s var(--ease);
+  }
+}
+
 /* ---------- Tarjetas ---------- */
 
 .tarjeta {

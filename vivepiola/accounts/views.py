@@ -32,6 +32,36 @@ class MeView(RetrieveUpdateAPIView):
         return self.request.user
 
 
+class EliminarCuentaView(APIView):
+    """
+    El usuario elimina su propia cuenta desde la app (lo exige Apple). Pide
+    escribir ELIMINAR porque las cuentas de Google no tienen contrasena que
+    confirmar.
+    """
+
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        if (request.data.get('confirmacion') or '').strip().upper() != 'ELIMINAR':
+            raise ValidationError({'confirmacion': 'Escribe ELIMINAR para confirmar.'})
+        usuario = request.user
+        if usuario.rol == Rol.ADMINISTRADOR and usuario.condominio_id:
+            otros = Usuario.objects.filter(
+                condominio_id=usuario.condominio_id, rol=Rol.ADMINISTRADOR, is_active=True,
+            ).exclude(pk=usuario.pk)
+            if not otros.exists():
+                return Response(
+                    {'detail': (
+                        'Eres el unico Administrador de la comunidad. Escribenos a '
+                        f'{settings.CONTACTO_CORREO} para traspasar la administracion '
+                        'antes de eliminar tu cuenta.'
+                    )},
+                    status=409,
+                )
+        usuario.eliminar_cuenta()
+        return Response(status=204)
+
+
 def _username_desde_email(email):
     base = email.split('@')[0][:140] or 'usuario'
     username = base

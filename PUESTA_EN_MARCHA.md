@@ -103,6 +103,63 @@ la de subida, y si se pierde, Google permite reemplazarla.
 
 Para probar la app contra un Django local, sigue `frontend/.env.android.example`.
 
+### App iPhone — 🟠 en preparación
+
+El proyecto iOS está en `frontend/ios` (mismo id `cl.sinconflicto.app`, misma
+web que Android, apunta a `https://sinconflicto.cl/api`). Ya trae:
+
+- Nombre "SINCONFLICTO", idioma español, solo iPhone y solo vertical.
+- Permisos de cámara, micrófono y galería con su explicación (Apple rechaza la
+  app si falta alguno, porque el reporte adjunta foto o video).
+- Declaración de que solo usa cifrado estándar (HTTPS), para no tener que
+  llenar el trámite de exportación en cada versión.
+- Ícono de 1024 px sin transparencia (`frontend/assets/icon-ios-1024.png`) y
+  pantalla de inicio oscura con el logo.
+- Dependencias por Swift Package Manager: no hace falta CocoaPods.
+
+**Compilar requiere un Mac con Xcode.** Apple no permite compilar ni firmar
+desde Windows. Sirve un Mac propio o uno en la nube (Codemagic, o GitHub
+Actions con `macos-latest`). En el Mac:
+
+```bash
+cd frontend
+npm ci
+npm run build:ios
+open ios/App/App.xcodeproj
+```
+
+En Xcode: *Signing & Capabilities* → elegir el equipo de la cuenta Apple
+Developer → *Product → Archive* → *Distribute App → App Store Connect*.
+
+Ojo: `npm run build:ios` reescribe `ios/App/CapApp-SPM/Package.swift`. Si se
+corre en Windows, deja rutas con `\` que en el Mac no funcionan. No subas ese
+archivo cuando lo genere Windows; en el Mac se regenera bien.
+
+Antes de cada versión nueva, sube *Version* y *Build* en Xcode (equivalen a
+`versionName` y `versionCode` de Android).
+
+**Lo que falta para enviarla a revisión:**
+
+1. **Cuenta Apple Developer** (USD 99 al año), a nombre tuyo o de la empresa.
+   Como empresa pide número D-U-N-S y tarda más; como persona, el nombre que
+   aparece como vendedor es el tuyo.
+2. ✅ **Política de privacidad** en `sinconflicto.cl/privacidad`
+   (`frontend/src/pages/Privacidad.jsx`), enlazada desde la portada y el
+   login. Falta agregarle la razón social y el RUT del responsable cuando
+   existan. Esa URL es la que se pone en App Store Connect y Google Play.
+3. ✅ **Eliminar la cuenta desde la app**: *Mi cuenta → Eliminar mi cuenta*
+   (`POST /api/auth/me/eliminar/`). Borra nombre, correo y teléfono y deja
+   la cuenta sin acceso; las denuncias y actas quedan firmadas como "Cuenta
+   eliminada" porque son registro del procedimiento. El único Administrador
+   de una comunidad no puede eliminarse (debe traspasar antes).
+4. **Cuenta de prueba para el revisor**: una comunidad de demostración en
+   producción con un usuario y contraseña que Apple pueda usar.
+5. En App Store Connect: capturas de pantalla de iPhone 6,9", descripción,
+   categoría y la ficha de privacidad (qué datos se recogen).
+
+Si algún día se activa el ingreso con Google en la app, Apple exige ofrecer
+también "Iniciar sesión con Apple".
+
 ---
 
 ## 1. Claves y servicios

@@ -282,6 +282,7 @@ export default function ComoFunciona() {
         <div className="foot-min">
           <LogoSinConflicto size={26} className="mk" />
           <span>Condominios de Chile · Ley 21.442</span>
+          <Link to="/privacidad">Privacidad</Link>
         </div>
       </footer>
     </div>

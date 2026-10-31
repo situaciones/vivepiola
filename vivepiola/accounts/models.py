@@ -57,6 +57,30 @@ class Usuario(AbstractUser):
     def __str__(self):
         return f'{self.get_full_name() or self.username} ({self.get_rol_display()})'
 
+    def eliminar_cuenta(self):
+        """
+        Borra los datos personales de la cuenta y la deja sin acceso.
+
+        No se borra la fila: denuncias, descargos, votos y actas son registros
+        del procedimiento sancionatorio que la comunidad debe conservar (Ley
+        21.442), y varios apuntan a la cuenta con PROTECT. Quedan firmados por
+        "Cuenta eliminada". La ficha del registro de copropietarios (Persona)
+        es de la comunidad, no de la cuenta, asi que solo se desvincula.
+        """
+        self.username = f'eliminado-{self.pk}'
+        self.email = ''
+        self.first_name = 'Cuenta eliminada'
+        self.last_name = ''
+        self.telefono = ''
+        self.persona = None
+        self.is_active = False
+        self.is_staff = False
+        self.is_superuser = False
+        self.set_unusable_password()
+        self.save()
+        PermisoDenuncia.objects.filter(usuario=self).delete()
+        self.niveles_escalamiento.clear()
+
 
 class EstadoInvitacion(models.TextChoices):
     PENDIENTE = 'PENDIENTE', 'Pendiente'

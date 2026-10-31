@@ -164,6 +164,9 @@ export default function Login() {
           <button className="btn btn-primario" type="submit" disabled={enviando}>
             {enviando ? 'Ingresando...' : 'Ingresar'}
           </button>
+          <p className="texto-secundario" style={{ textAlign: 'center', fontSize: '0.85rem' }}>
+            <Link to="/privacidad">Politica de privacidad</Link>
+          </p>
         </form>
       </div>
     </div>

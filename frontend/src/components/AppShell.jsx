@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react';
 import { App as AppNativa } from '@capacitor/app';
 import { Capacitor } from '@capacitor/core';
-import { LayoutGrid, LogOut } from 'lucide-react';
+import { LayoutGrid, LogOut, UserCog } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useVocab } from '../vocab';
 import Asistente from './Asistente';
 import Marca from './Marca';
+import MiCuenta from './MiCuenta';
 
 // La navegacion inferior del telefono admite cinco destinos comodos para el
 // pulgar; si hay mas, los ultimos se agrupan en "Mas".
@@ -23,6 +24,7 @@ export default function AppShell({ tabs, active, onChange, onAtras, dark = false
   // null = cerrada; 'perfil' o 'mas' = que muestra la hoja inferior.
   const [hoja, setHoja] = useState(null);
   const [chat, setChat] = useState(false);
+  const [cuenta, setCuenta] = useState(false);
 
   const desbordan = tabs.length > MAX_NAV_INFERIOR;
   const visibles = desbordan ? tabs.slice(0, MAX_NAV_INFERIOR - 1) : tabs;
@@ -38,6 +40,7 @@ export default function AppShell({ tabs, active, onChange, onAtras, dark = false
     if (!Capacitor.isNativePlatform()) return undefined;
     const escucha = AppNativa.addListener('backButton', () => {
       if (chat) setChat(false);
+      else if (cuenta) setCuenta(false);
       else if (hoja) setHoja(null);
       else if (onAtras?.()) return;
       else if (tabs.length && active !== tabs[0].id) onChange(tabs[0].id);
@@ -46,7 +49,7 @@ export default function AppShell({ tabs, active, onChange, onAtras, dark = false
     return () => {
       escucha.then((e) => e.remove());
     };
-  }, [chat, hoja, active, tabs, onChange, onAtras]);
+  }, [chat, cuenta, hoja, active, tabs, onChange, onAtras]);
 
   const elegir = (id) => {
     setHoja(null);
@@ -86,6 +89,9 @@ export default function AppShell({ tabs, active, onChange, onAtras, dark = false
             <div className="sidebar-footer-nombre">{nombre}</div>
             <div className="sidebar-footer-rol">{usuario?.username}</div>
           </div>
+          <button className="btn-icono" onClick={() => setCuenta(true)} title="Mi cuenta" aria-label="Mi cuenta">
+            <UserCog size={16} />
+          </button>
           <button className="btn-icono" onClick={logout} title="Cerrar sesion" aria-label="Cerrar sesion">
             <LogOut size={16} />
           </button>
@@ -134,6 +140,8 @@ export default function AppShell({ tabs, active, onChange, onAtras, dark = false
 
       <Asistente abierto={chat} onAbrir={() => setChat(true)} onCerrar={() => setChat(false)} />
 
+      {cuenta && <MiCuenta onCerrar={() => setCuenta(false)} />}
+
       {hoja && (
         <div className="hoja-overlay" onClick={() => setHoja(null)}>
           <div className="hoja" role="dialog" aria-modal="true" onClick={(e) => e.stopPropagation()}>
@@ -147,6 +155,9 @@ export default function AppShell({ tabs, active, onChange, onAtras, dark = false
                     <span>{rol} · {usuario?.username}</span>
                   </div>
                 </div>
+                <button type="button" className="hoja-opcion" onClick={() => { setHoja(null); setCuenta(true); }}>
+                  <UserCog size={20} /> Mi cuenta
+                </button>
                 <button type="button" className="hoja-opcion peligro" onClick={logout}>
                   <LogOut size={20} /> Cerrar sesion
                 </button>
