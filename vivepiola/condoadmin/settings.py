@@ -204,6 +204,7 @@ REST_FRAMEWORK = {
     'DEFAULT_THROTTLE_RATES': {
         'asistente': config('ASISTENTE_LIMITE', default='40/hour'),
         'demo': config('DEMO_LIMITE', default='5/hour'),
+        'invitacion': config('INVITACION_LIMITE', default='30/hour'),
     },
 }
 

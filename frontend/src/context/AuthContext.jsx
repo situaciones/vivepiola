@@ -47,6 +47,13 @@ export function AuthProvider({ children }) {
     await cargarUsuario();
   };
 
+  // Para cuando la sesion llega de otro flujo (aceptar una invitacion).
+  const entrarConTokens = async ({ access, refresh }) => {
+    localStorage.setItem('access', access);
+    localStorage.setItem('refresh', refresh);
+    await cargarUsuario();
+  };
+
   const logout = () => {
     localStorage.removeItem('access');
     localStorage.removeItem('refresh');
@@ -54,7 +61,7 @@ export function AuthProvider({ children }) {
   };
 
   return (
-    <AuthContext.Provider value={{ usuario, login, loginGoogle, logout, cargando }}>
+    <AuthContext.Provider value={{ usuario, login, loginGoogle, entrarConTokens, logout, cargando }}>
       {children}
     </AuthContext.Provider>
   );

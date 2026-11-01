@@ -210,7 +210,7 @@ export default function AdministradorDashboard() {
           <>
             <PageHeader
               titulo="Equipo y accesos"
-              subtitulo="Invita por correo con rol sugerido, comparte el Codigo Unico de Comunidad y confirma el rol de quienes entraron con Google."
+              subtitulo="Invita por correo con el rol de cada persona: con el enlace del correo crea su usuario y contrasena."
             />
             <div style={{ marginTop: 24 }}>
               <PanelEquipo />

@@ -4,6 +4,7 @@ import { Navigate, Route, BrowserRouter, Routes } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import MiCuenta from './components/MiCuenta';
 import ProtectedRoute from './components/ProtectedRoute';
+import AceptarInvitacion from './pages/AceptarInvitacion';
 import AcuseNotificacion from './pages/AcuseNotificacion';
 import AtajoMulta from './pages/AtajoMulta';
 import ComoFunciona from './pages/ComoFunciona';
@@ -71,6 +72,8 @@ export default function App() {
           <Route path="/como-funciona" element={<ComoFunciona />} />
           <Route path="/login" element={<Login />} />
           <Route path="/privacidad" element={<Privacidad />} />
+          {/* Publica: se llega por el enlace del correo de invitacion, sin cuenta. */}
+          <Route path="/invitacion/:codigo" element={<AceptarInvitacion />} />
           {/* Atajo de los avisos de WhatsApp: /m/12 abre ese expediente. */}
           <Route path="/m/:id" element={<AtajoMulta />} />
           {/* Publica a proposito: se llega por el enlace del correo, sin cuenta. */}

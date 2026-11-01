@@ -3,6 +3,10 @@ import { Copy, MailPlus, UserCheck } from 'lucide-react';
 import client from '../api/client';
 import PanelDenunciantes from './PanelDenunciantes';
 
+// El Codigo Unico de Comunidad solo sirve entrando con Google; sin Google la
+// gente entra por la invitacion del correo, asi que la tarjeta no se muestra.
+const CON_GOOGLE = Boolean(import.meta.env.VITE_GOOGLE_CLIENT_ID) || import.meta.env.DEV;
+
 const ROLES = [
   { valor: 'RESIDENTE', etiqueta: 'Residente' },
   { valor: 'FISCALIZADOR', etiqueta: 'Denunciante' },
@@ -37,7 +41,7 @@ export default function PanelEquipo() {
       const payload = { correo: form.correo, rol_sugerido: form.rol_sugerido };
       if (form.unidad) payload.unidad = form.unidad;
       const { data } = await client.post('/invitaciones/', payload);
-      setMensaje(`Invitacion enviada a ${data.correo}. Codigo: ${data.codigo}`);
+      setMensaje(`Invitacion enviada a ${data.correo}. Con el enlace del correo crea su usuario y contrasena (codigo: ${data.codigo}).`);
       setForm({ correo: '', unidad: '', rol_sugerido: 'RESIDENTE' });
       cargar();
     } catch (err) {
@@ -77,7 +81,7 @@ export default function PanelEquipo() {
     <div>
       {mensaje && <div className="mensaje-info">{mensaje}</div>}
 
-      {codigoComunidad && (
+      {CON_GOOGLE && codigoComunidad && (
         <div className="tarjeta" style={{ marginBottom: 18 }}>
           <strong>Codigo Unico de Comunidad</strong>
           <p className="texto-secundario" style={{ margin: '6px 0 10px' }}>
@@ -97,7 +101,7 @@ export default function PanelEquipo() {
         <strong><MailPlus size={15} style={{ verticalAlign: 'middle', marginRight: 6 }} />Invitar a una persona</strong>
         <div className="fila-formulario" style={{ alignItems: 'flex-end', flexWrap: 'wrap' }}>
           <label>
-            Correo (cuenta Google)
+            Correo
             <input
               type="email" required value={form.correo}
               onChange={(e) => setForm({ ...form, correo: e.target.value })}

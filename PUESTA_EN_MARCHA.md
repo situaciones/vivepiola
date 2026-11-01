@@ -152,6 +152,9 @@ Antes de cada versión nueva, sube *Version* y *Build* en Xcode (equivalen a
    la cuenta sin acceso; las denuncias y actas quedan firmadas como "Cuenta
    eliminada" porque son registro del procedimiento. El único Administrador
    de una comunidad no puede eliminarse (debe traspasar antes).
+   Las invitaciones se aceptan creando usuario y contraseña en
+   `/invitacion/<codigo>` (el enlace del correo), sin Google; así la app no
+   necesita ofrecer "Iniciar sesión con Apple".
 4. **Cuenta de prueba para el revisor**: una comunidad de demostración en
    producción con un usuario y contraseña que Apple pueda usar.
 5. En App Store Connect: capturas de pantalla de iPhone 6,9", descripción,

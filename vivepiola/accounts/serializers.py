@@ -72,6 +72,37 @@ class AsignarRolSerializer(serializers.Serializer):
     persona_id = serializers.IntegerField(required=False)
 
 
+class AceptarInvitacionSerializer(serializers.Serializer):
+    """Datos con que la persona invitada crea su cuenta de usuario y contrasena."""
+
+    first_name = serializers.CharField(max_length=150)
+    last_name = serializers.CharField(max_length=150, required=False, allow_blank=True, default='')
+    username = serializers.RegexField(
+        r'^[\w.@+-]+$', max_length=150,
+        error_messages={'invalid': 'Usa solo letras, numeros y . @ + - _ (sin espacios).'},
+    )
+    password = serializers.CharField(write_only=True)
+
+    def validate_username(self, value):
+        if Usuario.objects.filter(username__iexact=value).exists():
+            raise serializers.ValidationError('Ese nombre de usuario ya esta en uso. Elige otro.')
+        return value
+
+    def validate(self, datos):
+        from django.contrib.auth.password_validation import validate_password
+        from django.core.exceptions import ValidationError as DjangoValidationError
+
+        provisorio = Usuario(
+            username=datos['username'], first_name=datos['first_name'], last_name=datos['last_name'],
+            email=self.context.get('correo', ''),
+        )
+        try:
+            validate_password(datos['password'], user=provisorio)
+        except DjangoValidationError as exc:
+            raise serializers.ValidationError({'password': list(exc.messages)})
+        return datos
+
+
 class GoogleLoginSerializer(serializers.Serializer):
     credential = serializers.CharField()
     codigo = serializers.CharField(required=False, allow_blank=True, default='')

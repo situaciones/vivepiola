@@ -6,6 +6,7 @@ from rest_framework.exceptions import ValidationError
 from rest_framework.generics import RetrieveUpdateAPIView
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
+from rest_framework.throttling import ScopedRateThrottle
 from rest_framework.views import APIView
 from rest_framework_simplejwt.views import TokenObtainPairView
 
@@ -13,7 +14,7 @@ from .google import GoogleAuthError, verificar_credencial_google
 from .models import EstadoInvitacion, Invitacion, PermisoDenuncia, Rol, Usuario
 from .permissions import EsAdministrador
 from .serializers import (
-    AsignarRolSerializer, DenuncianteSerializer, GoogleLoginSerializer, InvitacionSerializer,
+    AceptarInvitacionSerializer, AsignarRolSerializer, DenuncianteSerializer, GoogleLoginSerializer, InvitacionSerializer,
     PermisoDenunciaSerializer,
     UsuarioPendienteSerializer, UsuarioSerializer, SinConflictoTokenObtainPairSerializer,
 )
@@ -118,7 +119,7 @@ class GoogleLoginView(APIView):
         return Response(respuesta)
 
     def _crear_usuario(self, perfil, codigo):
-        from condominios.models import Condominio, Persona
+        from condominios.models import Condominio
 
         email = perfil['email']
         invitacion = (
@@ -148,17 +149,7 @@ class GoogleLoginView(APIView):
         usuario.save()
 
         if invitacion and invitacion.vigente:
-            invitacion.estado = EstadoInvitacion.ACEPTADA
-            invitacion.aceptada_por = usuario
-            invitacion.aceptada_en = timezone.now()
-            invitacion.save(update_fields=['estado', 'aceptada_por', 'aceptada_en'])
-            # Vinculo automatico a su ficha del registro si el correo coincide.
-            persona = Persona.objects.filter(
-                condominio=invitacion.condominio, correo_electronico__iexact=email,
-            ).first()
-            if persona:
-                usuario.persona = persona
-                usuario.save(update_fields=['persona'])
+            _cerrar_invitacion(invitacion, usuario)
         return usuario
 
     def _asociar_por_codigo(self, usuario, codigo):
@@ -180,14 +171,104 @@ class GoogleLoginView(APIView):
             usuario.save(update_fields=['condominio'])
 
 
+def _cerrar_invitacion(invitacion, usuario):
+    """Marca la invitacion como aceptada y vincula la cuenta a su ficha del registro."""
+    from condominios.models import Persona
+
+    invitacion.estado = EstadoInvitacion.ACEPTADA
+    invitacion.aceptada_por = usuario
+    invitacion.aceptada_en = timezone.now()
+    invitacion.save(update_fields=['estado', 'aceptada_por', 'aceptada_en'])
+    # Vinculo automatico a su ficha del registro si el correo coincide.
+    persona = Persona.objects.filter(
+        condominio=invitacion.condominio, correo_electronico__iexact=usuario.email,
+    ).first()
+    if persona:
+        usuario.persona = persona
+        usuario.save(update_fields=['persona'])
+
+
+class AceptarInvitacionView(APIView):
+    """
+    Aceptar una invitacion creando usuario y contrasena, sin Google.
+
+    GET muestra a que comunidad y con que rol invitan; POST crea la cuenta y
+    devuelve la sesion. El enlace del correo es la prueba de que la persona
+    controla ese correo, igual que en un "restablecer contrasena": por eso
+    la cuenta nace con el correo de la invitacion y no con uno que se escriba.
+    """
+
+    authentication_classes = []
+    permission_classes = [AllowAny]
+    throttle_classes = [ScopedRateThrottle]
+    throttle_scope = 'invitacion'
+
+    def _invitacion(self, codigo):
+        invitacion = (
+            Invitacion.objects.select_related('condominio', 'unidad').filter(codigo=codigo).first()
+        )
+        if invitacion is None:
+            return None, Response({'detail': 'La invitacion no existe. Revisa el enlace o el codigo.'}, status=404)
+        if invitacion.estado == EstadoInvitacion.ACEPTADA:
+            return None, Response(
+                {'detail': 'Esta invitacion ya fue usada. Inicia sesion con tu usuario y contrasena.'},
+                status=410,
+            )
+        if not invitacion.vigente:
+            return None, Response(
+                {'detail': 'Esta invitacion vencio o fue revocada. Pide una nueva a la administracion.'},
+                status=410,
+            )
+        return invitacion, None
+
+    def get(self, request, codigo):
+        invitacion, error = self._invitacion(codigo)
+        if error:
+            return error
+        return Response({
+            'comunidad': invitacion.condominio.nombre,
+            'rol': invitacion.get_rol_sugerido_display(),
+            'unidad': invitacion.unidad.identificador if invitacion.unidad else None,
+            'correo': invitacion.correo,
+            'usuario_sugerido': _username_desde_email(invitacion.correo),
+            'vence': invitacion.expira_en,
+        })
+
+    def post(self, request, codigo):
+        invitacion, error = self._invitacion(codigo)
+        if error:
+            return error
+        if Usuario.objects.filter(email__iexact=invitacion.correo, is_active=True).exists():
+            return Response(
+                {'detail': 'Ya existe una cuenta con este correo. Inicia sesion con ella.'},
+                status=409,
+            )
+        datos = AceptarInvitacionSerializer(data=request.data, context={'correo': invitacion.correo})
+        datos.is_valid(raise_exception=True)
+        usuario = Usuario(
+            username=datos.validated_data['username'],
+            email=invitacion.correo,
+            first_name=datos.validated_data['first_name'],
+            last_name=datos.validated_data['last_name'],
+            rol=invitacion.rol_sugerido,
+            condominio=invitacion.condominio,
+        )
+        usuario.set_password(datos.validated_data['password'])
+        usuario.save()
+        _cerrar_invitacion(invitacion, usuario)
+        respuesta = _tokens_para(usuario)
+        respuesta.update({'rol': usuario.rol, 'condominio_id': usuario.condominio_id})
+        return Response(respuesta, status=201)
+
+
 def _enviar_correo_invitacion(invitacion):
     """Best-effort: en dev el backend de consola lo imprime; nunca bloquea la creacion."""
-    enlace = f'{settings.FRONTEND_URL}/login?codigo={invitacion.codigo}'
+    enlace = f'{settings.FRONTEND_URL}/invitacion/{invitacion.codigo}'
     cuerpo = (
         f'Le han invitado a {invitacion.condominio.nombre} en SINCONFLICTO '
         f'con el rol {invitacion.get_rol_sugerido_display()}.\n\n'
-        f'Para aceptar, ingrese con su cuenta de Google desde:\n{enlace}\n\n'
-        f'O use este codigo de invitacion al iniciar sesion: {invitacion.codigo}\n'
+        f'Para aceptar, abra este enlace y cree su usuario y contrasena:\n{enlace}\n\n'
+        f'Si se lo piden, su codigo de invitacion es: {invitacion.codigo}\n'
         f'La invitacion vence el {invitacion.expira_en:%d-%m-%Y}.'
     )
     from multas.correo_html import correo_con_html, html_correo
@@ -200,7 +281,7 @@ def _enviar_correo_invitacion(invitacion):
         parrafos=[
             f'Le han invitado a {comunidad} en SINCONFLICTO con el rol '
             f'{invitacion.get_rol_sugerido_display()}.',
-            'Para aceptar, ingrese con su cuenta de Google desde el boton.',
+            'Para aceptar, toque el boton y cree su usuario y contrasena.',
             f'Si se lo piden, su codigo de invitacion es: {invitacion.codigo}',
         ],
         boton=('Aceptar invitacion', enlace),

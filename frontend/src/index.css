@@ -1230,3 +1230,6 @@ textarea { resize: vertical; }
   }
   .asistente-aviso { padding-bottom: calc(10px + env(safe-area-inset-bottom)); }
 }
+
+/* Login sin Google: aceptar una invitacion con el codigo del correo. */
+.login-invitacion { display: flex; flex-direction: column; gap: 10px; padding-top: 12px; border-top: 1px solid var(--borde); }

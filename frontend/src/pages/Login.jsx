@@ -23,6 +23,19 @@ export default function Login() {
   // Solo se aceptan rutas internas, para que un link externo no pueda redirigir fuera.
   const solicitado = searchParams.get('next') || '';
   const destino = solicitado.startsWith('/') && !solicitado.startsWith('//') ? solicitado : '/app';
+  // Sin Google, la invitacion se acepta creando usuario y contrasena en su
+  // propia pagina. Los correos viejos traian /login?codigo=..., asi que se
+  // redirigen alla.
+  const [verCodigo, setVerCodigo] = useState(false);
+  useEffect(() => {
+    const delEnlace = searchParams.get('codigo');
+    if (!CON_GOOGLE && delEnlace) navigate(`/invitacion/${encodeURIComponent(delEnlace)}`, { replace: true });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+  const irAInvitacion = () => {
+    const limpio = codigo.trim();
+    if (limpio) navigate(`/invitacion/${encodeURIComponent(limpio)}`);
+  };
   const codigoRef = useRef(codigo);
   codigoRef.current = codigo;
   const botonGoogleRef = useRef(null);
@@ -164,6 +177,24 @@ export default function Login() {
           <button className="btn btn-primario" type="submit" disabled={enviando}>
             {enviando ? 'Ingresando...' : 'Ingresar'}
           </button>
+          {!CON_GOOGLE && (verCodigo ? (
+            <div className="login-invitacion">
+              <label>
+                Codigo de invitacion (viene en el correo)
+                <input
+                  value={codigo} onChange={(e) => setCodigo(e.target.value)} autoCapitalize="none"
+                  onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); irAInvitacion(); } }}
+                />
+              </label>
+              <button type="button" className="btn btn-secundario" onClick={irAInvitacion}>
+                Crear mi cuenta
+              </button>
+            </div>
+          ) : (
+            <button type="button" className="btn btn-fantasma" onClick={() => setVerCodigo(true)}>
+              <KeyRound size={15} /> ¿Te invitaron? Crea tu cuenta con el codigo
+            </button>
+          ))}
           <p className="texto-secundario" style={{ textAlign: 'center', fontSize: '0.85rem' }}>
             <Link to="/privacidad">Politica de privacidad</Link>
           </p>
