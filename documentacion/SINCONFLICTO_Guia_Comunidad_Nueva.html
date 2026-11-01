@@ -1,0 +1,659 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>SINCONFLICTO · Guía para una comunidad nueva</title>
+<style>
+  @page { size: A4; margin: 13mm 14mm 13mm 14mm; }
+  :root {
+    --tinta: #15142b; --suave: #4a4a68; --tenue: #85869f;
+    --morado: #a855f7; --indigo: #4f46e5; --azul: #3b82f6; --menta: #10b981;
+    --rojo: #c0362c; --ambar: #b46d00; --verde: #1f8a5b;
+    --fondo: #f5f5fb; --borde: #e3e3ee; --indigo-suave: #eef0ff;
+  }
+  * { box-sizing: border-box; }
+  html { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  body { margin: 0; font-family: "Segoe UI", system-ui, -apple-system, Arial, sans-serif; color: var(--tinta); font-size: 9.7pt; line-height: 1.45; background: #fff; }
+  h1, h2, h3, h4 { line-height: 1.2; margin: 0; letter-spacing: -0.01em; }
+  h2 { font-size: 18pt; margin: 0 0 3mm; padding-top: 0; }
+  h2 .num { color: var(--indigo); margin-right: 6px; }
+  h3 { font-size: 12pt; margin: 4mm 0 1.8mm; color: var(--indigo); break-after: avoid; }
+  h4 { font-size: 10.8pt; margin: 4mm 0 1.5mm; }
+  p { margin: 0 0 2.6mm; }
+  ul, ol { margin: 0 0 3mm; padding-left: 5.5mm; }
+  li { margin: 0 0 1.2mm; }
+  strong { font-weight: 650; }
+  .salto { break-before: page; }
+  .sin-corte { break-inside: avoid; }
+  .bajada { color: var(--suave); font-size: 10.4pt; margin-bottom: 4mm; }
+
+  /* Portada */
+  .portada { height: 268mm; display: flex; flex-direction: column; justify-content: space-between; padding: 14mm 12mm; border-radius: 6mm;
+    background: radial-gradient(120% 80% at 100% 0%, #2a1b52 0%, #0b0b14 60%); color: #fff; }
+  .marca { display: flex; align-items: center; gap: 10px; }
+  .marca .logo { width: 44px; height: 44px; border-radius: 12px; background: #15142b; display: grid; place-items: center; border: 1px solid rgba(255,255,255,.15); }
+  .marca b { display: block; font-size: 12pt; letter-spacing: .06em; line-height: 1.05; }
+  .portada h1 { font-size: 38pt; font-weight: 800; letter-spacing: -0.03em; line-height: 1.02; }
+  .portada h1 span { background: linear-gradient(120deg, #a855f7, #3b82f6 55%, #10b981); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .portada .sub { font-size: 13pt; color: #c9c9e0; max-width: 125mm; margin-top: 6mm; }
+  .portada .pie { display: flex; justify-content: space-between; font-size: 9.5pt; color: #a5a5c2; border-top: 1px solid rgba(255,255,255,.15); padding-top: 4mm; }
+
+  /* Indice */
+  .indice { list-style: none; padding: 0; margin: 4mm 0 0; counter-reset: none; }
+  .indice li { display: flex; gap: 8px; padding: 2.4mm 0; border-bottom: 1px solid var(--borde); font-size: 11pt; }
+  .indice li span:first-child { color: var(--indigo); font-weight: 700; width: 9mm; }
+  .indice li small { margin-left: auto; color: var(--tenue); }
+
+  /* Cajas */
+  .caja { border: 1px solid var(--borde); border-radius: 3mm; padding: 3.2mm 4.2mm; margin: 2.5mm 0 3mm; background: #fff; break-inside: avoid; }
+  .caja.clave { background: var(--indigo-suave); border-color: #d4d8ff; }
+  .caja.alerta { background: #fff6e6; border-color: #f1d9a8; }
+  .caja.rojo { background: #fdf1f0; border-color: #f2c9c4; }
+  .caja.verde { background: #ebf8f1; border-color: #bfe6d1; }
+  .caja h4 { margin-top: 0; }
+  .caja p:last-child, .caja ul:last-child { margin-bottom: 0; }
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 3.5mm; break-inside: avoid; }
+  .grid3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 3mm; }
+
+  /* Roles */
+  .rol-cab { display: flex; align-items: center; gap: 4mm; padding: 3.2mm 4.5mm; border-radius: 3mm; color: #fff; margin-bottom: 3mm; }
+  .rol-cab .ico { width: 12mm; height: 12mm; border-radius: 3mm; background: rgba(255,255,255,.18); display: grid; place-items: center; font-size: 16pt; font-weight: 800; }
+  .rol-cab h2 { margin: 0; padding: 0; color: #fff; font-size: 18pt; }
+  .rol-cab p { margin: 1mm 0 0; color: rgba(255,255,255,.85); font-size: 10pt; }
+  .r-admin { background: linear-gradient(120deg, #3b2a8a, #4f46e5); }
+  .r-comite { background: linear-gradient(120deg, #6d28d9, #a855f7); }
+  .r-fisc { background: linear-gradient(120deg, #1e40af, #3b82f6); }
+  .r-resi { background: linear-gradient(120deg, #047857, #10b981); }
+  .r-super { background: linear-gradient(120deg, #15142b, #3a3a5a); }
+
+  /* Pasos */
+  .pasos { counter-reset: paso; list-style: none; padding: 0; }
+  .pasos > li { counter-increment: paso; position: relative; padding: 0 0 2.2mm 10mm; margin: 0; break-inside: avoid; }
+  .pasos > li::before { content: counter(paso); position: absolute; left: 0; top: 0.2mm; width: 6.4mm; height: 6.4mm; border-radius: 50%; background: var(--indigo); color: #fff; font-size: 8.6pt; font-weight: 700; display: grid; place-items: center; }
+  .pasos > li::after { content: ""; position: absolute; left: 3.1mm; top: 7.4mm; bottom: 0.6mm; width: 0.3mm; background: #d4d8ff; }
+  .pasos > li:last-child::after { display: none; }
+
+  /* Tablas */
+  table { width: 100%; border-collapse: collapse; margin: 1.5mm 0 3mm; font-size: 8.9pt; }
+  th { text-align: left; background: var(--fondo); color: var(--suave); font-weight: 650; padding: 1.5mm 2.2mm; border-bottom: 1px solid var(--borde); }
+  td { padding: 1.5mm 2.2mm; border-bottom: 1px solid var(--borde); vertical-align: top; }
+  tr { break-inside: avoid; }
+  td.c, th.c { text-align: center; }
+  .si { color: var(--verde); font-weight: 700; }
+  .no { color: #c9c9d8; }
+  .pill { display: inline-block; padding: 0.3mm 2mm; border-radius: 99px; font-size: 8.4pt; font-weight: 650; white-space: nowrap; }
+  .p-gris { background: #ececf4; color: #4a4a68; }
+  .p-ind { background: var(--indigo-suave); color: var(--indigo); }
+  .p-verde { background: #ebf8f1; color: var(--verde); }
+  .p-ambar { background: #fff6e6; color: var(--ambar); }
+  .p-rojo { background: #fdf1f0; color: var(--rojo); }
+  .p-morado { background: #f5ecfe; color: #7e22ce; }
+
+  .diagrama { border: 1px solid var(--borde); border-radius: 3mm; padding: 2mm; margin: 2mm 0 3mm; background: #fcfcff; break-inside: avoid; }
+  .diagrama svg { width: 100%; height: auto; display: block; }
+  .nota { font-size: 8.8pt; color: var(--tenue); }
+  .cita { border-left: 1mm solid var(--morado); padding: 1mm 0 1mm 4mm; color: var(--suave); font-style: italic; margin: 3mm 0; }
+
+  .check { list-style: none; padding: 0; margin: 0; }
+  .check li { position: relative; padding: 2.4mm 0 2.4mm 10mm; border-bottom: 1px solid var(--borde); font-size: 10.4pt; break-inside: avoid; }
+  .check li::before { content: ""; position: absolute; left: 0; top: 2.2mm; width: 5mm; height: 5mm; border: 1.4px solid var(--indigo); border-radius: 1.2mm; }
+  .pasos ul { margin-top: 1.5mm; }
+</style>
+</head>
+<body>
+<!-- ================= PORTADA ================= -->
+<section class="portada">
+  <div class="marca">
+    <div class="logo">
+      <svg width="26" height="26" viewBox="0 0 64 64"><path d="M14 30 L28 46 L50 16" stroke="#3b82f6" stroke-width="8" fill="none" stroke-linecap="round" stroke-linejoin="round"/><circle cx="14" cy="30" r="6" fill="#a855f7"/><circle cx="50" cy="16" r="6" fill="#10b981"/></svg>
+    </div>
+    <div><b>SIN</b><b>CONFLICTO</b></div>
+  </div>
+  <div>
+    <h1>Tu comunidad,<br><span>de cero a funcionando.</span></h1>
+    <p class="sub">Guía paso a paso para el Administrador de una comunidad nueva: qué preparar, en qué orden, qué pantalla usar, qué hace cada persona y qué debería pasar en cada paso. Con un comité nuevo, guardias nuevos y residentes que nunca han usado la plataforma.</p>
+  </div>
+  <div class="pie">
+    <span>sinconflicto.cl · Ley 21.442 sobre Copropiedad Inmobiliaria</span>
+    <span>Noviembre 2026 · versión 1</span>
+  </div>
+</section>
+
+<!-- ================= INDICE ================= -->
+<section class="salto">
+  <h2>Contenido</h2>
+  <ul class="indice">
+    <li><span>1</span>Quién interviene</li>
+    <li><span>2</span>Lo que tienes que reunir antes de empezar</li>
+    <li><span>3</span>El mapa: nueve etapas en orden</li>
+    <li><span>4</span>Etapa 1 · Alta de la comunidad</li>
+    <li><span>5</span>Etapa 2 · Tu primer ingreso</li>
+    <li><span>6</span>Etapa 3 · Cargar el registro de copropietarios</li>
+    <li><span>7</span>Etapa 4 · Invitar al Comité</li>
+    <li><span>8</span>Etapa 5 · Subir el reglamento y las normas</li>
+    <li><span>9</span>Etapa 6 · El Comité confirma el catálogo de infracciones</li>
+    <li><span>10</span>Etapa 7 · Invitar a los guardias (Denunciantes)</li>
+    <li><span>11</span>Etapa 8 · Prueba de punta a punta</li>
+    <li><span>12</span>Etapa 9 · Abrir la comunidad a los residentes</li>
+    <li><span>13</span>La operación: cada día y cada mes</li>
+    <li><span>14</span>Preguntas frecuentes y problemas comunes</li>
+    <li><span>15</span>Lista de verificación final</li>
+  </ul>
+
+  <div class="caja clave" style="margin-top:8mm">
+    <h4>Cómo usar esta guía</h4>
+    <p>Sigue las etapas <strong>en orden</strong>: cada una deja listo algo que la siguiente necesita. Por ejemplo, el Comité no puede confirmar el catálogo si todavía no tiene cuenta, y una multa no se puede notificar si la persona no está en el registro con su correo.</p>
+    <p>En cada etapa encontrarás: <strong>quién</strong> lo hace, <strong>dónde</strong> (qué pantalla), los <strong>pasos</strong>, lo que <strong>deberías ver</strong> al terminar y los <strong>errores comunes</strong>.</p>
+  </div>
+
+  <div class="caja alerta">
+    <h4>La regla que ordena todo: nadie hace dos papeles</h4>
+    <p>La Ley 21.442 separa las funciones, y la plataforma lo respeta a rajatabla: <strong>quien reporta no sanciona, quien notifica no decide y solo el Comité resuelve</strong>. Por eso tú, como Administrador, vas a preparar todo y ejecutar lo que se decide, pero no vas a ver botones para aprobar o anular multas. No es un error: es la ley.</p>
+  </div>
+</section>
+
+<!-- ================= 1 ROLES ================= -->
+<section class="salto">
+  <h2><span class="num">1</span>Quién interviene</h2>
+  <p class="bajada">Cinco papeles. Cada persona tiene uno solo dentro de la comunidad y ve una pantalla distinta.</p>
+
+  <table>
+    <tr><th style="width:22%">Rol en la plataforma</th><th style="width:25%">Quién es en la vida real</th><th>Qué hace</th></tr>
+    <tr><td><span class="pill p-gris">Administrador del sistema</span></td><td>El equipo de SinConflicto (soporte).</td><td>Crea tu comunidad, configura sus plazos y te entrega tu cuenta. Después solo da soporte: no participa en las multas.</td></tr>
+    <tr><td><span class="pill p-ind">Administrador</span></td><td><strong>Tú</strong>: el administrador del edificio o la empresa administradora.</td><td>Prepara la comunidad, invita a las personas, notifica, responde el Libro de Novedades y exporta los cobros.</td></tr>
+    <tr><td><span class="pill p-morado">Comité de Administración</span></td><td>Los vecinos elegidos en asamblea.</td><td>El único que <strong>decide</strong>: confirma el catálogo de infracciones, revisa casos dudosos, resuelve apelaciones y ratifica medidas urgentes.</td></tr>
+    <tr><td><span class="pill p-gris">Denunciante</span></td><td>Guardias, conserjes, mayordomo, supervisor de turno.</td><td>Reporta hechos desde el teléfono, con foto o video. No define montos ni sanciona.</td></tr>
+    <tr><td><span class="pill p-verde">Residente</span></td><td>Propietarios, arrendatarios y ocupantes.</td><td>Recibe sus avisos y multas, se defiende (apela) y usa el Libro de Novedades.</td></tr>
+  </table>
+
+  <div class="grid2">
+    <div class="caja">
+      <h4>Lo que sí puedes hacer tú</h4>
+      <ul>
+        <li>Cargar y corregir el registro de copropietarios.</li>
+        <li>Subir el reglamento y las normas.</li>
+        <li>Invitar al Comité, a los guardias y a los residentes.</li>
+        <li>Poner límites a cada guardia (horario, días, unidades).</li>
+        <li>Notificar multas y dejar constancia de entrega en buzón.</li>
+        <li>Responder el Libro de Novedades.</li>
+        <li>Exportar las multas firmes al gasto común.</li>
+      </ul>
+    </div>
+    <div class="caja rojo">
+      <h4>Lo que no puedes hacer (lo decide el Comité)</h4>
+      <ul>
+        <li>Aprobar, rechazar o cambiar el monto de una multa.</li>
+        <li>Resolver apelaciones.</li>
+        <li>Confirmar cobros detenidos.</li>
+        <li>Levantar una medida urgente (contención).</li>
+        <li>Crear otra comunidad o dar el rol de Administrador a alguien (lo hace SinConflicto).</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ================= 2 QUE REUNIR ================= -->
+<section class="salto">
+  <h2><span class="num">2</span>Lo que tienes que reunir antes de empezar</h2>
+  <p class="bajada">Junta esto primero. Con todo a mano, la puesta en marcha se hace de corrido.</p>
+
+  <h3>2.1 Documentos (en PDF)</h3>
+  <table>
+    <tr><th style="width:38%">Documento</th><th>Para qué sirve</th></tr>
+    <tr><td>Reglamento de copropiedad</td><td>Es la base: de aquí salen las infracciones, sus artículos y montos.</td></tr>
+    <tr><td>Reglamento interno o normas de uso (estacionamientos, espacios comunes, piscina, mascotas…)</td><td>Obligan igual que el reglamento. Muchas faltas del día a día están aquí.</td></tr>
+    <tr><td>Normas de seguridad, normativa ambiental</td><td>Faltas de riesgo (por ejemplo, bloquear una salida de emergencia).</td></tr>
+    <tr><td>Actas de asamblea con acuerdos vigentes</td><td>Acuerdos que fijan reglas o multas. Ten a mano la fecha de cada asamblea.</td></tr>
+  </table>
+  <p class="nota">Mejor si el PDF tiene texto seleccionable (generado desde Word u otro programa). Un documento escaneado como foto puede leerse mal.</p>
+
+  <h3>2.2 El registro de copropietarios (Excel)</h3>
+  <p>La ley te obliga a llevarlo. Por cada persona que vive o es dueña de una unidad necesitas: unidad, nombre completo, RUT, domicilio, <strong>correo electrónico</strong>, teléfono (opcional) y con qué título ocupa la unidad. En la etapa 3 descargas la plantilla oficial; puedes ir llenándola desde ya.</p>
+  <div class="caja alerta">
+    <p><strong>El correo es lo más importante.</strong> Es el canal legal de notificación: a una persona sin correo válido no se le puede notificar una multa, y el caso queda detenido esperando que alguien lo resuelva a mano.</p>
+  </div>
+
+  <h3>2.3 Las personas</h3>
+  <ul>
+    <li><strong>Comité:</strong> nombre y correo de cada miembro (los que eligió la asamblea).</li>
+    <li><strong>Guardias / conserjes:</strong> nombre, correo y su turno (días y horario), si quieres limitarlos.</li>
+    <li><strong>Cuál unidad ocupa cada miembro del Comité</strong>, si vive en la comunidad.</li>
+  </ul>
+
+  <h3>2.4 Las decisiones de la comunidad</h3>
+  <p>Estos parámetros los configura SinConflicto al crear la comunidad. Si no dices nada, se usan los valores por defecto. Conviene que el Comité los acuerde antes.</p>
+  <table>
+    <tr><th style="width:30%">Parámetro</th><th class="c" style="width:13%">Por defecto</th><th>Qué significa</th></tr>
+    <tr><td>Plazo para apelar</td><td class="c">5 días</td><td>Días corridos que tiene el residente para defenderse. Cuentan desde que confirma que recibió la notificación, no desde el envío.</td></tr>
+    <tr><td>Plazo del Comité</td><td class="c">15 días</td><td>Días corridos que tiene el Comité para resolver una apelación.</td></tr>
+    <tr><td>Quórum para resolver</td><td class="c">1 miembro</td><td>Cuántos miembros del Comité deben coincidir para resolver una apelación. Con 2 o más, cada uno vota.</td></tr>
+    <tr><td>Avisos de cortesía</td><td class="c">2</td><td>Las primeras faltas de cada unidad se avisan sin cobro. 0 = se cobra desde la primera. Nunca aplica a faltas gravísimas ni de riesgo.</td></tr>
+    <tr><td>Ventana de duplicados</td><td class="c">24 horas</td><td>Si llegan dos reportes de la misma falta en la misma unidad dentro de ese tiempo, se juntan en un solo caso.</td></tr>
+  </table>
+  <p>Además, para las <strong>medidas urgentes</strong> (capítulo 10) se configura una <strong>cadena de escalamiento</strong>: a quién se avisa, en qué orden, si nadie ratifica la medida a tiempo. Define esa lista con el Comité y envíala junto con lo anterior.</p>
+</section>
+
+<!-- ================= 3 MAPA ================= -->
+<section class="salto">
+  <h2><span class="num">3</span>El mapa: nueve etapas en orden</h2>
+  <p class="bajada">De la cuenta nueva a la comunidad funcionando. Las etapas 1 a 8 se hacen una sola vez.</p>
+
+  <table>
+    <tr><th class="c" style="width:6%">#</th><th style="width:27%">Etapa</th><th style="width:19%">Quién</th><th style="width:22%">Dónde</th><th>Qué queda listo</th></tr>
+    <tr><td class="c">1</td><td>Alta de la comunidad</td><td>SinConflicto (tú envías los datos)</td><td>Correo a soporte</td><td>La comunidad existe y tienes tu usuario y contraseña.</td></tr>
+    <tr><td class="c">2</td><td>Tu primer ingreso</td><td>Tú</td><td>sinconflicto.cl/login</td><td>Conoces tu panel.</td></tr>
+    <tr><td class="c">3</td><td>Registro de copropietarios</td><td>Tú</td><td>Registro</td><td>Unidades y personas cargadas, con su correo.</td></tr>
+    <tr><td class="c">4</td><td>Invitar al Comité</td><td>Tú, y cada miembro acepta</td><td>Equipo y accesos</td><td>El Comité tiene cuenta.</td></tr>
+    <tr><td class="c">5</td><td>Subir reglamento y normas</td><td>Tú</td><td>Infracción y reglamento</td><td>Documentos cargados y borradores de infracciones propuestos por la IA.</td></tr>
+    <tr><td class="c">6</td><td>Confirmar el catálogo</td><td>Comité</td><td>Borradores IA / Catálogo</td><td>Infracciones vigentes con monto y gravedad. <strong>Sin esto no hay multas.</strong></td></tr>
+    <tr><td class="c">7</td><td>Invitar a los guardias</td><td>Tú, y cada guardia acepta</td><td>Equipo y accesos</td><td>Guardias con cuenta y, si quieres, con límites.</td></tr>
+    <tr><td class="c">8</td><td>Prueba de punta a punta</td><td>Tú, un guardia y el Comité</td><td>Todas</td><td>Comprobaste que un caso recorre todo el circuito.</td></tr>
+    <tr><td class="c">9</td><td>Abrir a los residentes</td><td>Tú</td><td>Equipo y accesos + comunicado</td><td>La comunidad sabe cómo funciona y quien quiera tiene cuenta.</td></tr>
+  </table>
+
+  <div class="diagrama">
+    <svg viewBox="0 0 900 150" xmlns="http://www.w3.org/2000/svg" font-family="Segoe UI, Arial" font-size="13">
+      <defs><marker id="f" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#8b8ba8"/></marker></defs>
+      <g>
+        <rect x="10" y="20" width="150" height="50" rx="10" fill="#ececf4"/><text x="85" y="42" text-anchor="middle" font-weight="700">1 · Alta</text><text x="85" y="60" text-anchor="middle" fill="#4a4a68" font-size="11">SinConflicto</text>
+        <rect x="190" y="20" width="150" height="50" rx="10" fill="#eef0ff"/><text x="265" y="42" text-anchor="middle" font-weight="700">2-3 · Ingreso</text><text x="265" y="60" text-anchor="middle" fill="#4a4a68" font-size="11">y registro</text>
+        <rect x="370" y="20" width="150" height="50" rx="10" fill="#f5ecfe"/><text x="445" y="42" text-anchor="middle" font-weight="700">4 · Comité</text><text x="445" y="60" text-anchor="middle" fill="#4a4a68" font-size="11">acepta invitación</text>
+        <rect x="550" y="20" width="150" height="50" rx="10" fill="#eef0ff"/><text x="625" y="42" text-anchor="middle" font-weight="700">5 · Normas</text><text x="625" y="60" text-anchor="middle" fill="#4a4a68" font-size="11">PDF + IA</text>
+        <rect x="730" y="20" width="160" height="50" rx="10" fill="#f5ecfe"/><text x="810" y="42" text-anchor="middle" font-weight="700">6 · Catálogo</text><text x="810" y="60" text-anchor="middle" fill="#4a4a68" font-size="11">el Comité confirma</text>
+        <rect x="190" y="90" width="150" height="50" rx="10" fill="#e8f0ff"/><text x="265" y="112" text-anchor="middle" font-weight="700">7 · Guardias</text><text x="265" y="130" text-anchor="middle" fill="#4a4a68" font-size="11">con límites</text>
+        <rect x="370" y="90" width="150" height="50" rx="10" fill="#fff6e6"/><text x="445" y="112" text-anchor="middle" font-weight="700">8 · Prueba</text><text x="445" y="130" text-anchor="middle" fill="#4a4a68" font-size="11">de punta a punta</text>
+        <rect x="550" y="90" width="150" height="50" rx="10" fill="#ebf8f1"/><text x="625" y="112" text-anchor="middle" font-weight="700">9 · Residentes</text><text x="625" y="130" text-anchor="middle" fill="#4a4a68" font-size="11">comunicado</text>
+        <rect x="730" y="90" width="160" height="50" rx="10" fill="#15142b"/><text x="810" y="112" text-anchor="middle" font-weight="700" fill="#fff">Operación</text><text x="810" y="130" text-anchor="middle" fill="#c9c9e0" font-size="11">diaria y mensual</text>
+      </g>
+      <g stroke="#8b8ba8" stroke-width="1.6" fill="none" marker-end="url(#f)">
+        <path d="M160 45 H186"/><path d="M340 45 H366"/><path d="M520 45 H546"/><path d="M700 45 H726"/>
+        <path d="M810 70 V78 H265 V86"/><path d="M340 115 H366"/><path d="M520 115 H546"/><path d="M700 115 H726"/>
+      </g>
+    </svg>
+  </div>
+</section>
+
+<!-- ================= 4 ETAPA 1 ================= -->
+<section class="salto">
+  <div class="rol-cab r-super"><div class="ico">1</div><div><h2>Etapa 1 · Alta de la comunidad</h2><p>Quién: SinConflicto, con los datos que tú envías · Dónde: correo a soporte</p></div></div>
+
+  <p>Tú no puedes crear la comunidad ni tu propia cuenta de Administrador: eso lo hace el equipo de SinConflicto. Es a propósito, para que nadie pueda inventar una comunidad o darse a sí mismo el rol de Administrador.</p>
+
+  <h3>Pasos</h3>
+  <ol class="pasos">
+    <li><strong>Escribe a <u>sinconflicto.cl@gmail.com</u></strong> con:
+      <ul>
+        <li>Nombre de la comunidad (como la conocen los vecinos, por ejemplo "Edificio Los Robles"). Aparece en el asunto de todos los correos.</li>
+        <li>Dirección y RUT de la administradora.</li>
+        <li>Tu nombre y tu correo (el del Administrador).</li>
+        <li>Los parámetros del capítulo 2.4, si quieren algo distinto de los valores por defecto.</li>
+        <li>La cadena de escalamiento para medidas urgentes (nombres, en orden).</li>
+      </ul>
+    </li>
+    <li><strong>SinConflicto crea la comunidad</strong> con esos datos y tu cuenta de Administrador.</li>
+    <li><strong>Recibes tu usuario y una contraseña inicial</strong>.</li>
+  </ol>
+
+  <div class="caja verde"><h4>Al terminar deberías tener</h4><p>Un usuario y una contraseña para entrar a sinconflicto.cl como Administrador de tu comunidad.</p></div>
+
+  <div class="caja alerta">
+    <h4>Hoy la contraseña no se cambia ni se recupera desde la app</h4>
+    <p>Todavía no existe "olvidé mi contraseña" ni "cambiar contraseña". Guarda la tuya en un lugar seguro. Si la pierdes, o si un vecino pierde la suya, hay que pedir a SinConflicto que la restablezca.</p>
+  </div>
+</section>
+
+<!-- ================= 5 ETAPA 2 ================= -->
+<section class="salto">
+  <div class="rol-cab r-admin"><div class="ico">2</div><div><h2>Etapa 2 · Tu primer ingreso</h2><p>Quién: tú · Dónde: sinconflicto.cl/login (computador o teléfono)</p></div></div>
+
+  <h3>Pasos</h3>
+  <ol class="pasos">
+    <li>Entra a <strong>sinconflicto.cl</strong> y toca <strong>Entrar</strong> (o ve directo a sinconflicto.cl/login).</li>
+    <li>Escribe tu <strong>usuario</strong> y <strong>contraseña</strong> y toca <strong>Ingresar</strong>.</li>
+    <li>Recorre tu panel. En el computador las secciones están en la barra de la izquierda; en el teléfono, en la barra de abajo (las que no caben, en <strong>Más</strong>).</li>
+  </ol>
+
+  <h3>Tu panel</h3>
+  <table>
+    <tr><th style="width:27%">Sección</th><th>Para qué la vas a usar</th><th style="width:16%">Cuándo</th></tr>
+    <tr><td><strong>Notificar multas</strong></td><td>Casos que el Comité aprobó y esperan que los notifiques; y casos sin acuse de recibo que necesitan constancia de entrega en buzón.</td><td>Operación</td></tr>
+    <tr><td><strong>Firmas por delegación</strong></td><td>Solo aparece si el Comité te delega la ratificación de medidas urgentes.</td><td>Ocasional</td></tr>
+    <tr><td><strong>Equipo y accesos</strong></td><td>Invitar personas, ver invitaciones pendientes y poner límites a los guardias.</td><td>Etapas 4, 7, 9</td></tr>
+    <tr><td><strong>Registro de copropietarios</strong></td><td>El registro de copropietarios: unidades y personas.</td><td>Etapa 3</td></tr>
+    <tr><td><strong>Infracción y reglamento</strong></td><td>Subir documentos y pedir a la IA que proponga infracciones.</td><td>Etapa 5</td></tr>
+    <tr><td><strong>Libro de Novedades</strong></td><td>Reclamos y solicitudes de los residentes, con plazo legal de 20 días.</td><td>Operación</td></tr>
+    <tr><td><strong>Gastos comunes</strong> (en el teléfono, "Cobros")</td><td>Exportar las multas firmes al aviso de gasto común.</td><td>Mensual</td></tr>
+  </table>
+  <p><strong>Mi cuenta</strong> (ícono junto a tu nombre en el computador, o tocando tus iniciales arriba a la derecha en el teléfono): tus datos, la política de privacidad y la opción de eliminar la cuenta.</p>
+  <p>Abajo a la derecha está el <strong>asistente</strong> (el botón con destellos): puedes preguntarle cómo hacer algo dentro de la plataforma.</p>
+</section>
+
+<!-- ================= 6 ETAPA 3 ================= -->
+<section class="salto">
+  <div class="rol-cab r-admin"><div class="ico">3</div><div><h2>Etapa 3 · Cargar el registro de copropietarios</h2><p>Quién: tú · Dónde: Registro</p></div></div>
+
+  <p>Todo se apoya en el registro: las multas se dirigen a una persona de una unidad y se notifican a su correo.</p>
+
+  <h3>Pasos</h3>
+  <ol class="pasos">
+    <li>Ve a <strong>Registro</strong> y toca <strong>Descargar plantilla Excel</strong>.</li>
+    <li>Abre el archivo. Se abre en una hoja de <strong>instrucciones</strong>: léela. En la hoja del registro, cada encabezado muestra su ayuda al pararte en él, y las columnas de valores cerrados tienen una lista desplegable.</li>
+    <li>Llena <strong>una fila por persona</strong> (si una unidad tiene dueño y arrendatario, son dos filas con la misma unidad).</li>
+    <li>Guarda el archivo como <strong>.xlsx</strong> (o .csv).</li>
+    <li>Vuelve a <strong>Registro</strong>, toca <strong>Importar registro</strong> y elige el archivo.</li>
+    <li>Lee el resultado: <em>Filas totales · OK · Con error</em>, y debajo el detalle de cada fila con error.</li>
+    <li>Corrige en el Excel las filas con error y <strong>vuelve a importar el mismo archivo</strong>. Las filas que ya estaban bien no se duplican: la persona se reconoce por su unidad y su RUT, y sus datos se actualizan.</li>
+  </ol>
+
+  <h3>Las columnas</h3>
+  <table>
+    <tr><th style="width:22%">Columna</th><th class="c" style="width:12%">¿Obligatoria?</th><th>Qué poner</th></tr>
+    <tr><td>unidad</td><td class="c">Sí</td><td>Departamento, casa o estacionamiento. Ej: <em>Depto 302</em>. <strong>Si la unidad no existe, se crea sola.</strong> Escríbela siempre igual ("Depto 302", no a veces "Dpto. 302").</td></tr>
+    <tr><td>rol_ocupacion</td><td class="c">Sí</td><td>PROPIETARIO, ARRENDATARIO, USUFRUCTUARIO, COMODATARIO u OCUPANTE.</td></tr>
+    <tr><td>nombre_completo</td><td class="c">Sí</td><td>Nombre y apellidos.</td></tr>
+    <tr><td>cedula_identidad</td><td class="c">Sí</td><td>RUT con guion. Ej: 12.345.678-9.</td></tr>
+    <tr><td>domicilio</td><td class="c">Sí</td><td>Dirección de la unidad.</td></tr>
+    <tr><td>correo_electronico</td><td class="c">Sí</td><td><strong>Canal legal de notificación.</strong> Revisa que esté bien escrito.</td></tr>
+    <tr><td>telefono</td><td class="c">No</td><td>Para avisos complementarios.</td></tr>
+    <tr><td>permanencia</td><td class="c">No</td><td>PERMANENTE (30 días corridos o más) o TRANSITORIO. Del transitorio, el dueño recibe copia de las notificaciones.</td></tr>
+    <tr><td>vinculo_copropietario</td><td class="c">No</td><td>CONYUGE, CONVIVIENTE_CIVIL o FAMILIAR del dueño.</td></tr>
+    <tr><td>condicion_especial</td><td class="c">No</td><td>FALLECIDO, DISCAPACIDAD o REQUIERE_APOYO (para trámites digitales). <strong>Detiene el cobro automático</strong>: si vence el plazo sin apelación, el Comité confirma antes de cobrar.</td></tr>
+  </table>
+
+  <div class="grid2">
+    <div class="caja verde"><h4>Al terminar deberías ver</h4><p>"Con error: 0". Todas las unidades de la comunidad aparecen en las listas de la plataforma (por ejemplo, al invitar a alguien con unidad).</p></div>
+    <div class="caja alerta"><h4>Errores comunes</h4>
+      <ul><li>Correo mal escrito: la multa no llegará.</li><li>RUT sin guion o con formato distinto.</li><li>La misma unidad escrita de dos formas: se crean dos unidades.</li><li>Dejar filas de ejemplo o de prueba: se importan como personas reales.</li></ul>
+    </div>
+  </div>
+</section>
+
+<!-- ================= 7 ETAPA 4 ================= -->
+<section class="salto">
+  <div class="rol-cab r-comite"><div class="ico">4</div><div><h2>Etapa 4 · Invitar al Comité</h2><p>Quién: tú invitas, cada miembro acepta · Dónde: Equipo y accesos</p></div></div>
+
+  <p>El Comité tiene que estar adentro antes de la etapa 6, porque es el único que puede confirmar el catálogo de infracciones.</p>
+
+  <h3>Lo que haces tú (una vez por cada miembro)</h3>
+  <ol class="pasos">
+    <li>Ve a <strong>Equipo y accesos</strong>, en el bloque <strong>Invitar a una persona</strong>.</li>
+    <li>Escribe su <strong>correo</strong>. Usa el mismo correo que tiene en el registro: así su cuenta queda vinculada a su ficha automáticamente.</li>
+    <li>En <strong>Unidad</strong> elige la suya si vive en la comunidad (si no, deja "Sin unidad").</li>
+    <li>En <strong>Rol sugerido</strong> elige <strong>Comite de Administracion</strong>.</li>
+    <li>Toca <strong>Enviar invitación</strong>. Arriba aparece un mensaje con el <strong>código</strong> de esa invitación.</li>
+  </ol>
+
+  <h3>Lo que hace cada miembro del Comité</h3>
+  <ol class="pasos">
+    <li>Recibe un correo <em>"Invitación a [tu comunidad] - SINCONFLICTO"</em> desde notificaciones@sinconflicto.cl. Si no lo ve, que revise <strong>spam</strong> o promociones.</li>
+    <li>Toca <strong>Aceptar invitación</strong>. Se abre una página que le dice a qué comunidad lo invitan y con qué rol.</li>
+    <li>Escribe su <strong>nombre</strong> y <strong>apellido</strong>, revisa el <strong>usuario</strong> que viene sugerido (sale de su correo; puede cambiarlo) y elige una <strong>contraseña</strong> de al menos 8 caracteres, dos veces.</li>
+    <li>Toca <strong>Crear cuenta y entrar</strong>. Queda adentro, en su panel de Comité. Desde ahí entra siempre con su usuario y contraseña en sinconflicto.cl/login.</li>
+  </ol>
+
+  <div class="grid2">
+    <div class="caja verde"><h4>Al terminar deberías ver</h4><p>En <strong>Invitaciones pendientes</strong> ya no aparecen los miembros que aceptaron. Los que siguen ahí todavía no lo hacen.</p></div>
+    <div class="caja"><h4>Si el correo no llega o se perdió</h4><p>En sinconflicto.cl/login hay un enlace <strong>"¿Te invitaron? Crea tu cuenta con el código"</strong>: la persona escribe el código que te apareció al invitar y sigue igual.</p></div>
+  </div>
+
+  <div class="caja alerta">
+    <h4>Reglas de las invitaciones</h4>
+    <ul>
+      <li>Vencen a los <strong>14 días</strong> y sirven <strong>una sola vez</strong>.</li>
+      <li>No se editan: si te equivocaste de correo o de rol, toca <strong>Revocar</strong> y envía otra.</li>
+      <li>La cuenta queda con el correo de la invitación; la persona no lo puede cambiar (es su canal de notificación).</li>
+      <li>Contraseñas demasiado comunes o solo con números se rechazan, con el motivo en pantalla.</li>
+      <li>Si ese correo ya tiene una cuenta, la página le pide iniciar sesión en vez de crear otra.</li>
+    </ul>
+  </div>
+
+  <p><strong>Su panel:</strong> <em>Bandeja de decisión</em> (casos dudosos, apelaciones y cobros detenidos), <em>Medidas</em> (medidas urgentes por ratificar), <em>Borradores IA</em> (etapa 6) y <em>Catálogo</em> (infracciones vigentes).</p>
+</section>
+
+<!-- ================= 8 ETAPA 5 ================= -->
+<section class="salto">
+  <div class="rol-cab r-admin"><div class="ico">5</div><div><h2>Etapa 5 · Subir el reglamento y las normas</h2><p>Quién: tú · Dónde: Infracción y reglamento (sección "Normas e infracciones")</p></div></div>
+
+  <h3>Pasos (repite por cada documento)</h3>
+  <ol class="pasos">
+    <li>En <strong>Qué documento es</strong> elige el tipo: Reglamento de copropiedad, Normas de uso de estacionamientos, Normas de uso de espacios comunes, Normas de seguridad, Normativa ambiental, Acta o acuerdo de asamblea, u Otro cuerpo normativo.</li>
+    <li>En <strong>Cómo lo conoce la comunidad</strong> (opcional) escribe el nombre con que lo citan los vecinos, por ejemplo "Instructivo de estacionamientos 2026". Así se citará en las multas.</li>
+    <li>Si es un acta, indica la <strong>fecha de la asamblea</strong>.</li>
+    <li>Toca <strong>Subir PDF del documento</strong> y elige el archivo. El documento aparece en la lista.</li>
+    <li>Toca <strong>Extraer infracciones con IA</strong> en ese documento. La IA lee el texto y propone infracciones: código, descripción, artículo, monto y gravedad. Al terminar el documento dice "(IA ya procesó este documento)".</li>
+  </ol>
+
+  <div class="caja clave">
+    <h4>Lo que hace y no hace la IA aquí</h4>
+    <p>Solo <strong>propone borradores</strong>. Ningún borrador sirve para multar a nadie hasta que una persona del Comité lo revisa y lo confirma. Cada borrador guarda el fragmento del documento del que salió, para que el Comité pueda comparar.</p>
+  </div>
+
+  <div class="grid2">
+    <div class="caja verde"><h4>Al terminar deberías ver</h4><p>Todos tus documentos en la lista, cada uno procesado por la IA. El Comité ve los borradores en su sección <strong>Borradores IA</strong>.</p></div>
+    <div class="caja alerta"><h4>Errores comunes</h4><ul><li>Subir solo el reglamento de copropiedad y olvidar el interno: faltarán las infracciones del día a día.</li><li>PDF escaneado como imagen: la IA puede no leerlo bien.</li><li>Subir versiones antiguas o derogadas.</li></ul></div>
+  </div>
+
+  <p>Avísale al Comité que ya hay borradores esperando: es su turno.</p>
+</section>
+
+<!-- ================= 9 ETAPA 6 ================= -->
+<section class="salto">
+  <div class="rol-cab r-comite"><div class="ico">6</div><div><h2>Etapa 6 · El Comité confirma el catálogo</h2><p>Quién: Comité · Dónde: Borradores IA y Catálogo (en el panel del Comité)</p></div></div>
+
+  <p>Es el <strong>control humano obligatorio</strong> y la etapa más importante para que las multas sean justas. El catálogo dice qué es falta, cuánto cuesta y qué tan grave es. <strong>Sin infracciones confirmadas, la plataforma no puede cursar ninguna multa.</strong></p>
+
+  <h3>Pasos</h3>
+  <ol class="pasos">
+    <li>El Comité entra a <strong>Borradores IA</strong>.</li>
+    <li>Por cada borrador compara la propuesta con el texto del documento y revisa los campos de la tabla de abajo.</li>
+    <li>Toca <strong>Confirmar</strong> si está bien (pasa al catálogo vigente) o <strong>Descartar</strong> si no corresponde.</li>
+    <li>Si falta alguna infracción que la IA no encontró, la crea a mano en <strong>Catálogo</strong>.</li>
+    <li>Revisa el <strong>Catálogo</strong> final: esa es la base legal con que se multará.</li>
+  </ol>
+
+  <h3>Qué revisar en cada infracción</h3>
+  <table>
+    <tr><th style="width:26%">Campo</th><th>Qué significa y cómo decidir</th></tr>
+    <tr><td>Código y descripción</td><td>Cómo se identifica la falta. La descripción debe ser clara para el vecino que la reciba.</td></tr>
+    <tr><td>Artículo</td><td>El artículo del documento que la establece. Aparece en la notificación.</td></tr>
+    <tr><td>Monto y unidad</td><td>El monto y si es en <strong>UF</strong>, <strong>UTM</strong> o <strong>pesos (CLP)</strong>. Debe ser el que fija el reglamento o la asamblea.</td></tr>
+    <tr><td>Gravedad</td><td><strong>Leve, Grave o Gravísima</strong>. Define cuán seguro debe estar el sistema para notificar sin revisión del Comité: leve 65/100, grave 80/100, gravísima 90/100. Las gravísimas nunca tienen aviso de cortesía.</td></tr>
+    <tr><td>Factor de reincidencia</td><td>Por cuánto se multiplica el monto si la unidad repite la misma falta dentro de 6 meses (1 = no cambia; 2 = el doble).</td></tr>
+    <tr><td>Conlleva contención</td><td>Márcalo solo para faltas de <strong>riesgo real</strong> (fuga, obra sin permiso, salida de emergencia bloqueada). Permite que un guardia active una medida urgente (capítulo 10).</td></tr>
+    <tr><td>Plazo y quórum de ratificación</td><td>Solo si conlleva contención: en cuántas horas (por defecto 24) y con cuántas firmas del Comité (por defecto 1) hay que ratificar la medida.</td></tr>
+  </table>
+
+  <div class="caja alerta">
+    <h4>Consejo</h4>
+    <p>Empiecen con las faltas que más se repiten (ruidos, estacionamiento, mascotas, basura, uso de espacios comunes). Un catálogo corto y bien revisado es mejor que uno largo con montos dudosos. Siempre se pueden agregar después.</p>
+  </div>
+  <div class="caja verde"><h4>Al terminar deberías ver</h4><p>En <strong>Catálogo</strong>, las infracciones vigentes con su monto, gravedad y artículo. <strong>Borradores IA</strong> vacío o solo con lo que decidieron dejar para después.</p></div>
+</section>
+
+<!-- ================= 10 ETAPA 7 ================= -->
+<section class="salto">
+  <div class="rol-cab r-fisc"><div class="ico">7</div><div><h2>Etapa 7 · Invitar a los guardias (Denunciantes)</h2><p>Quién: tú invitas, cada guardia acepta · Dónde: Equipo y accesos</p></div></div>
+
+  <h3>Invitarlos</h3>
+  <p>Igual que al Comité (etapa 4), pero con <strong>Rol sugerido: Denunciante</strong> y normalmente <strong>Sin unidad</strong>. Cada guardia acepta desde el correo y crea su usuario y contraseña. Lo ideal es que instale la app en el teléfono del turno o use sinconflicto.cl desde el navegador del teléfono.</p>
+
+  <h3>Ponerles límites (opcional, recomendado)</h3>
+  <p>En <strong>Equipo y accesos</strong>, bloque <strong>Denunciantes y sus límites</strong>, aparece cada guardia. Toca <strong>Editar límites</strong>:</p>
+  <table>
+    <tr><th style="width:26%">Límite</th><th>Para qué sirve</th></tr>
+    <tr><td>Suspender</td><td>Le quita el permiso de denunciar sin borrar su cuenta (vacaciones, licencia, término de contrato).</td></tr>
+    <tr><td>Desde / hasta (fechas)</td><td>Un reemplazo por dos semanas, por ejemplo.</td></tr>
+    <tr><td>Días</td><td>Los días de su turno.</td></tr>
+    <tr><td>Horario</td><td>Su turno. Admite turnos de noche: "22:00 a 06:00" funciona, y la madrugada cuenta como parte del turno del día en que empezó.</td></tr>
+    <tr><td>Unidades</td><td>Solo puede denunciar estas unidades (por ejemplo, el guardia de estacionamientos).</td></tr>
+    <tr><td>Notas</td><td>Para recordar por qué pusiste el límite.</td></tr>
+  </table>
+  <p>Fuera de sus límites, la plataforma le rechaza el reporte y le dice cuál límite no cumple. Él ve sus límites arriba de su pantalla. Sin límites, puede denunciar siempre.</p>
+
+  <h3>Lo que hace un guardia en el día a día</h3>
+  <ol class="pasos">
+    <li>Abre <strong>Nuevo reporte</strong> (pantalla "Nueva denuncia"). La fecha y hora vienen prellenadas.</li>
+    <li>Elige la <strong>unidad</strong> y, si la sabe, la persona responsable.</li>
+    <li>Describe el hecho con sus palabras. <strong>No elige artículo ni monto</strong>: eso lo hace el sistema con el catálogo.</li>
+    <li>Adjunta <strong>fotos o video</strong> tomados en el momento: la foto original guarda fecha y lugar, que es la mejor prueba. Las fotos reenviadas por WhatsApp pierden esos datos.</li>
+    <li>Envía. El reporte no se puede editar ni borrar. En <strong>Mis tickets</strong> ve en qué etapa va, pero nunca el monto ni a quién se sancionó.</li>
+  </ol>
+
+  <div class="caja clave">
+    <h4>Medidas urgentes y delegación</h4>
+    <p>Si el catálogo tiene faltas que <strong>conllevan contención</strong>, el guardia puede activar una medida urgente desde <strong>Medidas</strong>. La medida queda activa de inmediato y el Comité tiene que ratificarla en el plazo; si nadie lo hace, avisa a la cadena de escalamiento que se configuró en la etapa 1. Si el Comité no siempre está disponible, un miembro puede <strong>delegarte</strong> la ratificación por un tiempo y hasta cierta gravedad; entonces te aparece la sección <strong>Firmas por delegación</strong>.</p>
+  </div>
+</section>
+
+<!-- ================= 11 ETAPA 8 ================= -->
+<section class="salto">
+  <div class="rol-cab" style="background:linear-gradient(120deg,#b45309,#f59e0b)"><div class="ico">8</div><div><h2>Etapa 8 · Prueba de punta a punta</h2><p>Quién: tú, un guardia y un miembro del Comité · Dónde: todas las pantallas</p></div></div>
+
+  <p>Antes de anunciar la plataforma a toda la comunidad, haz recorrer un caso completo. Así cada uno ve su parte funcionando y nadie se estrena con un vecino real.</p>
+
+  <div class="caja alerta"><p><strong>Importante:</strong> todo lo que pasa en la plataforma queda sellado y no se borra. Usa una <strong>unidad de prueba</strong> cuyo correo sea el tuyo, y al final el Comité <strong>acoge</strong> la apelación para que el caso quede anulado.</p></div>
+
+  <ol class="pasos">
+    <li><strong>Prepara la unidad de prueba.</strong> Agrega al registro una fila con la unidad "Unidad de prueba", tú como OCUPANTE y <strong>tu correo</strong>. Impórtala.</li>
+    <li><strong>El guardia reporta</strong> una falta del catálogo sobre esa unidad, con una foto y una descripción clara ("auto estacionado en la rampa de acceso").</li>
+    <li><strong>Mira dónde cae el caso.</strong> Si el sistema encontró la infracción con seguridad suficiente, se notifica solo y te llega el correo. Si no, aparece en la <strong>Bandeja de decisión</strong> del Comité con el motivo; el Comité lo tipifica y a ti te aparece en <strong>Notificar multas</strong>, donde tocas notificar.</li>
+    <li><strong>Revisa el correo</strong> que llegó a tu casilla: asunto con el nombre de la comunidad, PDF adjunto y botón para abrir el caso. Si la unidad aún tiene cupo de cortesía, será un aviso sin cobro.</li>
+    <li><strong>Abre el enlace y confirma la recepción.</strong> Desde ese momento corre el plazo de 5 días.</li>
+    <li><strong>Apela</strong> desde ese mismo enlace, escribiendo "Prueba del sistema".</li>
+    <li><strong>El Comité resuelve</strong> desde su Bandeja de decisión eligiendo <strong>Acoger</strong>. El caso queda anulado y te llega la resolución.</li>
+    <li><strong>El guardia</strong> revisa en Mis tickets que su reporte muestra la etapa, sin montos.</li>
+  </ol>
+  <div class="caja verde"><h4>Si todo esto pasó, la comunidad está lista</h4><p>Si algo no ocurrió como se describe (no llegó el correo, el caso no apareció donde debía), escribe a soporte antes de seguir.</p></div>
+</section>
+
+<!-- ================= 12 ETAPA 9 ================= -->
+<section class="salto">
+  <div class="rol-cab r-resi"><div class="ico">9</div><div><h2>Etapa 9 · Abrir la comunidad a los residentes</h2><p>Quién: tú · Dónde: Equipo y accesos, y un comunicado a la comunidad</p></div></div>
+
+  <div class="caja clave">
+    <h4>Un residente no necesita cuenta para recibir una multa</h4>
+    <p>Las notificaciones llegan al correo del registro con un <strong>enlace personal</strong> que abre el caso, permite confirmar la recepción y apelar <strong>sin usuario ni contraseña</strong>. La cuenta es útil para ver su historial y usar el Libro de Novedades, pero no es requisito para el debido proceso.</p>
+  </div>
+
+  <h3>Pasos</h3>
+  <ol class="pasos">
+    <li><strong>Envía un comunicado</strong> a la comunidad (correo, WhatsApp, diario mural) antes de que llegue la primera notificación. Abajo tienes un texto de ejemplo.</li>
+    <li><strong>Invita a los residentes que quieran cuenta</strong>: en Equipo y accesos, con su correo, su unidad y Rol sugerido <strong>Residente</strong>. Hoy se invita de a una persona; empieza por quienes lo pidan.</li>
+    <li>Cada residente acepta desde el correo igual que el Comité: nombre, usuario y contraseña, y entra.</li>
+  </ol>
+
+  <h3>Lo que ve un residente</h3>
+  <table>
+    <tr><th style="width:26%">Sección</th><th>Qué hay</th></tr>
+    <tr><td>Mis multas</td><td>Sus casos con la línea de tiempo, la evidencia, el artículo aplicado, el monto y su plazo para apelar.</td></tr>
+    <tr><td>Libro de Novedades</td><td>Sus reclamos y solicitudes a la administración, con respuesta garantizada en 20 días corridos.</td></tr>
+  </table>
+
+  <h3>Texto de ejemplo para el comunicado</h3>
+  <div class="cita" style="font-style:normal">
+    <p>Estimados vecinos:</p>
+    <p>A partir del [fecha], [nombre de la comunidad] usará la plataforma SinConflicto para registrar las infracciones al reglamento, notificarlas y recibir sus descargos, tal como exige la Ley 21.442.</p>
+    <p><strong>Cómo funciona:</strong> si se registra una infracción de su unidad, le llegará un correo de notificaciones@sinconflicto.cl con la evidencia, el artículo del reglamento y el monto. Desde ese mismo correo puede confirmar que lo recibió y presentar su descargo dentro de [5] días, sin necesidad de crear una cuenta. Las primeras [2] faltas leves de cada unidad se avisan sin cobro. Las apelaciones las resuelve el Comité de Administración.</p>
+    <p><strong>Importante:</strong> las notificaciones llegan al correo registrado en la administración. Si su correo cambió, avísenos.</p>
+    <p>Si quiere una cuenta para ver su historial y usar el Libro de Novedades, pídala a la administración y le enviaremos una invitación.</p>
+    <p>Atentamente, [Administración]</p>
+  </div>
+</section>
+
+<!-- ================= 13 OPERACION ================= -->
+<section class="salto">
+  <h2><span class="num">13</span>La operación: cada día y cada mes</h2>
+  <p class="bajada">Una vez en marcha, la mayoría de los casos avanza solo. Tu trabajo se concentra en estas tareas.</p>
+
+  <h3>Cada día</h3>
+  <table>
+    <tr><th style="width:27%">Tarea</th><th>Qué hacer</th></tr>
+    <tr><td>Leer el resumen</td><td>Cada mañana (8:00) te llega un correo <strong>solo si hay algo pendiente</strong>: multas por notificar, reclamos por vencer, multas listas para cobro y apelaciones que el Comité dejó vencer.</td></tr>
+    <tr><td>Notificar lo aprobado</td><td>En <strong>Notificar multas</strong>, los casos que el Comité tipificó a mano. Un toque genera el PDF y lo envía.</td></tr>
+    <tr><td>Constancia en buzón</td><td>Si un vecino no confirma la recepción tras 3 reenvíos, el caso aparece para que imprimas la notificación, la dejes en el buzón de la unidad y lo registres. Desde ese momento corre su plazo.</td></tr>
+    <tr><td>Libro de Novedades</td><td>Responder reclamos y solicitudes. Plazo legal: <strong>20 días corridos</strong>. Los que están por vencer aparecen destacados.</td></tr>
+  </table>
+
+  <h3>Cada mes</h3>
+  <ol class="pasos">
+    <li>Ve a <strong>Gastos comunes</strong> (en el teléfono, "Cobros") y elige el período.</li>
+    <li>Genera el lote: todas las multas <strong>firmes</strong> (sin apelación pendiente) que no se habían exportado salen en un archivo CSV.</li>
+    <li>Incorpora ese archivo al aviso de cobro de gastos comunes. Las multas quedan marcadas como exportadas y no se vuelven a cobrar.</li>
+  </ol>
+
+  <h3>El recorrido de un caso, en breve</h3>
+  <table>
+    <tr><th style="width:5%" class="c">#</th><th>Qué pasa</th><th style="width:22%">Quién actúa</th></tr>
+    <tr><td class="c">1</td><td>Un guardia reporta con evidencia.</td><td>Denunciante</td></tr>
+    <tr><td class="c">2</td><td>El sistema busca la infracción en el catálogo, junta reportes repetidos y aplica reincidencia y cortesía.</td><td>Automático</td></tr>
+    <tr><td class="c">3</td><td>Si está seguro, se notifica solo. Si no, va a la Bandeja del Comité, que lo tipifica o lo rechaza, y tú lo notificas.</td><td>Automático o Comité + tú</td></tr>
+    <tr><td class="c">4</td><td>El vecino confirma la recepción (o la constancia en buzón la perfecciona). Corre su plazo.</td><td>Residente / tú</td></tr>
+    <tr><td class="c">5</td><td>Si apela, el Comité resuelve: acoger, rechazar, rebajar o cortesía. Puede citarlo a reunión.</td><td>Comité</td></tr>
+    <tr><td class="c">6</td><td>Si no apela, queda firme (o por confirmar, si hay una condición especial).</td><td>Automático / Comité</td></tr>
+    <tr><td class="c">7</td><td>Las firmes se exportan al gasto común.</td><td>Tú</td></tr>
+  </table>
+
+  <h3>Cambios en la comunidad</h3>
+  <ul>
+    <li><strong>Llega o se va un vecino:</strong> actualiza el Excel y vuelve a importarlo (las personas existentes se actualizan por unidad y RUT).</li>
+    <li><strong>Cambia el Comité:</strong> invita a los nuevos miembros. Para quitar el acceso a quienes salen, escribe a soporte.</li>
+    <li><strong>Un guardia deja el puesto:</strong> suspende su permiso en Denunciantes y sus límites, y avisa a soporte para desactivar la cuenta.</li>
+    <li><strong>Cambia el reglamento:</strong> sube la nueva versión, extrae con IA y el Comité confirma; las infracciones que ya no aplican se descartan del catálogo.</li>
+  </ul>
+</section>
+
+<!-- ================= 14 FAQ ================= -->
+<section class="salto">
+  <h2><span class="num">14</span>Preguntas frecuentes y problemas comunes</h2>
+
+  <table>
+    <tr><th style="width:36%">Situación</th><th>Qué hacer</th></tr>
+    <tr><td>Alguien dice que no le llegó la invitación.</td><td>Que revise spam y promociones. Si no está, dale el código que apareció al invitar: lo escribe en sinconflicto.cl/login, en "¿Te invitaron? Crea tu cuenta con el código".</td></tr>
+    <tr><td>La invitación dice que venció o fue revocada.</td><td>Revoca (si sigue en la lista) y envía una nueva.</td></tr>
+    <tr><td>Invité con el rol o el correo equivocado.</td><td>Si no la han aceptado: Revocar y enviar otra. Si ya la aceptaron: escribe a soporte.</td></tr>
+    <tr><td>Alguien olvidó su contraseña.</td><td>Hoy no hay recuperación automática: escribe a soporte para restablecerla.</td></tr>
+    <tr><td>Un guardia no puede enviar una denuncia.</td><td>Lee el mensaje que le aparece: dice qué límite no cumple (suspendido, fuera de horario, día o unidad). Revisa sus límites en Equipo y accesos.</td></tr>
+    <tr><td>Un caso quedó "en revisión" y no avanza.</td><td>Está esperando al Comité. El motivo se ve en la bandeja (por ejemplo, la persona no tiene correo). Si es por falta de correo, corrígelo en el registro.</td></tr>
+    <tr><td>El Comité no resuelve una apelación.</td><td>A los 15 días aparece como urgente en tu resumen y en el del Comité. Recuérdaselo: tú no puedes resolverla.</td></tr>
+    <tr><td>Un vecino dice que nunca recibió la multa.</td><td>Revisa en el caso a qué correo se envió y si confirmó la recepción. Sin acuse el plazo no corre; tras 3 reenvíos usa la constancia en buzón.</td></tr>
+    <tr><td>Un vecino quiere eliminar su cuenta.</td><td>Puede hacerlo él mismo en Mi cuenta → Eliminar mi cuenta. Sus casos quedan en el expediente; su ficha del registro la mantienes tú.</td></tr>
+    <tr><td>Quiero cambiar los plazos o las cortesías.</td><td>Acuérdalo con el Comité y pídelo a soporte; hoy no se cambian desde tu panel.</td></tr>
+  </table>
+
+  <div class="caja">
+    <h4>Soporte</h4>
+    <p>Escribe a <strong>sinconflicto.cl@gmail.com</strong> indicando tu comunidad, qué intentabas hacer y qué mensaje te apareció.</p>
+  </div>
+</section>
+
+<!-- ================= 15 CHECKLIST ================= -->
+<section class="salto">
+  <h2><span class="num">15</span>Lista de verificación final</h2>
+  <p class="bajada">Marca cada punto. Si todos están listos, tu comunidad está funcionando.</p>
+
+  <ul class="check">
+    <li>Reuní el reglamento, las normas internas y las actas en PDF.</li>
+    <li>El Comité acordó los plazos, las cortesías, el quórum y la cadena de escalamiento.</li>
+    <li>SinConflicto creó la comunidad y recibí mi usuario y contraseña.</li>
+    <li>Entré a sinconflicto.cl y conozco las secciones de mi panel.</li>
+    <li>Importé el registro de copropietarios con 0 filas con error.</li>
+    <li>Todas las personas del registro tienen un correo válido.</li>
+    <li>Invité a todos los miembros del Comité y todos aceptaron.</li>
+    <li>Subí todos los documentos y extraje las infracciones con IA.</li>
+    <li>El Comité revisó los borradores y el catálogo vigente tiene las faltas principales.</li>
+    <li>Invité a los guardias y todos aceptaron.</li>
+    <li>Configuré los límites de cada guardia (si corresponde).</li>
+    <li>Hice la prueba de punta a punta con la unidad de prueba y el Comité la anuló.</li>
+    <li>Envié el comunicado a la comunidad.</li>
+    <li>Invité a los residentes que pidieron cuenta.</li>
+    <li>Sé dónde notificar, cómo hacer la constancia en buzón, cómo responder el Libro de Novedades y cómo exportar los cobros.</li>
+  </ul>
+
+  <div class="caja verde" style="margin-top:8mm">
+    <h4>Listo</h4>
+    <p>Desde aquí, la plataforma hace la mayor parte del trabajo: recibe los reportes, encuentra la norma, notifica, controla los plazos y te avisa cada mañana solo lo que necesita tu atención.</p>
+  </div>
+</section>
+
+</body>
+</html>
