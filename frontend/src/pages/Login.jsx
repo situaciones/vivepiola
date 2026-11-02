@@ -142,7 +142,7 @@ export default function Login() {
           </ol>
         </div>
 
-        <div className="marca-foot">Ley 21.442 de Copropiedad Inmobiliaria, Chile</div>
+        <div className="marca-foot">Basado en la normativa chilena vigente y en el reglamento, las normas internas y los acuerdos de tu comunidad.</div>
       </aside>
 
       <div className="login-cabecera-movil">
