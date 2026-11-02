@@ -159,7 +159,7 @@ export default function AdministradorDashboard() {
         { id: 'equipo', corto: 'Equipo', label: 'Equipo y accesos', icon: UserPlus },
         { id: 'registro', corto: 'Registro', label: t('registro_titulo'), icon: Users },
         { id: 'reglamento', corto: 'Reglamento', label: `${t('infraccion')} y reglamento`, icon: FileText },
-        { id: 'novedades', corto: 'Novedades', label: 'Libro de Novedades', icon: MessageSquareText, badge: novedadesPendientes.length },
+        { id: 'novedades', corto: 'Solicitudes', label: 'Solicitudes y reclamos', icon: MessageSquareText, badge: novedadesPendientes.length },
         { id: 'gastos', corto: 'Cobros', label: t('destino_cobro').charAt(0).toUpperCase() + t('destino_cobro').slice(1), icon: Wallet },
       ]}
       active={tab}
@@ -308,8 +308,8 @@ export default function AdministradorDashboard() {
         {tab === 'novedades' && (
           <>
             <PageHeader
-              titulo="Libro de Novedades - pendientes de respuesta"
-              subtitulo="Toda solicitud o reclamo dirigido a la administracion debe responderse dentro del plazo legal de 20 dias corridos."
+              titulo="Solicitudes y reclamos - pendientes de respuesta"
+              subtitulo="Lo que los residentes escriben a la administracion, con 20 dias corridos para responder. Es un canal de la plataforma: no reemplaza el Libro de Novedades oficial de la comunidad."
               stats={[{ label: 'Pendientes', valor: novedadesPendientes.length, alerta: novedadesPendientes.length > 0 }]}
             />
             <div className="lista-tarjetas" style={{ marginTop: 24 }}>

@@ -23,9 +23,14 @@ def _marcar_vencidas(condominio):
 
 class NovedadLibroViewSet(viewsets.ModelViewSet):
     """
-    Libro de Novedades Digital: cualquier residente puede registrar un
-    reclamo o solicitud; la administracion debe responder dentro del plazo
-    legal (por defecto 20 dias corridos, art. settings.NOVEDADES_PLAZO_RESPUESTA_DIAS).
+    Solicitudes y reclamos: cualquier residente puede registrar un reclamo o
+    solicitud y la administracion debe responder dentro del plazo (por
+    defecto 20 dias corridos, settings.NOVEDADES_PLAZO_RESPUESTA_DIAS).
+
+    Se muestra como "Solicitudes y reclamos" y no como "Libro de Novedades":
+    el libro de la ley es un instrumento de la comunidad con exigencias
+    propias que este canal no cumple. Los nombres internos (novedades,
+    NovedadLibro) quedan porque estan en la base de datos y en la API.
     """
 
     serializer_class = NovedadLibroSerializer

@@ -92,7 +92,7 @@ class IngresoGoogleTestCase(APITestCase):
 
     def test_invitacion_revocada_no_asigna_rol(self):
         self.client.force_authenticate(self.administrador)
-        creada = self.client.post('/api/invitaciones/', {'correo': 'tarde@gmail.com', 'rol_sugerido': Rol.COMITE})
+        creada = self.client.post('/api/invitaciones/', {'correo': 'tarde@gmail.com', 'rol_sugerido': Rol.FISCALIZADOR})
         self.client.post(f"/api/invitaciones/{creada.data['id']}/revocar/")
 
         self.client.force_authenticate(None)

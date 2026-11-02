@@ -146,7 +146,7 @@ class ResumenPendientesTestCase(APITestCase):
         )
         resumen = resumen_para_administracion(self.condominio)
         self.assertTrue(resumen['urgente'])
-        self.assertIn('plazo legal por vencer', ' '.join(resumen['puntos']))
+        self.assertIn('plazo de respuesta por vencer', ' '.join(resumen['puntos']))
 
     def test_el_resumen_del_comite_pone_primero_lo_urgente(self):
         self._multa(EstadoMulta.EN_REVISION)

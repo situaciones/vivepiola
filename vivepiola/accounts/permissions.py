@@ -27,11 +27,41 @@ def permiso_por_rol(*roles_permitidos):
     return _PermisoRol
 
 
+def permiso_comite(*otros_roles):
+    """
+    Como permiso_por_rol, pero el rol COMITE solo basta si la persona integra
+    el Comite designado y vigente (condominios/comite.py). Es para las
+    decisiones que la ley reserva al Comite; leer no pasa por aqui.
+    """
+
+    class _PermisoComite(BasePermission):
+        message = 'Esta accion esta reservada al Comite de Administracion.'
+
+        def has_permission(self, request, view):
+            from condominios.comite import motivo_sin_facultad
+
+            user = request.user
+            if not (user and user.is_authenticated):
+                return False
+            if user.rol in otros_roles or user.rol == Rol.SUPERADMIN:
+                return True
+            if user.rol != Rol.COMITE:
+                return False
+            motivo = motivo_sin_facultad(user)
+            if motivo:
+                self.message = motivo
+                return False
+            return True
+
+    _PermisoComite.__name__ = 'PermisoComite_' + '_'.join(otros_roles)
+    return _PermisoComite
+
+
 EsFiscalizador = permiso_por_rol(Rol.FISCALIZADOR)
-EsComite = permiso_por_rol(Rol.COMITE)
+EsComite = permiso_comite()
 EsAdministrador = permiso_por_rol(Rol.ADMINISTRADOR)
 EsResidente = permiso_por_rol(Rol.RESIDENTE)
-EsComiteOAdministrador = permiso_por_rol(Rol.COMITE, Rol.ADMINISTRADOR)
+EsComiteOAdministrador = permiso_comite(Rol.ADMINISTRADOR)
 EsFiscalizadorOComiteOAdministrador = permiso_por_rol(Rol.FISCALIZADOR, Rol.COMITE, Rol.ADMINISTRADOR)
 # Denunciante: quien puede levantar un reporte. La Ley habilita a conserje,
 # comite y a cualquier copropietario/residente (con opcion de anonimato).

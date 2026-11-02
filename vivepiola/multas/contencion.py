@@ -18,6 +18,7 @@ from django.db import IntegrityError, transaction
 from django.utils import timezone
 
 from accounts.models import Rol, Usuario
+from condominios.comite import motivo_sin_facultad
 
 from .models import (
     ESTADOS_MEDIDA_ACTIVOS, AccionDelegable, Delegacion, EnCalidadDe, EstadoDelegacion,
@@ -82,7 +83,11 @@ def _resolver_autoridad(medida, actor, momento):
     una delegacion VIGENTE que cubra RATIFICAR_CONTENCION con techo >= gravedad.
     Lanza SinAutoridad si nada lo respalda.
     """
-    if actor.rol in (Rol.COMITE, Rol.SUPERADMIN) and actor.condominio_id == medida.multa.condominio_id:
+    if (
+        actor.rol in (Rol.COMITE, Rol.SUPERADMIN) and actor.condominio_id == medida.multa.condominio_id
+        # El Comite firma por cargo solo si integra la designacion vigente.
+        and motivo_sin_facultad(actor, timezone.localtime(momento).date()) is None
+    ):
         return EnCalidadDe.TITULAR, None
 
     gravedad = medida.hallazgo.gravedad

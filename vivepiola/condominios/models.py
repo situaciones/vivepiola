@@ -312,3 +312,44 @@ class RegistroImportacion(models.Model):
 
     def __str__(self):
         return f'Importacion {self.id} - {self.condominio.nombre} ({self.fecha_carga:%Y-%m-%d})'
+
+
+class DesignacionComite(models.Model):
+    """
+    La eleccion del Comite de Administracion por la asamblea, con su acta.
+
+    Sin una designacion vigente nadie decide como Comite (ver
+    condominios/comite.py): un expediente resuelto por alguien sin mandato es
+    una nulidad facil de alegar. Cada designacion nueva reemplaza a la
+    anterior, que queda guardada como historial.
+    """
+
+    condominio = models.ForeignKey(Condominio, on_delete=models.CASCADE, related_name='designaciones_comite')
+    acta = models.FileField(upload_to='comite/actas/%Y/', help_text='Acta de la asamblea que eligio al Comite.')
+    fecha_asamblea = models.DateField(help_text='Desde esta fecha rige el mandato.')
+    vigente_hasta = models.DateField(help_text='Termino del mandato fijado por la asamblea.')
+    activa = models.BooleanField(default=True, help_text='Falso cuando otra designacion la reemplazo.')
+    notas = models.CharField(max_length=255, blank=True)
+    creada_por = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, related_name='+')
+    creada_en = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-creada_en']
+
+    def __str__(self):
+        return f'Comite {self.condominio.nombre} ({self.fecha_asamblea:%d-%m-%Y} a {self.vigente_hasta:%d-%m-%Y})'
+
+
+class MiembroComite(models.Model):
+    """Una persona del registro elegida para el Comite en una designacion."""
+
+    designacion = models.ForeignKey(DesignacionComite, on_delete=models.CASCADE, related_name='miembros')
+    persona = models.ForeignKey(Persona, on_delete=models.PROTECT, related_name='membresias_comite')
+    cargo = models.CharField(max_length=60, blank=True, help_text='Ej: Presidente, Secretario. Opcional.')
+
+    class Meta:
+        unique_together = ('designacion', 'persona')
+        ordering = ['persona__nombre_completo']
+
+    def __str__(self):
+        return f'{self.persona.nombre_completo} - {self.designacion}'

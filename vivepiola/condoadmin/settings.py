@@ -236,6 +236,9 @@ EMAIL_HOST_PASSWORD = config('EMAIL_HOST_PASSWORD', default='')
 DEFAULT_FROM_EMAIL = config('DEFAULT_FROM_EMAIL', default='notificaciones@sinconflicto.cl')
 # A donde llegan las solicitudes de demo de la portada.
 CONTACTO_CORREO = config('CONTACTO_CORREO', default='sinconflicto.cl@gmail.com')
+# El que se muestra al publico (privacidad, mensajes de la app). El de arriba
+# es interno del equipo y no se publica.
+SOPORTE_CORREO = config('SOPORTE_CORREO', default='soporte@sinconflicto.cl')
 
 
 # Integracion IA (extraccion de infracciones desde reglamento en PDF)
@@ -355,3 +358,9 @@ CURSE_CONFIANZA_MINIMA = {
 EVIDENCIA_VIDEO_MAX_MB = config('EVIDENCIA_VIDEO_MAX_MB', default=50, cast=int)
 EVIDENCIA_VIDEO_FORMATOS = ('.mp4', '.mov', '.webm', '.3gp', '.m4v')
 DESCARGO_PLAZO_DEFAULT_DIAS = config('DESCARGO_PLAZO_DEFAULT_DIAS', default=5, cast=int)
+
+# Reglas para designar el Comite de Administracion (condominios/comite.py).
+# Son las que entendemos de la Ley 21.442; si el abogado o el reglamento de una
+# comunidad dicen otra cosa, se ajustan aqui sin tocar el codigo.
+COMITE_MIEMBROS_MINIMOS = config('COMITE_MIEMBROS_MINIMOS', default=3, cast=int)
+COMITE_DURACION_MAXIMA_ANOS = config('COMITE_DURACION_MAXIMA_ANOS', default=3, cast=int)

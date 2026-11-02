@@ -15,7 +15,7 @@ import './Privacidad.css';
  * (Usuario.eliminar_cuenta), esta pagina se actualiza en el mismo cambio.
  */
 
-const CORREO = 'sinconflicto.cl@gmail.com';
+const CORREO = 'soporte@sinconflicto.cl';
 const ACTUALIZADA = '31 de octubre de 2026';
 
 export default function Privacidad() {

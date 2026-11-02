@@ -17,9 +17,10 @@ class EstadoNovedad(models.TextChoices):
 
 class NovedadLibro(models.Model):
     """
-    Libro de Novedades Digital exigido por la ley: reclamos y solicitudes
-    dirigidas a la administracion deben responderse en un plazo maximo de
-    20 dias corridos (configurable por condominio).
+    Una solicitud o reclamo de un residente a la administracion, que debe
+    responderse dentro de 20 dias corridos (configurable por condominio).
+    En pantalla se llama "Solicitudes y reclamos": no es el Libro de
+    Novedades oficial de la ley (ver NovedadLibroViewSet).
     """
 
     condominio = models.ForeignKey('condominios.Condominio', on_delete=models.CASCADE, related_name='novedades')

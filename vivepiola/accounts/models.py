@@ -24,7 +24,9 @@ class Rol(models.TextChoices):
 
 # Roles que un Administrador de condominio puede asignar/invitar. El rol
 # ADMINISTRADOR y SUPERADMIN quedan fuera: solo el Django admin los otorga.
-ROLES_ASIGNABLES = (Rol.FISCALIZADOR, Rol.COMITE, Rol.RESIDENTE)
+# COMITE tambien: el Comite nace de la designacion con acta de asamblea
+# (condominios/comite.py), no de una invitacion suelta.
+ROLES_ASIGNABLES = (Rol.FISCALIZADOR, Rol.RESIDENTE)
 
 
 class Usuario(AbstractUser):

@@ -7,7 +7,7 @@ sancionatorio:
 - **Denunciante:** crea tickets con evidencia fotografica. No define monto ni aprueba.
 - **Comite de Administracion:** revisa evidencia y es el UNICO que aprueba/rechaza multas, eligiendo la infraccion del catalogo del reglamento. Tambien confirma el catalogo de infracciones y resuelve descargos.
 - **Administrador:** notifica al residente (genera PDF + envia correo, el canal legal), gestiona el registro de copropietarios, carga el reglamento y exporta multas firmes a gastos comunes.
-- **Residente:** ve sus multas y evidencia, presenta descargos dentro del plazo, usa el Libro de Novedades.
+- **Residente:** ve sus multas y evidencia, presenta descargos dentro del plazo, escribe a la administracion en Solicitudes y reclamos.
 
 ## Arquitectura
 
@@ -83,9 +83,9 @@ Configurar `frontend/.env` -> `VITE_API_URL=http://127.0.0.1:8000/api`.
 6. Si no hay descargo, la multa pasa a **firme** automaticamente al vencer el plazo.
 7. Administrador **exporta** las multas firmes a un lote CSV de gastos comunes por periodo.
 
-El **Libro de Novedades Digital** permite a cualquier residente registrar
-reclamos/solicitudes, con alerta de plazo legal de 20 dias corridos para que
-la administracion responda.
+**Solicitudes y reclamos** permite a cualquier residente escribir a la
+administracion, con alerta de plazo de 20 dias corridos para que responda. No
+reemplaza el Libro de Novedades oficial de la comunidad.
 
 ## Sellado criptografico de actos (V2)
 

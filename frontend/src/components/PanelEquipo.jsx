@@ -1,16 +1,17 @@
 import { useEffect, useState } from 'react';
 import { Copy, MailPlus, UserCheck } from 'lucide-react';
 import client from '../api/client';
+import PanelComite from './PanelComite';
 import PanelDenunciantes from './PanelDenunciantes';
 
 // El Codigo Unico de Comunidad solo sirve entrando con Google; sin Google la
 // gente entra por la invitacion del correo, asi que la tarjeta no se muestra.
 const CON_GOOGLE = Boolean(import.meta.env.VITE_GOOGLE_CLIENT_ID) || import.meta.env.DEV;
 
+// El Comite no se invita: se registra con su acta en PanelComite.
 const ROLES = [
   { valor: 'RESIDENTE', etiqueta: 'Residente' },
   { valor: 'FISCALIZADOR', etiqueta: 'Denunciante' },
-  { valor: 'COMITE', etiqueta: 'Comite de Administracion' },
 ];
 
 export default function PanelEquipo() {
@@ -80,6 +81,8 @@ export default function PanelEquipo() {
   return (
     <div>
       {mensaje && <div className="mensaje-info">{mensaje}</div>}
+
+      <PanelComite />
 
       {CON_GOOGLE && codigoComunidad && (
         <div className="tarjeta" style={{ marginBottom: 18 }}>

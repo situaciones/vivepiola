@@ -154,7 +154,7 @@ export default function Landing() {
     } catch (err) {
       setError(
         err.response?.status === 429
-          ? 'Ya recibimos varias solicitudes desde aquí. Escríbenos a sinconflicto.cl@gmail.com.'
+          ? 'Ya recibimos varias solicitudes desde aquí. Escríbenos a soporte@sinconflicto.cl.'
           : 'No se pudo enviar. Revisa tu conexión e intenta de nuevo.',
       );
     } finally {

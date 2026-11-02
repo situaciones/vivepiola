@@ -118,7 +118,7 @@ export default function ResidenteDashboard() {
     <AppShell
       tabs={[
         { id: 'multas', label: t('mis_multas'), icon: ShieldCheck, badge: activas.length },
-        { id: 'novedades', corto: 'Novedades', label: 'Libro de Novedades', icon: MessageSquareText, badge: novedadesPendientes.length },
+        { id: 'novedades', corto: 'Solicitudes', label: 'Solicitudes y reclamos', icon: MessageSquareText, badge: novedadesPendientes.length },
       ]}
       active={tab}
       onChange={setTab}
@@ -260,7 +260,7 @@ export default function ResidenteDashboard() {
 
         {tab === 'novedades' && (
           <>
-            <PageHeader titulo="Libro de Novedades" subtitulo="Reclamos y solicitudes dirigidos a la administracion, con respuesta garantizada dentro de 20 dias corridos." />
+            <PageHeader titulo="Solicitudes y reclamos" subtitulo="Escribe a la administracion de tu comunidad. Tiene 20 dias corridos para responderte." />
 
             <form className="tarjeta formulario" onSubmit={crearNovedad} style={{ marginTop: 24 }}>
               <div className="fila-formulario">

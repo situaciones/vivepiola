@@ -62,6 +62,8 @@ export default function ComiteDashboard() {
   const [decision, setDecision] = useState({}); // { [multaId]: { infraccion_id, monto, revisado } }
   const [verificacion, setVerificacion] = useState(null); // { multaId, data }
   const [mensaje, setMensaje] = useState('');
+  // Si el mandato vencio o falta el acta, se avisa arriba: las decisiones las rechaza el backend.
+  const [comite, setComite] = useState(null);
   const [formInfraccion, setFormInfraccion] = useState({ codigo: '', descripcion: '', articulo_referencia: '', monto: '', unidad_monto: 'UF', gravedad: 'LEVE', conlleva_contencion: false, plazo_ratificacion_horas: 24 });
 
   const [medidas, setMedidas] = useState([]);
@@ -75,6 +77,7 @@ export default function ComiteDashboard() {
   };
 
   useEffect(cargarTodo, []);
+  useEffect(() => { client.get('/comite/').then((r) => setComite(r.data)).catch(() => {}); }, []);
 
   // Las propuestas se piden por caso: dependen del historial de esa unidad.
   useEffect(() => {
@@ -321,6 +324,12 @@ export default function ComiteDashboard() {
       onAtras={volverABandeja}
     >
       <div className="contenedor">
+        {comite && !comite.vigente && !comite.sin_designacion && (
+          <div className="mensaje-error">{comite.motivo} Mientras tanto el Comite no puede tomar decisiones en la plataforma.</div>
+        )}
+        {comite?.sin_designacion && (
+          <div className="mensaje-info">El Comite aun no tiene registrada el acta de la asamblea que lo eligio. Pidele al Administrador que la registre en Equipo y accesos.</div>
+        )}
         {mensaje && <div className="mensaje-info">{mensaje}</div>}
 
         {tab === 'bandeja' && (

@@ -72,7 +72,7 @@ export default function AceptarInvitacion() {
           <h2><strong>Bienvenido</strong> a tu comunidad.</h2>
           <p>
             Con tu cuenta veras los avisos y multas de tu unidad, podras presentar
-            descargos y escribir en el Libro de Novedades.
+            descargos y escribir a la administracion.
           </p>
         </div>
         <div className="marca-foot">

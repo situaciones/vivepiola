@@ -54,7 +54,7 @@ class EliminarCuentaView(APIView):
                 return Response(
                     {'detail': (
                         'Eres el unico Administrador de la comunidad. Escribenos a '
-                        f'{settings.CONTACTO_CORREO} para traspasar la administracion '
+                        f'{settings.SOPORTE_CORREO} para traspasar la administracion '
                         'antes de eliminar tu cuenta.'
                     )},
                     status=409,

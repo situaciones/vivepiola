@@ -107,8 +107,8 @@ def resumen_para_administracion(condominio):
         puntos.append(f'{_linea(por_notificar, "multa aprobada", "multas aprobadas")} por notificar')
     if urgentes:
         puntos.append(
-            f'{_linea(urgentes, "reclamo", "reclamos")} del Libro de Novedades '
-            f'con el plazo legal por vencer'
+            f'{_linea(urgentes, "reclamo", "reclamos")} de Solicitudes y reclamos '
+            f'con el plazo de respuesta por vencer'
         )
     elif por_responder:
         puntos.append(f'{_linea(por_responder, "reclamo", "reclamos")} por responder')
