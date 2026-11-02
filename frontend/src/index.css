@@ -956,7 +956,8 @@ textarea { resize: vertical; }
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  padding: 48px;
+  gap: 24px;
+  padding: 36px 48px;
   position: relative;
   overflow: hidden;
   isolation: isolate;
@@ -983,8 +984,15 @@ textarea { resize: vertical; }
   mask-image: radial-gradient(circle at 30% 30%, black, transparent 70%);
 }
 .login-panel-marca .marca-top { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 1.05rem; }
-.login-panel-marca .marca-claim { max-width: 400px; }
-.login-panel-marca .marca-claim h2 { color: white; font-size: 2rem; font-weight: 800; letter-spacing: -0.03em; line-height: 1.15; margin: 0 0 14px; }
+.login-panel-marca .marca-claim { max-width: 460px; display: flex; flex-direction: column; }
+.login-etiqueta {
+  align-self: flex-start;
+  font-size: 0.74rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase;
+  color: #c7c9f5; padding: 6px 12px; border-radius: 999px;
+  background: rgba(139, 157, 255, 0.12); border: 1px solid rgba(139, 157, 255, 0.25);
+  margin-bottom: 16px;
+}
+.login-panel-marca .marca-claim h2 { color: white; font-size: clamp(1.7rem, 2.4vw, 2.1rem); font-weight: 800; letter-spacing: -0.03em; line-height: 1.15; margin: 0 0 12px; }
 .login-panel-marca .marca-claim h2::before { display: none; }
 .login-panel-marca .marca-claim h2 strong {
   background: var(--grad-completo);
@@ -992,8 +1000,30 @@ textarea { resize: vertical; }
   background-clip: text;
   color: transparent;
 }
-.login-panel-marca .marca-claim p { color: #a6a8c8; font-size: 0.95rem; line-height: 1.65; }
+.login-panel-marca .marca-claim p { color: #b4b6d6; font-size: 1rem; line-height: 1.6; margin: 0; }
 .login-panel-marca .marca-foot { font-size: 0.78rem; color: #6f7096; }
+
+.ilustracion-comunidad { width: 100%; max-width: 280px; height: auto; margin: 14px 0 0; align-self: center; }
+.ilustracion-comunidad .ic-camino { animation: ic-avanzar 1.6s linear infinite; }
+@keyframes ic-avanzar { to { stroke-dashoffset: -22; } }
+@media (prefers-reduced-motion: reduce) { .ilustracion-comunidad .ic-camino { animation: none; } }
+
+/* El camino de un caso: una linea que une los pasos, de morado a verde. */
+.login-flujo { list-style: none; margin: 8px 0 0; padding: 0; display: flex; flex-direction: column; position: relative; }
+.login-flujo::before {
+  content: ''; position: absolute; left: 17px; top: 18px; bottom: 18px; width: 2px;
+  background: linear-gradient(180deg, #a855f7, #3b82f6 55%, #10b981); opacity: 0.55;
+}
+.login-flujo li { display: flex; gap: 14px; align-items: flex-start; padding: 5px 0; position: relative; }
+.login-flujo-icono {
+  flex: 0 0 36px; height: 36px; border-radius: 12px;
+  display: grid; place-items: center;
+  background: #16152b; border: 1px solid rgba(150, 140, 235, 0.3); color: #c7c9f5;
+}
+.login-flujo li:last-child .login-flujo-icono { color: #10b981; border-color: rgba(16, 185, 129, 0.45); }
+.login-flujo b { display: block; color: white; font-size: 0.95rem; font-weight: 700; margin-top: 1px; }
+.login-flujo b small { color: #8b9dff; font-size: 0.75rem; font-weight: 800; margin-right: 4px; }
+.login-flujo li span:not(.login-flujo-icono) { display: block; color: #9a9cc0; font-size: 0.86rem; line-height: 1.45; margin-top: 2px; }
 
 .login-panel-form { flex: 1; display: flex; align-items: center; justify-content: center; padding: 40px; background: var(--fondo); }
 
@@ -1001,6 +1031,18 @@ textarea { resize: vertical; }
 .login-tarjeta h1 { font-size: 1.55rem; font-weight: 800; letter-spacing: -0.03em; margin-bottom: 4px; }
 .login-tarjeta input { min-height: 48px; font-size: 16px; }
 .login-tarjeta .btn { min-height: 50px; font-size: 0.95rem; margin-top: 4px; border-radius: 14px; }
+
+.login-clave { position: relative; display: block; }
+.login-clave input { width: 100%; padding-right: 48px; }
+.login-ver-clave {
+  position: absolute; right: 6px; top: 50%; transform: translateY(-50%);
+  width: 38px; height: 38px; border: 0; border-radius: 10px; background: transparent;
+  color: var(--texto-tenue); display: grid; place-items: center; cursor: pointer;
+}
+.login-ver-clave:hover { background: var(--tech-soft); color: var(--tech-fuerte); }
+.login-tarjeta .btn-primario { display: inline-flex; align-items: center; justify-content: center; gap: 8px; }
+.login-nota { font-size: 0.85rem; margin: 0; }
+.login-ver-flujo { display: none; }
 
 .login-separador {
   display: flex; align-items: center; gap: 12px;
@@ -1011,9 +1053,17 @@ textarea { resize: vertical; }
 /* Version compacta de la marca, solo en el telefono. */
 .login-cabecera-movil { display: none; }
 
+@media (min-width: 861px) and (max-height: 760px) {
+  .ilustracion-comunidad { display: none; }
+}
+
 @media (max-width: 860px) {
   .pantalla-login { flex-direction: column; }
-  .login-panel-marca { display: none; }
+  /* En el telefono primero se entra; lo que es SinConflicto queda debajo. */
+  .login-panel-marca { order: 3; flex: none; padding: 40px 22px calc(36px + env(safe-area-inset-bottom)); gap: 24px; }
+  .login-panel-marca .marca-top { display: none; }
+  .login-panel-marca .marca-claim h2 { font-size: 1.5rem; }
+  .login-panel-marca .marca-claim p { font-size: 0.95rem; }
 
   .login-cabecera-movil {
     display: flex; flex-direction: column; gap: 22px;
@@ -1042,11 +1092,15 @@ textarea { resize: vertical; }
     flex: 1;
     align-items: flex-start;
     padding: 28px 22px calc(28px + env(safe-area-inset-bottom));
-    border-radius: 28px 28px 0 0;
+    border-radius: 28px;
     margin-top: -18px;
     box-shadow: 0 -20px 40px -24px rgba(0, 0, 0, 0.6);
   }
   .login-tarjeta { width: 100%; }
+  .login-ver-flujo {
+    display: block; text-align: center; font-size: 0.9rem; font-weight: 600;
+    color: var(--tech-fuerte); text-decoration: none; padding: 6px 0;
+  }
 }
 
 .cargando-pantalla {
