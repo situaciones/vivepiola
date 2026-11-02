@@ -1,7 +1,7 @@
 {
   "name": "SINCONFLICTO",
   "short_name": "SinConflicto",
-  "description": "Trazabilidad de multas, notificaciones y reclamos en condominios.",
+  "description": "Convivencia ordenada para condominios: reclamos, avisos y apelaciones con cada paso respaldado.",
   "lang": "es-CL",
   "start_url": "/app",
   "scope": "/",
