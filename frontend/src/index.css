@@ -961,16 +961,17 @@ textarea { resize: vertical; }
 }
 .login-panel-marca .marca-top { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 1.05rem; }
 .login-panel-marca .marca-claim { max-width: 440px; display: flex; flex-direction: column; }
-.login-panel-marca .marca-claim h2 { color: white; font-size: 1.6rem; font-weight: 700; line-height: 1.25; margin: 0 0 10px; }
+.login-panel-marca .marca-claim h2 { color: white; font-size: 1.75rem; font-weight: 700; line-height: 1.25; margin: 0 0 10px; }
 .login-panel-marca .marca-claim h2::before { display: none; }
 .login-panel-marca .marca-claim p { color: #a9abc4; font-size: 0.95rem; line-height: 1.55; margin: 0; }
 .login-panel-marca .marca-foot { font-size: 0.78rem; color: #6f7096; }
 
 .ilustracion-comunidad { width: 100%; max-width: 260px; height: auto; margin: 20px 0 4px; }
 
-.login-flujo { margin: 12px 0 0; padding: 0 0 0 1.3em; display: flex; flex-direction: column; gap: 12px; }
-.login-flujo li { color: #c9cbe0; font-size: 0.92rem; line-height: 1.5; padding-left: 4px; }
-.login-flujo li::marker { color: #7d80a8; font-weight: 600; }
+.login-flujo { margin: 14px 0 0; padding: 0 0 0 1.4em; display: flex; flex-direction: column; gap: 14px; }
+.login-flujo li { color: #a9abc4; font-size: 0.88rem; line-height: 1.5; padding-left: 4px; }
+.login-flujo li b { display: block; color: white; font-size: 0.98rem; font-weight: 700; margin-bottom: 2px; }
+.login-flujo li::marker { color: #8b9dff; font-weight: 700; }
 
 .login-panel-form { flex: 1; display: flex; align-items: center; justify-content: center; padding: 40px; background: var(--fondo); }
 
@@ -995,6 +996,21 @@ textarea { resize: vertical; }
   font: inherit; font-size: 0.9rem; color: var(--tech-fuerte); text-decoration: underline; text-underline-offset: 3px;
 }
 .login-ver-flujo { display: none; }
+
+.descargar-app { border-top: 1px solid var(--borde); padding-top: 16px; display: flex; flex-direction: column; gap: 10px; }
+.descargar-app p { margin: 0; font-size: 0.85rem; color: var(--texto-suave); text-align: center; }
+.descargar-app-insignias { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
+.insignia-tienda {
+  display: inline-flex; align-items: center; gap: 8px;
+  min-width: 150px; padding: 7px 14px; border-radius: 9px;
+  background: #000; color: white; text-decoration: none; border: 1px solid #000;
+}
+.insignia-tienda:hover { background: #1c1c1c; }
+.insignia-texto { display: flex; flex-direction: column; line-height: 1.1; text-align: left; }
+.insignia-texto small { font-size: 0.66rem; }
+.insignia-texto b { font-size: 1.05rem; font-weight: 600; letter-spacing: -0.01em; }
+.insignia-pronto { opacity: 0.8; cursor: default; }
+.insignia-pronto:hover { background: #000; }
 
 .login-separador {
   display: flex; align-items: center; gap: 12px;

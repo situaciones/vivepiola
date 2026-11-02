@@ -4,19 +4,37 @@ import { AlertCircle, Eye, EyeOff } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import Marca from '../components/Marca';
 import IlustracionComunidad from '../components/IlustracionComunidad';
+import DescargarApp from '../components/DescargarApp';
 
 const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || '';
 // Sin CLIENT_ID solo existe el modo simulado, que el backend de produccion
 // rechaza: en una version publicada no se ofrece un boton que no funciona.
 const CON_GOOGLE = Boolean(GOOGLE_CLIENT_ID) || import.meta.env.DEV;
 
-// Lo que pasa con cada caso, para quien nunca ha usado la app.
+// Lo que pasa con cada caso, para quien nunca ha usado la app. Cada frase
+// describe lo que el sistema hace de verdad: la IA cursa sola solo los casos
+// claros, las primeras faltas se avisan sin cobro y las actas quedan selladas.
 const PASOS = [
-  'Alguien reporta lo que pasó, con una foto.',
-  'El Comité lo revisa. Si un miembro es parte del caso, no vota.',
-  'Te llega un correo con la prueba y el artículo del reglamento. Las primeras veces suele ser solo una advertencia.',
-  'Si no estás de acuerdo, puedes apelar dentro del plazo. El Comité te responde por escrito.',
-  'Todo queda guardado en el expediente del caso.',
+  {
+    titulo: 'Se reporta con pruebas',
+    texto: 'Un vecino, el conserje o la administración registra lo que pasó en la app, con foto, fecha y lugar.',
+  },
+  {
+    titulo: 'La IA hace el trabajo pesado',
+    texto: 'Lee el reporte y las fotos y los compara con tu reglamento. Los casos claros avanzan solos; los dudosos o graves pasan al Comité.',
+  },
+  {
+    titulo: 'Primero una advertencia, nunca una sorpresa',
+    texto: 'Recibes el aviso con la foto y el artículo exacto. Las primeras veces es solo una advertencia, sin cobro.',
+  },
+  {
+    titulo: 'Tienes derecho a apelar',
+    texto: 'Tu versión siempre cuenta. Apelas desde el mismo aviso y el Comité debe responderte con sus fundamentos.',
+  },
+  {
+    titulo: 'Nadie puede cambiar la historia',
+    texto: 'Cada paso queda sellado con fecha y hora. Ni la administración ni el Comité pueden borrarlo ni modificarlo.',
+  },
 ];
 
 export default function Login() {
@@ -114,11 +132,13 @@ export default function Login() {
         </Link>
 
         <div className="marca-claim">
-          <h2 id="como-funciona">Cómo se resuelve un problema en tu comunidad</h2>
-          <p>SinConflicto ordena los reclamos y multas del edificio. Cada caso pasa por los mismos pasos:</p>
+          <h2 id="como-funciona">En tu edificio, las reglas son iguales para todos.</h2>
+          <p>Sin favoritos, sin sorpresas y sin discusiones en el pasillo. Así avanza cada caso:</p>
           <IlustracionComunidad />
           <ol className="login-flujo">
-            {PASOS.map((paso) => <li key={paso}>{paso}</li>)}
+            {PASOS.map(({ titulo, texto }) => (
+              <li key={titulo}><b>{titulo}</b> {texto}</li>
+            ))}
           </ol>
         </div>
 
@@ -211,6 +231,7 @@ export default function Login() {
               Tengo un código de invitación
             </button>
           )}
+          <DescargarApp />
           <a href="#como-funciona" className="login-ver-flujo">Cómo funciona SinConflicto</a>
           <p className="texto-secundario" style={{ textAlign: 'center', fontSize: '0.85rem' }}>
             <Link to="/privacidad">Política de privacidad</Link>
