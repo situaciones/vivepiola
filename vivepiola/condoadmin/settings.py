@@ -298,7 +298,7 @@ GOOGLE_OAUTH_CLIENT_ID = config('GOOGLE_OAUTH_CLIENT_ID', default='')
 GOOGLE_OAUTH_MOCK = config('GOOGLE_OAUTH_MOCK', default=DEBUG, cast=bool)
 
 # URL publica del frontend, usada en los correos de invitacion.
-FRONTEND_URL = config('FRONTEND_URL', default='https://vivepiola-p3oup.ondigitalocean.app')
+FRONTEND_URL = config('FRONTEND_URL', default='https://sinconflicto.cl')
 
 
 # Parametros legales del negocio (Ley 21.442 - Chile)

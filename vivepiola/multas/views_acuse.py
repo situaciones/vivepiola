@@ -26,7 +26,7 @@ from rest_framework.views import APIView
 
 from .models import CanalNotificacion, Descargo, EstadoMulta, ResolucionDescargo, TipoActo
 from .sellado import sellar_acto
-from .services import multa_desde_token_acuse, registrar_acuse, registrar_historial
+from .services import avisar_apelacion_al_comite, multa_desde_token_acuse, registrar_acuse, registrar_historial
 
 # Que puede hacer el residente en cada estado. Se envia al frontend para que la
 # pagina no tenga que replicar las reglas del backend y arriesgar decir una cosa
@@ -213,6 +213,7 @@ class ApelarView(_VistaConToken):
             'via': 'enlace_de_notificacion',
             'archivo_adjunto': None,
         })
+        avisar_apelacion_al_comite(multa)
 
         multa.refresh_from_db()
         return Response(_expediente(multa), status=201)

@@ -101,6 +101,39 @@ def motivo_sin_facultad(usuario, hoy=None):
     return None
 
 
+def motivo_conflicto_interes(usuario, multa):
+    """
+    Por que `usuario` no puede decidir sobre `multa` por ser parte interesada;
+    None si puede. Nadie es juez de su propia unidad: el caso lo decide otro
+    miembro del Comite.
+    """
+    from accounts.models import Rol
+
+    persona = getattr(usuario, 'persona', None)
+    if usuario.rol != Rol.COMITE or persona is None:
+        return None
+    if multa.persona_infractor_id == persona.id or (persona.unidad_id and persona.unidad_id == multa.unidad_id):
+        return 'Este caso es de tu propia unidad: por imparcialidad debe decidirlo otro miembro del Comite.'
+    return None
+
+
+def comite_habilitado(multa, hoy=None):
+    """
+    Cuentas del Comite que pueden decidir sobre `multa`: con facultad vigente
+    y sin conflicto de interes. Son quienes reciben el aviso de una apelacion
+    y las que cuentan para el quorum.
+    """
+    from accounts.models import Rol, Usuario
+
+    cuentas = Usuario.objects.filter(
+        condominio_id=multa.condominio_id, rol=Rol.COMITE, is_active=True,
+    ).select_related('persona', 'condominio')
+    return [
+        c for c in cuentas
+        if motivo_sin_facultad(c, hoy) is None and motivo_conflicto_interes(c, multa) is None
+    ]
+
+
 def _cuenta_de(persona):
     from accounts.models import Usuario
 

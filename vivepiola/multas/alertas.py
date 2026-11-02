@@ -153,6 +153,19 @@ def _quien(alerta):
     return nombre
 
 
+def _responsable_del_vehiculo(unidad):
+    """
+    A quien se dirige el reporte de una alerta. Si en la unidad del auto hay
+    una sola persona registrada, es ella. Con varias no se puede saber quien
+    lo dejo ahi: el caso queda para que alguien identifique al responsable.
+    """
+    personas = list(
+        Persona.objects.filter(unidad=unidad, activo=True)
+        .exclude(condicion_especial='FALLECIDO')[:2]
+    )
+    return personas[0] if len(personas) == 1 else None
+
+
 def _reporte_de_la_alerta(alerta, usuario):
     """
     El reporte para el procedimiento normal, sobre la unidad del vehiculo.
@@ -170,6 +183,7 @@ def _reporte_de_la_alerta(alerta, usuario):
         return None  # un guardia fuera de sus limites avisa, pero no denuncia
     ticket = Ticket.objects.create(
         condominio=alerta.condominio, unidad=unidad, creado_por=usuario,
+        persona_reportada=_responsable_del_vehiculo(unidad),
         descripcion=f'Alerta inmediata: {_texto_situacion(alerta)}',
         fecha_hecho=alerta.creada_en, estado=EstadoTicket.CONVERTIDO,
     )

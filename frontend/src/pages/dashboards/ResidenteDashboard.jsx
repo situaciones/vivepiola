@@ -11,6 +11,15 @@ import ProcesoTimeline from '../../components/ProcesoTimeline';
 import { useVocab } from '../../vocab';
 
 function CuentaRegresiva({ fechaLimite, t }) {
+  // Sin fecha limite el plazo aun no corre: empieza al acusar recibo, y
+  // apelar desde aqui ya cuenta como acuse.
+  if (!fechaLimite) {
+    return (
+      <span className="countdown normal">
+        <Clock3 size={15} /> Tu plazo para apelar aun no empieza: corre desde que confirmas que recibiste el aviso.
+      </span>
+    );
+  }
   const restante = new Date(fechaLimite).getTime() - Date.now();
   if (restante <= 0) {
     return <span className="countdown urgente"><Clock3 size={15} /> {t('countdown_vencido')}</span>;
@@ -168,7 +177,7 @@ export default function ResidenteDashboard() {
                       <strong>Este aviso no tiene cobro</strong>
                       <p>
                         La falta queda registrada, pero no se te carga nada en el gasto comun.
-                        Si se repite, la sancion que corresponde es de {m.monto_sin_cortesia}.
+                        Si se repite, la sancion que corresponde es de {m.monto_sin_cortesia} {m.infraccion_unidad_monto}.
                       </p>
                     </div>
                   ) : (
@@ -211,6 +220,9 @@ export default function ResidenteDashboard() {
                     <div className="resultado-importacion" style={{ marginTop: 12 }}>
                       <p><strong>{t('tu_descargo')}</strong> {m.descargo.texto}</p>
                       <p><strong>Resolucion:</strong> <EstadoBadge estado={m.descargo.resolucion} /> {m.descargo.comentario_resolucion}</p>
+                      {m.descargo.resolucion === 'DESCUENTO' && (
+                        <p>Rebaja del {m.descargo.porcentaje_descuento}%: de {m.descargo.monto_original} a {m.monto} {m.infraccion_unidad_monto}.</p>
+                      )}
 
                       {m.descargo.reuniones?.filter((r) => r.estado !== 'CANCELADA').map((r) => (
                         <div key={r.id} className="aviso-reunion">

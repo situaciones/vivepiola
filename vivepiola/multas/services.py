@@ -1215,6 +1215,108 @@ def _avisar_firmeza_sin_respuesta(multa, vencio):
         logger.exception('No se pudo avisar la firmeza sin respuesta de la multa %s', multa.id)
 
 
+def avisar_apelacion_al_comite(multa):
+    """
+    Correo a los miembros del Comite que pueden resolver: llego una apelacion
+    y corre su plazo. Sin este aviso se enteraban recien en el resumen diario,
+    y cada dia perdido es un dia menos para resolver antes de que la multa
+    quede firme por falta de respuesta. El texto de la apelacion no va en el
+    correo: se lee en la app, donde queda el registro de quien lo vio.
+    """
+    from condominios.comite import comite_habilitado
+
+    from .correo_html import correo_con_html, html_correo
+
+    destinatarios = sorted({c.email for c in comite_habilitado(multa) if c.email})
+    if not destinatarios:
+        return
+    comunidad = multa.condominio.nombre
+    unidad = multa.unidad.identificador if multa.unidad else 'sin unidad'
+    vence = f'{timezone.localtime(multa.descargo.fecha_limite_resolucion):%d-%m-%Y}'
+    parrafos = [
+        f'El residente de {unidad} apelo la multa #{multa.id}.',
+        f'El Comite tiene hasta el {vence} para resolverla. Si no responde en ese plazo, '
+        'la multa queda firme y se cobra en los gastos comunes, y al residente se le '
+        'informa que fue por falta de respuesta del Comite.',
+        'Revise la apelacion y la evidencia en la Bandeja de decision de la app.',
+    ]
+    try:
+        correo_con_html(
+            asunto=f'Nueva apelacion: multa #{multa.id} ({unidad}) - {comunidad}',
+            texto='\n\n'.join(parrafos),
+            html=html_correo(
+                comunidad=comunidad, titulo='Llego una apelacion', parrafos=parrafos,
+                boton=('Revisar la apelacion', f'{settings.FRONTEND_URL.rstrip("/")}/app'),
+            ),
+            from_email=settings.DEFAULT_FROM_EMAIL,
+            to=destinatarios,
+            reply_to=correos_administracion(multa.condominio),
+        ).send(fail_silently=True)
+    except Exception:
+        logger.exception('No se pudo avisar al Comite la apelacion de la multa %s', multa.id)
+
+
+def _avisar_resolucion(multa, descargo):
+    """Correo al residente con lo que decidio el Comite sobre su apelacion."""
+    from .correo_html import correo_con_html, html_correo
+    from .models import ResolucionDescargo
+
+    persona = multa.persona_infractor
+    if persona is None or not persona.correo_electronico:
+        return
+    comunidad = multa.condominio.nombre
+    unidad = multa.infraccion.unidad_monto if multa.infraccion else ''
+    cobro = 'y se incluira en el proximo cobro de gastos comunes de su unidad.'
+    resultado = {
+        ResolucionDescargo.ACEPTADO: (
+            'Apelacion aceptada',
+            f'El Comite acogio su apelacion: la multa #{multa.id} queda anulada y no se le cobrara nada.',
+        ),
+        ResolucionDescargo.DESCUENTO: (
+            'Apelacion acogida en parte',
+            f'El Comite rebajo la multa #{multa.id} en un {descargo.porcentaje_descuento}%: de '
+            f'{descargo.monto_original} a {multa.monto} {unidad}. Con esta rebaja queda firme {cobro}',
+        ),
+        ResolucionDescargo.CORTESIA: (
+            'Apelacion resuelta: parte de cortesia',
+            f'El Comite dio por acreditada la falta, pero la dejo como parte de cortesia: '
+            f'la multa #{multa.id} queda registrada y no se le cobrara.',
+        ),
+    }.get(descargo.resolucion)
+    if resultado is None:  # RECHAZADO
+        if multa.estado == EstadoMulta.CORTESIA:
+            resultado = ('Apelacion rechazada', (
+                f'El Comite rechazo su apelacion. Como la multa #{multa.id} era un aviso de cortesia, '
+                'queda registrada sin cobro.'
+            ))
+        else:
+            resultado = ('Apelacion rechazada', (
+                f'El Comite rechazo su apelacion: la multa #{multa.id} queda firme por '
+                f'{multa.monto} {unidad} {cobro}'
+            ))
+    titulo, decision = resultado
+    parrafos = [decision.replace('  ', ' ')]
+    if descargo.comentario_resolucion:
+        parrafos.append(f'Fundamento del Comite: {descargo.comentario_resolucion}')
+    parrafos.append(
+        'Si tiene dudas, responda este correo: le llegara a la administracion de su comunidad.'
+    )
+    try:
+        correo_con_html(
+            asunto=f'Resolucion de su apelacion, multa #{multa.id} - {comunidad}',
+            texto='\n\n'.join(parrafos),
+            html=html_correo(
+                comunidad=comunidad, titulo=titulo, parrafos=parrafos,
+                boton=('Ver el caso', enlace_acuse(multa)),
+            ),
+            from_email=settings.DEFAULT_FROM_EMAIL,
+            to=[persona.correo_electronico],
+            reply_to=correos_administracion(multa.condominio),
+        ).send(fail_silently=True)
+    except Exception:
+        logger.exception('No se pudo avisar la resolucion de la multa %s', multa.id)
+
+
 def confirmar_antes_del_cobro(multa, usuario, dar_cortesia=False, comentario=''):
     """
     Resuelve un expediente detenido antes del cobro. Solo dos salidas: confirmar
@@ -1407,7 +1509,7 @@ def registrar_voto_resolucion(descargo, usuario, resolucion, porcentaje_descuent
     if not creado:
         return voto, False
 
-    quorum = descargo.multa.condominio.quorum_resolucion_apelacion
+    quorum = quorum_efectivo(descargo.multa)
     coincidentes = descargo.votos.filter(
         resolucion=resolucion, porcentaje_descuento=porcentaje_descuento,
     ).count()
@@ -1420,6 +1522,21 @@ def registrar_voto_resolucion(descargo, usuario, resolucion, porcentaje_descuent
         'quorum_requerido': quorum,
     })
     return voto, coincidentes >= quorum
+
+
+def quorum_efectivo(multa):
+    """
+    Votos coincidentes que se exigen para resolver la apelacion de `multa`.
+
+    Es el quorum de la comunidad, salvo que no queden suficientes miembros
+    habilitados: si uno es parte del caso (o su cuenta no esta activa), exigir
+    su voto dejaria la apelacion sin resolver y la multa quedaria firme por
+    un motivo que no es culpa del residente.
+    """
+    from condominios.comite import comite_habilitado
+
+    habilitados = len(comite_habilitado(multa))
+    return max(1, min(multa.condominio.quorum_resolucion_apelacion, habilitados))
 
 
 def resolver_descargo(descargo, resolucion, usuario, comentario='', porcentaje_descuento=None):
@@ -1488,4 +1605,5 @@ def resolver_descargo(descargo, resolucion, usuario, comentario='', porcentaje_d
         'texto_descargo': descargo.texto,
         'descargo_presentado_en': descargo.fecha_presentacion.isoformat(),
     })
+    _avisar_resolucion(multa, descargo)
     return multa

@@ -17,6 +17,7 @@ from accounts.permissions import (
     EsAdministrador, EsComite, EsDenunciante, EsFiscalizadorOComiteOAdministrador, EsResidente,
 )
 
+from condominios.comite import motivo_conflicto_interes
 from reglamentos.models import EstadoInfraccion, InfraccionCatalogo
 
 from .contencion import (
@@ -38,10 +39,10 @@ from .serializers import (
     ResolverDescargoSerializer, TicketSerializer,
 )
 from .services import (
-    ETAPA_PARA_DENUNCIANTE, actualizar_multas_vencidas, aplicar_monto_con_reincidencia,
+    ETAPA_PARA_DENUNCIANTE, actualizar_multas_vencidas, aplicar_monto_con_reincidencia, avisar_apelacion_al_comite,
     buscar_expediente_abierto, cursar_multa_automatica, generar_audit_trail_pdf,
     confirmar_antes_del_cobro, convocar_reunion, notificar_multa, proponer_infraccion,
-    proponer_resoluciones, reevaluar_con_evidencia, registrar_acta_reunion, registrar_acuse,
+    proponer_resoluciones, quorum_efectivo, reevaluar_con_evidencia, registrar_acta_reunion, registrar_acuse,
     registrar_historial, registrar_voto_resolucion, resolver_descargo, resolver_posible_duplicado,
 )
 
@@ -262,8 +263,23 @@ class MultaViewSet(viewsets.ReadOnlyModelViewSet):
             return [EsResidente()]
         return [UsuarioAsignado()]
 
+    # Decisiones del Comite sobre un caso concreto: quien es parte del caso no
+    # puede tomarlas (ver motivo_conflicto_interes).
+    DECISIONES_COMITE = (
+        'aprobar', 'rechazar', 'resolver_descargo_view', 'resolver_duplicado',
+        'confirmar_cobro', 'convocar_reunion_view', 'acta_reunion',
+    )
+
     def get_queryset(self):
         return multas_visibles(self.request.user)
+
+    def get_object(self):
+        multa = super().get_object()
+        if self.action in self.DECISIONES_COMITE:
+            motivo = motivo_conflicto_interes(self.request.user, multa)
+            if motivo:
+                raise PermissionDenied(motivo)
+        return multa
 
     @action(detail=True, methods=['post'], url_path='resolver-duplicado')
     def resolver_duplicado(self, request, pk=None):
@@ -540,6 +556,7 @@ class MultaViewSet(viewsets.ReadOnlyModelViewSet):
             'texto': descargo.texto,
             'archivo_adjunto': descargo.archivo_adjunto.name if descargo.archivo_adjunto else None,
         })
+        avisar_apelacion_al_comite(multa)
 
         return Response(DescargoSerializer(descargo).data, status=201)
 
@@ -562,7 +579,7 @@ class MultaViewSet(viewsets.ReadOnlyModelViewSet):
         # Con quorum 1 resuelve quien entre primero, como siempre. Con 2 o mas,
         # la comunidad exige acuerdo: los votos se acumulan y solo cuando
         # coinciden en la MISMA salida se aplica.
-        quorum = multa.condominio.quorum_resolucion_apelacion
+        quorum = quorum_efectivo(multa)
         if quorum > 1:
             _, completo = registrar_voto_resolucion(
                 multa.descargo, request.user, resolucion,
