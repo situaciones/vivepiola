@@ -947,106 +947,58 @@ textarea { resize: vertical; }
 
 /* ---------- Login ---------- */
 
-.pantalla-login { min-height: 100vh; min-height: 100dvh; display: flex; background: var(--navy-950); }
+.pantalla-login { min-height: 100vh; min-height: 100dvh; display: flex; background: var(--fondo); }
 
 .login-panel-marca {
   flex: 1;
   background: var(--navy-950);
-  color: white;
+  color: #e6e6f0;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
   gap: 24px;
-  padding: 36px 48px;
-  position: relative;
-  overflow: hidden;
-  isolation: isolate;
-}
-/* Dos halos de la marca y una grilla tenue: profundidad sin imagen pesada. */
-.login-panel-marca::before {
-  content: '';
-  position: absolute;
-  inset: -20%;
-  z-index: -1;
-  background:
-    radial-gradient(40% 35% at 20% 25%, rgba(168, 85, 247, 0.45), transparent 70%),
-    radial-gradient(35% 30% at 80% 70%, rgba(59, 130, 246, 0.35), transparent 70%),
-    radial-gradient(25% 25% at 60% 15%, rgba(16, 185, 129, 0.18), transparent 70%);
-  filter: blur(20px);
-}
-.login-panel-marca::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  z-index: -1;
-  background-image: linear-gradient(rgba(255,255,255,0.045) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.045) 1px, transparent 1px);
-  background-size: 32px 32px;
-  mask-image: radial-gradient(circle at 30% 30%, black, transparent 70%);
+  padding: 36px 56px;
 }
 .login-panel-marca .marca-top { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 1.05rem; }
-.login-panel-marca .marca-claim { max-width: 460px; display: flex; flex-direction: column; }
-.login-etiqueta {
-  align-self: flex-start;
-  font-size: 0.74rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase;
-  color: #c7c9f5; padding: 6px 12px; border-radius: 999px;
-  background: rgba(139, 157, 255, 0.12); border: 1px solid rgba(139, 157, 255, 0.25);
-  margin-bottom: 16px;
-}
-.login-panel-marca .marca-claim h2 { color: white; font-size: clamp(1.7rem, 2.4vw, 2.1rem); font-weight: 800; letter-spacing: -0.03em; line-height: 1.15; margin: 0 0 12px; }
+.login-panel-marca .marca-claim { max-width: 440px; display: flex; flex-direction: column; }
+.login-panel-marca .marca-claim h2 { color: white; font-size: 1.6rem; font-weight: 700; line-height: 1.25; margin: 0 0 10px; }
 .login-panel-marca .marca-claim h2::before { display: none; }
-.login-panel-marca .marca-claim h2 strong {
-  background: var(--grad-completo);
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
-}
-.login-panel-marca .marca-claim p { color: #b4b6d6; font-size: 1rem; line-height: 1.6; margin: 0; }
+.login-panel-marca .marca-claim p { color: #a9abc4; font-size: 0.95rem; line-height: 1.55; margin: 0; }
 .login-panel-marca .marca-foot { font-size: 0.78rem; color: #6f7096; }
 
-.ilustracion-comunidad { width: 100%; max-width: 280px; height: auto; margin: 14px 0 0; align-self: center; }
-.ilustracion-comunidad .ic-camino { animation: ic-avanzar 1.6s linear infinite; }
-@keyframes ic-avanzar { to { stroke-dashoffset: -22; } }
-@media (prefers-reduced-motion: reduce) { .ilustracion-comunidad .ic-camino { animation: none; } }
+.ilustracion-comunidad { width: 100%; max-width: 260px; height: auto; margin: 20px 0 4px; }
 
-/* El camino de un caso: una linea que une los pasos, de morado a verde. */
-.login-flujo { list-style: none; margin: 8px 0 0; padding: 0; display: flex; flex-direction: column; position: relative; }
-.login-flujo::before {
-  content: ''; position: absolute; left: 17px; top: 18px; bottom: 18px; width: 2px;
-  background: linear-gradient(180deg, #a855f7, #3b82f6 55%, #10b981); opacity: 0.55;
-}
-.login-flujo li { display: flex; gap: 14px; align-items: flex-start; padding: 5px 0; position: relative; }
-.login-flujo-icono {
-  flex: 0 0 36px; height: 36px; border-radius: 12px;
-  display: grid; place-items: center;
-  background: #16152b; border: 1px solid rgba(150, 140, 235, 0.3); color: #c7c9f5;
-}
-.login-flujo li:last-child .login-flujo-icono { color: #10b981; border-color: rgba(16, 185, 129, 0.45); }
-.login-flujo b { display: block; color: white; font-size: 0.95rem; font-weight: 700; margin-top: 1px; }
-.login-flujo b small { color: #8b9dff; font-size: 0.75rem; font-weight: 800; margin-right: 4px; }
-.login-flujo li span:not(.login-flujo-icono) { display: block; color: #9a9cc0; font-size: 0.86rem; line-height: 1.45; margin-top: 2px; }
+.login-flujo { margin: 12px 0 0; padding: 0 0 0 1.3em; display: flex; flex-direction: column; gap: 12px; }
+.login-flujo li { color: #c9cbe0; font-size: 0.92rem; line-height: 1.5; padding-left: 4px; }
+.login-flujo li::marker { color: #7d80a8; font-weight: 600; }
 
 .login-panel-form { flex: 1; display: flex; align-items: center; justify-content: center; padding: 40px; background: var(--fondo); }
 
-.login-tarjeta { width: 380px; max-width: 100%; display: flex; flex-direction: column; gap: 16px; animation: entrar 0.4s var(--ease); }
-.login-tarjeta h1 { font-size: 1.55rem; font-weight: 800; letter-spacing: -0.03em; margin-bottom: 4px; }
-.login-tarjeta input { min-height: 48px; font-size: 16px; }
-.login-tarjeta .btn { min-height: 50px; font-size: 0.95rem; margin-top: 4px; border-radius: 14px; }
+.login-tarjeta { width: 360px; max-width: 100%; display: flex; flex-direction: column; gap: 16px; }
+.login-tarjeta h1 { font-size: 1.4rem; font-weight: 700; margin-bottom: 4px; }
+.login-tarjeta input { min-height: 46px; font-size: 16px; }
+.login-tarjeta .btn { min-height: 46px; font-size: 0.95rem; margin-top: 4px; border-radius: 10px; }
+.login-tarjeta .btn-primario { background: var(--tech-fuerte); box-shadow: none; }
+.login-tarjeta .btn-primario:hover:not(:disabled) { background: #4338ca; filter: none; box-shadow: none; }
 
 .login-clave { position: relative; display: block; }
 .login-clave input { width: 100%; padding-right: 48px; }
 .login-ver-clave {
   position: absolute; right: 6px; top: 50%; transform: translateY(-50%);
-  width: 38px; height: 38px; border: 0; border-radius: 10px; background: transparent;
+  width: 36px; height: 36px; border: 0; border-radius: 8px; background: transparent;
   color: var(--texto-tenue); display: grid; place-items: center; cursor: pointer;
 }
-.login-ver-clave:hover { background: var(--tech-soft); color: var(--tech-fuerte); }
-.login-tarjeta .btn-primario { display: inline-flex; align-items: center; justify-content: center; gap: 8px; }
+.login-ver-clave:hover { color: var(--texto); }
 .login-nota { font-size: 0.85rem; margin: 0; }
+.login-enlace {
+  align-self: center; background: none; border: 0; padding: 4px 0; cursor: pointer;
+  font: inherit; font-size: 0.9rem; color: var(--tech-fuerte); text-decoration: underline; text-underline-offset: 3px;
+}
 .login-ver-flujo { display: none; }
 
 .login-separador {
   display: flex; align-items: center; gap: 12px;
-  color: var(--texto-tenue); font-size: 0.78rem; font-weight: 500;
+  color: var(--texto-tenue); font-size: 0.8rem;
 }
 .login-separador::before, .login-separador::after { content: ''; flex: 1; height: 1px; background: var(--borde); }
 
@@ -1059,48 +1011,21 @@ textarea { resize: vertical; }
 
 @media (max-width: 860px) {
   .pantalla-login { flex-direction: column; }
-  /* En el telefono primero se entra; lo que es SinConflicto queda debajo. */
-  .login-panel-marca { order: 3; flex: none; padding: 40px 22px calc(36px + env(safe-area-inset-bottom)); gap: 24px; }
+  /* En el telefono primero se entra; como funciona queda debajo. */
+  .login-panel-marca { order: 3; flex: none; padding: 36px 22px calc(32px + env(safe-area-inset-bottom)); }
   .login-panel-marca .marca-top { display: none; }
-  .login-panel-marca .marca-claim h2 { font-size: 1.5rem; }
-  .login-panel-marca .marca-claim p { font-size: 0.95rem; }
+  .login-panel-marca .marca-claim h2 { font-size: 1.3rem; }
 
   .login-cabecera-movil {
-    display: flex; flex-direction: column; gap: 22px;
-    padding: calc(28px + env(safe-area-inset-top)) 24px 44px;
-    color: white; position: relative; overflow: hidden; isolation: isolate;
-  }
-  .login-cabecera-movil::before {
-    content: '';
-    position: absolute; inset: -30%; z-index: -1;
-    background:
-      radial-gradient(45% 40% at 15% 30%, rgba(168, 85, 247, 0.5), transparent 70%),
-      radial-gradient(40% 40% at 88% 35%, rgba(59, 130, 246, 0.42), transparent 70%),
-      radial-gradient(30% 30% at 55% 5%, rgba(16, 185, 129, 0.22), transparent 70%);
-    filter: blur(18px);
+    display: block;
+    padding: calc(22px + env(safe-area-inset-top)) 22px 22px;
+    background: var(--navy-950); color: white;
   }
   .login-cabecera-movil .marca-wordmark b { font-size: 0.9rem; }
-  .login-cabecera-movil h2 { color: white; font-size: 1.7rem; font-weight: 800; letter-spacing: -0.03em; line-height: 1.15; margin: 0; }
-  .login-cabecera-movil h2::before { display: none; }
-  .login-cabecera-movil h2 strong {
-    background: var(--grad-completo);
-    -webkit-background-clip: text; background-clip: text; color: transparent;
-  }
-  .login-cabecera-movil p { color: #b4b6d6; font-size: 0.92rem; line-height: 1.55; margin-top: 8px; }
 
-  .login-panel-form {
-    flex: 1;
-    align-items: flex-start;
-    padding: 28px 22px calc(28px + env(safe-area-inset-bottom));
-    border-radius: 28px;
-    margin-top: -18px;
-    box-shadow: 0 -20px 40px -24px rgba(0, 0, 0, 0.6);
-  }
+  .login-panel-form { flex: 1; align-items: flex-start; padding: 28px 22px 36px; }
   .login-tarjeta { width: 100%; }
-  .login-ver-flujo {
-    display: block; text-align: center; font-size: 0.9rem; font-weight: 600;
-    color: var(--tech-fuerte); text-decoration: none; padding: 6px 0;
-  }
+  .login-ver-flujo { display: block; text-align: center; font-size: 0.9rem; color: var(--texto-suave); }
 }
 
 .cargando-pantalla {

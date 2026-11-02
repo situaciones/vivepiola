@@ -2,15 +2,16 @@
  * Ilustracion del login: dos vecinos con un problema, el edificio al medio y
  * el visto de la marca arriba. Se lee de izquierda a derecha: el aviso (!)
  * recorre un camino ordenado y llega resuelto (visto verde).
- * Es SVG propio para que pese poco y se vea nitida en cualquier pantalla.
+ * Es un SVG propio para que pese poco y se vea nitida en cualquier pantalla.
  */
 
 // Ventanas del edificio: [columna, fila, color]. Las vacias quedan apagadas.
+const LUZ = '#e9c46a';
 const VENTANAS = [
-  [0, 0, '#a855f7'], [1, 0, null], [2, 0, '#3b82f6'],
-  [0, 1, null], [1, 1, '#ffc65c'], [2, 1, null],
-  [0, 2, '#3b82f6'], [1, 2, null], [2, 2, '#10b981'],
-  [0, 3, null], [1, 3, '#a855f7'], [2, 3, '#ffc65c'],
+  [0, 0, LUZ], [1, 0, null], [2, 0, null],
+  [0, 1, null], [1, 1, LUZ], [2, 1, LUZ],
+  [0, 2, null], [1, 2, null], [2, 2, LUZ],
+  [0, 3, LUZ], [1, 3, null], [2, 3, null],
 ];
 
 function Vecino({ x, color, cabello }) {
@@ -31,27 +32,11 @@ export default function IlustracionComunidad({ className = '' }) {
       role="img"
       aria-label="Dos vecinos con un problema que se resuelve por un camino ordenado"
     >
-      <defs>
-        <linearGradient id="ic-camino" x1="0" x2="1" y1="0" y2="0">
-          <stop offset="0" stopColor="#a855f7" />
-          <stop offset="0.5" stopColor="#3b82f6" />
-          <stop offset="1" stopColor="#10b981" />
-        </linearGradient>
-        <linearGradient id="ic-edificio" x1="0" x2="0" y1="0" y2="1">
-          <stop offset="0" stopColor="#2c2a55" />
-          <stop offset="1" stopColor="#1a1834" />
-        </linearGradient>
-        <radialGradient id="ic-suelo" cx="0.5" cy="0.5" r="0.5">
-          <stop offset="0" stopColor="#6366f1" stopOpacity="0.35" />
-          <stop offset="1" stopColor="#6366f1" stopOpacity="0" />
-        </radialGradient>
-      </defs>
-
-      <ellipse cx="180" cy="198" rx="170" ry="14" fill="url(#ic-suelo)" />
+      <line x1="20" y1="198" x2="340" y2="198" stroke="rgba(150,140,235,.3)" strokeWidth="1.5" />
 
       {/* Edificio */}
-      <rect x="128" y="64" width="104" height="134" rx="10" fill="url(#ic-edificio)" stroke="rgba(150,140,235,.35)" />
-      <rect x="120" y="58" width="120" height="10" rx="5" fill="#47457a" />
+      <rect x="128" y="64" width="104" height="134" rx="4" fill="#1f1d3c" />
+      <rect x="120" y="58" width="120" height="8" rx="2" fill="#2c2a55" />
       {VENTANAS.map(([c, f, color]) => (
         <rect
           key={`${c}-${f}`}
@@ -63,12 +48,11 @@ export default function IlustracionComunidad({ className = '' }) {
 
       {/* Camino del aviso: sale del vecino de la izquierda y llega al de la derecha */}
       <path
-        className="ic-camino"
         d="M70 104 C 96 30, 150 18, 180 22 C 210 18, 264 30, 290 104"
-        fill="none" stroke="url(#ic-camino)" strokeWidth="3" strokeLinecap="round" strokeDasharray="2 9"
+        fill="none" stroke="#5b5a8a" strokeWidth="2" strokeLinecap="round" strokeDasharray="4 6"
       />
 
-      {/* Sello al centro: el proceso, sin atajos */}
+      {/* Al centro, el paso por el Comite */}
       <g transform="translate(180 22)">
         <circle r="19" fill="#131320" stroke="rgba(150,140,235,.45)" strokeWidth="1.5" />
         <path d="M-8 -2 L-2 7 L9 -9" fill="none" stroke="#3b82f6" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" />

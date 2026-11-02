@@ -1,8 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
-import {
-  AlertCircle, ArrowRight, BellRing, Camera, Eye, EyeOff, KeyRound, MessageSquareText, Scale, ShieldCheck, Users,
-} from 'lucide-react';
+import { AlertCircle, Eye, EyeOff } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import Marca from '../components/Marca';
 import IlustracionComunidad from '../components/IlustracionComunidad';
@@ -12,13 +10,13 @@ const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || '';
 // rechaza: en una version publicada no se ofrece un boton que no funciona.
 const CON_GOOGLE = Boolean(GOOGLE_CLIENT_ID) || import.meta.env.DEV;
 
-// El camino de cada caso, contado para quien nunca ha usado la app.
+// Lo que pasa con cada caso, para quien nunca ha usado la app.
 const PASOS = [
-  { icono: Camera, titulo: 'Alguien avisa', texto: 'Un vecino o el conserje cuenta lo que pasó, con foto.' },
-  { icono: Users, titulo: 'El Comité revisa', texto: 'Vecinos elegidos por la comunidad. Nadie decide su propio caso.' },
-  { icono: BellRing, titulo: 'Te llega el aviso', texto: 'Con la prueba y la regla del reglamento. Muchas veces, primero como cortesía.' },
-  { icono: MessageSquareText, titulo: 'Puedes dar tu versión', texto: 'Tienes un plazo para apelar y el Comité te responde con sus razones.' },
-  { icono: ShieldCheck, titulo: 'Todo queda registrado', texto: 'Si mañana alguien pregunta qué pasó, está todo.' },
+  'Alguien reporta lo que pasó, con una foto.',
+  'El Comité lo revisa. Si un miembro es parte del caso, no vota.',
+  'Te llega un correo con la prueba y el artículo del reglamento. Las primeras veces suele ser solo una advertencia.',
+  'Si no estás de acuerdo, puedes apelar dentro del plazo. El Comité te responde por escrito.',
+  'Todo queda guardado en el expediente del caso.',
 ];
 
 export default function Login() {
@@ -110,52 +108,33 @@ export default function Login() {
 
   return (
     <div className="pantalla-login">
-      <aside className="login-panel-marca" aria-labelledby="que-es-sc">
+      <aside className="login-panel-marca" aria-labelledby="como-funciona">
         <Link to="/" className="marca-top" style={{ textDecoration: 'none', color: 'inherit' }}>
           <Marca size={34} />
         </Link>
 
         <div className="marca-claim">
-          <span className="login-etiqueta">¿Qué es SinConflicto?</span>
-          <h2 id="que-es-sc">Los problemas entre vecinos, resueltos <strong>con orden y sin peleas</strong>.</h2>
-          <p>
-            Cuando algo pasa en tu comunidad, sigue siempre el mismo camino.
-            Nadie decide a dedo y todos pueden ver cada paso.
-          </p>
+          <h2 id="como-funciona">Cómo se resuelve un problema en tu comunidad</h2>
+          <p>SinConflicto ordena los reclamos y multas del edificio. Cada caso pasa por los mismos pasos:</p>
           <IlustracionComunidad />
           <ol className="login-flujo">
-            {PASOS.map(({ icono: Icono, titulo, texto }, i) => (
-              <li key={titulo}>
-                <span className="login-flujo-icono"><Icono size={17} /></span>
-                <div>
-                  <b><small>{i + 1}</small> {titulo}</b>
-                  <span>{texto}</span>
-                </div>
-              </li>
-            ))}
+            {PASOS.map((paso) => <li key={paso}>{paso}</li>)}
           </ol>
         </div>
 
-        <div className="marca-foot">
-          <Scale size={13} style={{ verticalAlign: 'middle', marginRight: 6 }} />
-          Según la Ley 21.442 de Copropiedad Inmobiliaria — Chile
-        </div>
+        <div className="marca-foot">Ley 21.442 de Copropiedad Inmobiliaria, Chile</div>
       </aside>
 
       <div className="login-cabecera-movil">
-        <Marca size={40} />
-        <div>
-          <h2>Tu comunidad, <strong>sin conflictos</strong>.</h2>
-          <p>Entra para ver tus avisos, reclamos y multas, con cada paso a la vista.</p>
-        </div>
+        <Marca size={36} />
       </div>
 
       <div className="login-panel-form">
         <form className="login-tarjeta" onSubmit={handleSubmit}>
           <div>
-            <h1>Entra a tu comunidad</h1>
+            <h1>Iniciar sesión</h1>
             <p className="texto-secundario">
-              {CON_GOOGLE ? 'Usa tu cuenta de Google o tu usuario.' : 'Usa el usuario que te dio tu comunidad.'}
+              {CON_GOOGLE ? 'Con tu cuenta de Google o tu usuario.' : 'Con tu usuario y contraseña.'}
             </p>
           </div>
 
@@ -204,15 +183,13 @@ export default function Login() {
           )}
 
           <button className="btn btn-primario" type="submit" disabled={enviando}>
-            {enviando ? 'Entrando...' : <>Entrar <ArrowRight size={17} /></>}
+            {enviando ? 'Entrando...' : 'Entrar'}
           </button>
 
           {verCodigo ? (
             <div className="login-invitacion">
               <label>
-                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-                  <KeyRound size={13} /> Código de invitación
-                </span>
+                Código de invitación
                 <input
                   value={codigo} onChange={(e) => setCodigo(e.target.value)} autoCapitalize="none"
                   placeholder="Viene en el correo de bienvenida"
@@ -221,7 +198,7 @@ export default function Login() {
               </label>
               {CON_GOOGLE ? (
                 <p className="texto-secundario login-nota">
-                  Escríbelo y luego continúa con Google. Solo se pide la primera vez.
+                  Escríbelo y después continúa con Google. Se pide solo la primera vez.
                 </p>
               ) : (
                 <button type="button" className="btn btn-secundario" onClick={irAInvitacion}>
@@ -230,11 +207,11 @@ export default function Login() {
               )}
             </div>
           ) : (
-            <button type="button" className="btn btn-fantasma" onClick={() => setVerCodigo(true)}>
-              <KeyRound size={15} /> ¿Primera vez? Tengo un código de invitación
+            <button type="button" className="login-enlace" onClick={() => setVerCodigo(true)}>
+              Tengo un código de invitación
             </button>
           )}
-          <a href="#que-es-sc" className="login-ver-flujo">¿Qué es SinConflicto? Mira cómo funciona ↓</a>
+          <a href="#como-funciona" className="login-ver-flujo">Cómo funciona SinConflicto</a>
           <p className="texto-secundario" style={{ textAlign: 'center', fontSize: '0.85rem' }}>
             <Link to="/privacidad">Política de privacidad</Link>
           </p>
