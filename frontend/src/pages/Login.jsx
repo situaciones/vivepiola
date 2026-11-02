@@ -12,16 +12,18 @@ const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || '';
 const CON_GOOGLE = Boolean(GOOGLE_CLIENT_ID) || import.meta.env.DEV;
 
 // Lo que pasa con cada caso, para quien nunca ha usado la app. Cada frase
-// describe lo que el sistema hace de verdad: la IA cursa sola solo los casos
-// claros, las primeras faltas se avisan sin cobro y las actas quedan selladas.
+// describe lo que el sistema hace de verdad: la IA aplica el catalogo que el
+// Comite confirmo y cursa sola solo los casos claros, las primeras faltas se
+// avisan sin cobro, las apelaciones las resuelven personas y las actas quedan
+// selladas. No prometer aqui que una persona revisa cada multa: no es asi.
 const PASOS = [
   {
     titulo: 'Se reporta con pruebas',
     texto: 'Un vecino, el conserje o la administración registra lo que pasó en la app, con foto, fecha y lugar.',
   },
   {
-    titulo: 'La IA hace el trabajo pesado',
-    texto: 'Lee el reporte y las fotos y los compara con tu reglamento. Los casos claros avanzan solos; los dudosos o graves pasan al Comité.',
+    titulo: 'Tu Comité aprueba las reglas. La IA las aplica.',
+    texto: 'Lee el reporte y las fotos, encuentra el artículo de tu reglamento que corresponde y deja escrito por qué. Los casos claros avanzan solos; los dudosos o graves los revisa el Comité.',
   },
   {
     titulo: 'Primero una advertencia, nunca una sorpresa',
@@ -29,7 +31,7 @@ const PASOS = [
   },
   {
     titulo: 'Tienes derecho a apelar',
-    texto: 'Tu versión siempre cuenta. Apelas desde el mismo aviso y el Comité debe responderte con sus fundamentos.',
+    texto: 'Tu versión siempre cuenta. Apelas desde el mismo aviso y tu apelación la deciden personas del Comité, no la IA, con sus fundamentos por escrito.',
   },
   {
     titulo: 'Nadie puede cambiar la historia',
