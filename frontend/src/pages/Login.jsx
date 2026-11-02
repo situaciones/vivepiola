@@ -12,18 +12,18 @@ const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || '';
 const CON_GOOGLE = Boolean(GOOGLE_CLIENT_ID) || import.meta.env.DEV;
 
 // Lo que pasa con cada caso, para quien nunca ha usado la app. Cada frase
-// describe lo que el sistema hace de verdad: la IA aplica el catalogo que el
-// Comite confirmo y cursa sola solo los casos claros, las primeras faltas se
-// avisan sin cobro, las apelaciones las resuelven personas y las actas quedan
-// selladas. No prometer aqui que una persona revisa cada multa: no es asi.
+// describe lo que el sistema hace de verdad: la IA propone con el catalogo que
+// el Comite confirmo, la advertencia sin cobro sale sola, toda multa con cobro
+// la aprueba la mayoria del Comite (Ley 21.442), las apelaciones las resuelven
+// personas y las actas quedan selladas.
 const PASOS = [
   {
     titulo: 'Se reporta con pruebas',
     texto: 'Un vecino, el conserje o la administración registra lo que pasó en la app, con foto, fecha y lugar.',
   },
   {
-    titulo: 'Tu Comité aprueba las reglas. La IA las aplica.',
-    texto: 'Lee el reporte y las fotos, encuentra el artículo de tu reglamento que corresponde y deja escrito por qué. Los casos claros avanzan solos; los dudosos o graves los revisa el Comité.',
+    titulo: 'La IA prepara el caso. Tu Comité decide.',
+    texto: 'Lee el reporte y las fotos, encuentra el artículo de tu reglamento que corresponde y deja la propuesta lista. Ninguna multa con cobro sale sin la aprobación de la mayoría del Comité.',
   },
   {
     titulo: 'Primero una advertencia, nunca una sorpresa',

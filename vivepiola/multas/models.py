@@ -363,6 +363,40 @@ class VotoResolucion(models.Model):
         return f'Voto {self.resolucion} de {self.actor} en la apelacion #{self.descargo_id}'
 
 
+class DecisionAprobacion(models.TextChoices):
+    APROBAR = 'APROBAR', 'Aplicar la multa'
+    RECHAZAR = 'RECHAZAR', 'No aplicar la multa'
+
+
+class VotoAprobacion(models.Model):
+    """
+    Voto de un miembro del Comite sobre si se aplica una multa con cobro.
+
+    La Ley 21.442 deja la imposicion de multas en el Comite: ninguna multa con
+    cobro sale sin que la mayoria de sus integrantes la apruebe. Solo cuentan
+    como acuerdo los votos por la misma salida (misma infraccion y mismo
+    monto). Un mismo actor no vota dos veces el mismo expediente.
+    """
+
+    multa = models.ForeignKey('Multa', on_delete=models.CASCADE, related_name='votos_aprobacion')
+    actor = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT, related_name='votos_aprobacion')
+    decision = models.CharField(max_length=10, choices=DecisionAprobacion.choices)
+    infraccion = models.ForeignKey(
+        'reglamentos.InfraccionCatalogo', on_delete=models.PROTECT, null=True, blank=True,
+    )
+    # Monto pedido por quien vota. Vacio = el del catalogo (con reincidencia).
+    monto = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    motivo = models.TextField(blank=True)
+    ts = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['ts']
+        unique_together = ('multa', 'actor')
+
+    def __str__(self):
+        return f'Voto {self.decision} de {self.actor} en la multa #{self.multa_id}'
+
+
 class HistorialMulta(models.Model):
     """Bitacora inmutable de cada cambio de estado, para el debido proceso."""
 
@@ -442,6 +476,7 @@ class TipoActo(models.TextChoices):
     REUNION_CONVOCADA = 'REUNION_CONVOCADA', 'Reunion convocada con el residente'
     REUNION_REALIZADA = 'REUNION_REALIZADA', 'Reunion realizada'
     VOTO_RESOLUCION = 'VOTO_RESOLUCION', 'Voto del Comite sobre la apelacion'
+    VOTO_APROBACION = 'VOTO_APROBACION', 'Voto del Comite para aplicar o no la multa'
     RESOLUCION_DESCARGO = 'RESOLUCION_DESCARGO', 'Resolucion del descargo'
     FIRMEZA_AUTOMATICA = 'FIRMEZA_AUTOMATICA', 'Firmeza automatica por vencimiento de plazo'
     FIRMEZA_SIN_RESPUESTA_COMITE = (

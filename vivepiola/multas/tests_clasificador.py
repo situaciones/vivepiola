@@ -111,10 +111,11 @@ class ClasificadorTestCase(APITestCase):
         self.assertEqual(multa.propuesta_confianza, 90)
         self.assertIn('Art. 4', multa.propuesta_fundamento)
         self.assertEqual(multa.monto, Decimal('2.00'))
-        # Con 90 de confianza el encuadre es solido: se notifica de inmediato y
-        # el residente se defiende apelando, sin filtro previo del comite.
-        self.assertEqual(multa.estado, EstadoMulta.NOTIFICADA)
-        self.assertIsNone(multa.aprobada_por, 'nadie aprobo: el ciclo ya no tiene ese paso')
+        # Con 90 de confianza el encuadre es solido: la propuesta llega lista,
+        # pero una multa con cobro la aprueba el Comite (Ley 21.442).
+        self.assertEqual(multa.estado, EstadoMulta.EN_REVISION)
+        self.assertIsNone(multa.aprobada_por)
+        self.assertIn('Propuesta lista', multa.historial.first().comentario)
 
     def test_el_catalogo_enviado_solo_trae_infracciones_activas(self):
         InfraccionCatalogo.objects.create(
@@ -184,9 +185,9 @@ class ClasificadorTestCase(APITestCase):
 
     def test_la_propuesta_de_la_ia_nunca_queda_firme_sin_defensa_posible(self):
         """
-        Con el filtro previo eliminado, la garantia ya no es que un humano
-        apruebe antes: es que el residente siempre puede apelar y el comite
-        puede dejar la multa en cero. La IA notifica, no sanciona en definitiva.
+        La IA propone, no sanciona: la multa con cobro la aprueba el Comite y,
+        ya notificada, el residente siempre puede apelar y el Comite puede
+        dejarla en cero.
         """
         cliente = ClienteFalso(
             '{"codigo": "MASCOTA-01", "confianza": 80, "fundamento": "Animal suelto."}'
@@ -194,8 +195,17 @@ class ClasificadorTestCase(APITestCase):
         with self._con_cliente(cliente):
             multa = self._denunciar('El perro andaba suelto')
 
-        self.assertEqual(multa.estado, EstadoMulta.NOTIFICADA)
+        self.assertEqual(multa.estado, EstadoMulta.EN_REVISION)
         self.assertEqual(multa.infraccion_id, self.mascotas.id)
+
+        self.client.force_authenticate(self.comite)
+        r = self.client.post(f'/api/multas/{multa.id}/aprobar/', {'infraccion_id': self.mascotas.id})
+        self.assertEqual(r.status_code, 200, r.data)
+        administrador = Usuario.objects.create_user(
+            username='admin3', password='x', rol=Rol.ADMINISTRADOR, condominio=self.condominio,
+        )
+        self.client.force_authenticate(administrador)
+        self.assertEqual(self.client.post(f'/api/multas/{multa.id}/notificar/').status_code, 200)
 
         self.client.force_authenticate(self.residente)
         respuesta = self.client.post(f'/api/multas/{multa.id}/descargo/', {'texto': 'No es mi perro'})

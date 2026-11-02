@@ -211,7 +211,11 @@ class AnalisisDeEvidenciaTestCase(APITestCase):
 
         multa.refresh_from_db()
         self.assertEqual(multa.infraccion, self.infraccion, 'la foto permitio encuadrarlo')
-        self.assertEqual(multa.estado, EstadoMulta.NOTIFICADA)
+        # Con el encuadre ya solido: advertencia notificada, o multa propuesta al Comite.
+        self.assertTrue(
+            multa.estado == EstadoMulta.NOTIFICADA
+            or 'Propuesta lista' in ' '.join(multa.historial.values_list('comentario', flat=True))
+        )
         self.assertIn('se analizo la evidencia', ' '.join(
             multa.historial.values_list('comentario', flat=True)
         ).lower())

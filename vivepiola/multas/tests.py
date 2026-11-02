@@ -425,7 +425,7 @@ class SelladoCriptograficoTestCase(APITestCase):
         tipos = [a['tipo_acto'] for a in informe['actas']]
         self.assertEqual(
             tipos,
-            ['APROBACION', 'NOTIFICACION', 'ACUSE_RECIBO', 'DESCARGO_PRESENTADO', 'RESOLUCION_DESCARGO'],
+            ['VOTO_APROBACION', 'APROBACION', 'NOTIFICACION', 'ACUSE_RECIBO', 'DESCARGO_PRESENTADO', 'RESOLUCION_DESCARGO'],
             'el acuse de recibo es parte de la cadena: prueba cuando arranco el plazo',
         )
         # La cadena esta encadenada de verdad
@@ -1037,7 +1037,7 @@ class ContencionTestCase(APITestCase):
         r = self.client.get(f'/api/multas/{multa.id}/verificar-integridad/')
         self.assertTrue(r.data['integra'])
         tipos = [a['tipo_acto'] for a in r.data['actas']]
-        self.assertEqual(tipos, ['CONTENCION_EJECUTADA', 'APROBACION', 'CONTENCION_RATIFICADA'])
+        self.assertEqual(tipos, ['CONTENCION_EJECUTADA', 'VOTO_APROBACION', 'APROBACION', 'CONTENCION_RATIFICADA'])
 
 
 @override_settings(MEDIA_ROOT=MEDIA_TEMP)

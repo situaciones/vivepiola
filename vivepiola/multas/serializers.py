@@ -153,6 +153,8 @@ class MultaSerializer(serializers.ModelSerializer):
     # actual de la persona y del canal por el que se acuso recibo.
     motivo_confirmacion = serializers.SerializerMethodField()
     es_aviso_de_cortesia = serializers.BooleanField(read_only=True)
+    # Votacion del Comite para aplicar la multa (solo mientras esta EN_REVISION).
+    aprobacion_comite = serializers.SerializerMethodField()
 
     class Meta:
         model = Multa
@@ -169,7 +171,7 @@ class MultaSerializer(serializers.ModelSerializer):
             'propuesta_origen', 'propuesta_confianza', 'propuesta_fundamento',
             'es_reincidencia', 'multa_primera_sancion', 'agravante_sugerido',
             'fecha_creacion', 'fecha_firme', 'historial', 'descargo', 'corroboraciones',
-            'posible_duplicado', 'duplicado_revisado',
+            'posible_duplicado', 'duplicado_revisado', 'aprobacion_comite',
         )
         read_only_fields = (
             'condominio', 'unidad', 'persona_infractor', 'estado', 'aprobada_por', 'fecha_aprobacion',
@@ -193,6 +195,15 @@ class MultaSerializer(serializers.ModelSerializer):
             'reportes': original.corroboraciones.count() + 1,
         }
 
+
+    def get_aprobacion_comite(self, obj):
+        from .models import EstadoMulta
+        from .services import estado_aprobacion
+
+        if obj.estado != EstadoMulta.EN_REVISION:
+            return None
+        request = self.context.get('request')
+        return estado_aprobacion(obj, getattr(request, 'user', None))
 
     def get_motivo_confirmacion(self, obj):
         from .services import motivo_para_confirmar

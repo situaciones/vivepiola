@@ -80,6 +80,14 @@ class UmbralPorGravedadTestCase(APITestCase):
         self.assertEqual(respuesta.status_code, 201, respuesta.data)
         return Multa.objects.get(ticket_id=respuesta.data['id'])
 
+    def assertEncuadradaSola(self, multa):
+        """Paso el umbral: salio como advertencia o quedo propuesta lista para el Comite."""
+        self.assertTrue(
+            multa.estado == EstadoMulta.NOTIFICADA
+            or 'Propuesta lista' in multa.historial.first().comentario,
+            multa.historial.first().comentario,
+        )
+
     # -- El umbral sube con lo que pesa la falta ------------------------
 
     def test_cada_gravedad_tiene_su_propia_exigencia(self):
@@ -90,7 +98,7 @@ class UmbralPorGravedadTestCase(APITestCase):
     def test_una_confianza_que_alcanza_para_la_leve_no_alcanza_para_la_grave(self):
         """El mismo 70 de confianza decide distinto segun lo que este en juego."""
         leve = self._denunciar('LEVE-01', confianza=70, dias_atras=20)
-        self.assertEqual(leve.estado, EstadoMulta.NOTIFICADA)
+        self.assertEncuadradaSola(leve)
 
         grave = self._denunciar('GRAVE-01', confianza=70, dias_atras=10)
         self.assertEqual(grave.estado, EstadoMulta.EN_REVISION)
@@ -98,15 +106,16 @@ class UmbralPorGravedadTestCase(APITestCase):
 
     def test_una_confianza_que_alcanza_para_la_grave_no_alcanza_para_la_gravisima(self):
         grave = self._denunciar('GRAVE-01', confianza=85, dias_atras=20)
-        self.assertEqual(grave.estado, EstadoMulta.NOTIFICADA)
+        self.assertEncuadradaSola(grave)
 
         gravisima = self._denunciar('GRAVISIMA-01', confianza=85, dias_atras=10)
         self.assertEqual(gravisima.estado, EstadoMulta.EN_REVISION)
         self.assertIn('exige al menos 90', gravisima.historial.first().comentario)
 
-    def test_con_certeza_alta_hasta_la_gravisima_se_cursa_sola(self):
+    def test_con_certeza_alta_hasta_la_gravisima_queda_propuesta(self):
         multa = self._denunciar('GRAVISIMA-01', confianza=95)
-        self.assertEqual(multa.estado, EstadoMulta.NOTIFICADA)
+        self.assertEncuadradaSola(multa)
+        self.assertEqual(multa.estado, EstadoMulta.EN_REVISION, 'con cobro, la decide el Comite')
         self.assertEqual(multa.monto, Decimal('30.00'), 'una gravisima no recibe cortesia')
 
     def test_el_motivo_explica_la_gravedad_y_no_solo_el_numero(self):

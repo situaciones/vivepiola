@@ -1,10 +1,10 @@
 """
-Tests del ciclo sin filtro previo del comite.
+Tests del encuadre automatico de la denuncia.
 
-La denuncia se tipifica y se notifica de inmediato; el residente ejerce su
-defensa apelando, y el comite interviene una sola vez, al resolver. Lo que se
-verifica aqui es donde estan los limites de ese automatismo: que sanciona solo
-y que no, y que nada se pierde cuando no puede.
+El sistema tipifica solo cuando el encuadre es solido. La advertencia sin
+cobro se notifica de inmediato; la multa con cobro queda propuesta hasta que
+la apruebe la mayoria del Comite (Ley 21.442). Lo que se verifica aqui es
+donde estan los limites de ese automatismo y que nada se pierde cuando no puede.
 """
 
 import tempfile
@@ -50,6 +50,7 @@ class CurseAutomaticoTestCase(APITestCase):
         )
         cls.comite = Usuario.objects.create_user(
             username='comite_curse', password='x', rol=Rol.COMITE, condominio=cls.condominio,
+            email='comite@test.local',
         )
         cls.ruido = InfraccionCatalogo.objects.create(
             condominio=cls.condominio, codigo='RUIDO-01', descripcion='Ruidos molestos',
@@ -70,67 +71,61 @@ class CurseAutomaticoTestCase(APITestCase):
         self.assertEqual(respuesta.status_code, 201, respuesta.data)
         return Multa.objects.get(ticket_id=respuesta.data['id'])
 
-    # -- Lo que si se cursa solo ---------------------------------------
-
-    def test_con_encuadre_solido_se_notifica_sin_pasar_por_el_comite(self):
-        multa = self._denunciar(confianza=85)
-
-        self.assertEqual(multa.estado, EstadoMulta.NOTIFICADA)
-        self.assertIsNone(multa.aprobada_por, 'el ciclo ya no tiene paso de aprobacion')
-        self.assertIsNone(multa.notificada_por, 'la notificacion la emite el sistema')
-        self.assertEqual(multa.infraccion, self.ruido)
-        self.assertEqual(multa.monto, Decimal('3.00'))
-        self.assertTrue(multa.pdf_notificacion.name)
-        self.assertIsNone(
-            multa.fecha_limite_descargo,
-            'haber enviado no es haber notificado: el plazo arranca con el acuse',
-        )
-
-        self.assertEqual(len(mail.outbox), 1)
-        self.assertIn('nora@test.local', mail.outbox[0].to)
-        self.assertIn('/acuse/', mail.outbox[0].body, 'el correo debe traer como confirmar la recepcion')
-
-    def test_la_notificacion_no_dice_que_el_comite_aprobo_algo_que_no_vio(self):
-        """
-        Una notificacion legal no puede afirmar un hecho que no ocurrio. Si
-        nadie aprobo, el texto dice que se curso automaticamente y ofrece la
-        apelacion como contrapeso.
-        """
-        self._denunciar(confianza=85)
-        cuerpo = mail.outbox[0].body
-
-        self.assertNotIn('ha aprobado', cuerpo)
-        self.assertIn('se ha cursado una multa', cuerpo)
-        self.assertIn('automaticamente', cuerpo)
-        self.assertIn('puede apelar', cuerpo)
-
-    def test_cuando_si_hubo_aprobacion_humana_la_notificacion_lo_dice(self):
-        multa = self._denunciar(confianza=40)
-        self.assertEqual(multa.estado, EstadoMulta.EN_REVISION)
-
+    def _aprobar_y_notificar(self, multa):
         self.client.force_authenticate(self.comite)
-        self.client.post(f'/api/multas/{multa.id}/aprobar/', {'infraccion_id': self.ruido.id})
-
+        r = self.client.post(f'/api/multas/{multa.id}/aprobar/', {'infraccion_id': self.ruido.id})
+        self.assertEqual(r.status_code, 200, r.data)
         administrador = Usuario.objects.create_user(
-            username='admin_curse', password='x', rol=Rol.ADMINISTRADOR, condominio=self.condominio,
+            username=f'admin_curse_{multa.id}', password='x', rol=Rol.ADMINISTRADOR, condominio=self.condominio,
         )
         self.client.force_authenticate(administrador)
         mail.outbox = []
-        respuesta = self.client.post(f'/api/multas/{multa.id}/notificar/')
-        self.assertEqual(respuesta.status_code, 200, respuesta.data)
+        r = self.client.post(f'/api/multas/{multa.id}/notificar/')
+        self.assertEqual(r.status_code, 200, r.data)
+        multa.refresh_from_db()
+        return multa
 
-        self.assertIn('ha aprobado', mail.outbox[0].body)
+    # -- Con encuadre solido, la propuesta llega lista al Comite ---------
 
-    def test_el_curse_automatico_queda_sellado_como_acto_del_sistema(self):
+    def test_con_encuadre_solido_la_multa_con_cobro_espera_al_comite(self):
+        """La Ley 21.442 deja la imposicion de multas en el Comite: no sale sola."""
         multa = self._denunciar(confianza=85)
 
+        self.assertEqual(multa.estado, EstadoMulta.EN_REVISION)
+        self.assertEqual(multa.infraccion, self.ruido, 'la propuesta llega lista')
+        self.assertEqual(multa.monto, Decimal('3.00'))
+        self.assertIsNone(multa.fecha_notificacion)
+        self.assertIn('Falta la aprobacion del Comite', multa.historial.first().comentario)
+        self.assertFalse(multa.actas_selladas.filter(tipo_acto=TipoActo.CURSE_AUTOMATICO).exists())
+
+        self.assertNotIn('nora@test.local', [d for m in mail.outbox for d in m.to])
+        avisos = [m for m in mail.outbox if 'Multa por aprobar' in m.subject]
+        self.assertEqual(len(avisos), 1)
+        self.assertIn('no se notifica ni se cobra', avisos[0].body)
+
+    def test_aprobada_por_el_comite_la_notificacion_lo_dice(self):
+        multa = self._aprobar_y_notificar(self._denunciar(confianza=85))
+        self.assertEqual(multa.estado, EstadoMulta.NOTIFICADA)
+        self.assertEqual(multa.aprobada_por, self.comite)
+        self.assertIn('ha aprobado', mail.outbox[0].body)
+
+    def test_la_advertencia_sin_cobro_si_sale_sola(self):
+        """Una advertencia no es una multa con cobro: se notifica de inmediato."""
+        self.condominio.cortesias_antes_de_multar = 1
+        self.condominio.save()
+        multa = self._denunciar(confianza=85)
+
+        self.assertEqual(multa.estado, EstadoMulta.NOTIFICADA)
+        self.assertEqual(multa.monto, Decimal('0.00'))
+        self.assertIsNone(multa.aprobada_por)
+        self.assertNotIn('ha aprobado', mail.outbox[0].body)
         acta = multa.actas_selladas.get(tipo_acto=TipoActo.CURSE_AUTOMATICO)
         self.assertEqual(acta.manifiesto['extra']['confianza_propuesta'], 85)
         self.assertEqual(acta.manifiesto['extra']['origen_propuesta'], 'IA')
-        self.assertEqual(acta.manifiesto['extra']['monto_aplicado'], '3.00')
+        self.assertTrue(acta.manifiesto['extra']['es_cortesia'])
 
-    def test_el_residente_apela_y_el_comite_resuelve_una_sola_vez(self):
-        multa = self._denunciar(confianza=85)
+    def test_el_residente_apela_y_el_comite_resuelve(self):
+        multa = self._aprobar_y_notificar(self._denunciar(confianza=85))
         residente = Usuario.objects.create_user(
             username='nora', password='x', rol=Rol.RESIDENTE,
             condominio=self.condominio, persona=self.persona,
@@ -150,9 +145,6 @@ class CurseAutomaticoTestCase(APITestCase):
         multa.refresh_from_db()
         self.assertEqual(multa.estado, EstadoMulta.FIRME)
         self.assertEqual(multa.monto, Decimal('1.50'))
-
-        actos_del_comite = multa.actas_selladas.filter(actor=self.comite).count()
-        self.assertEqual(actos_del_comite, 1, 'el comite debe intervenir exactamente una vez')
 
     # -- Lo que NO se cursa solo ---------------------------------------
 
@@ -201,6 +193,8 @@ class CurseAutomaticoTestCase(APITestCase):
         self.assertIn('no tiene correo registrado', multa.historial.first().comentario)
 
     def test_si_el_correo_falla_el_expediente_no_se_pierde(self):
+        self.condominio.cortesias_antes_de_multar = 1  # la advertencia es lo que se notifica solo
+        self.condominio.save()
         with patch('multas.services.EmailMessage.send', side_effect=OSError('SMTP caido')):
             multa = self._denunciar(confianza=95)
 
@@ -210,4 +204,4 @@ class CurseAutomaticoTestCase(APITestCase):
     def test_el_umbral_es_configurable(self):
         with override_settings(CURSE_CONFIANZA_MINIMA={'LEVE': 50, 'GRAVE': 80, 'GRAVISIMA': 90}):
             multa = self._denunciar(confianza=55)
-        self.assertEqual(multa.estado, EstadoMulta.NOTIFICADA)
+        self.assertIn('Propuesta lista', multa.historial.first().comentario)

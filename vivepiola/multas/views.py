@@ -25,7 +25,7 @@ from .contencion import (
     levantar_contencion, otorgar_delegacion, ratificar_contencion, revocar_delegacion,
 )
 from .models import (
-    AntecedenteDescargo, CanalNotificacion, Delegacion, Descargo, EstadoMulta, EstadoReunion,
+    AntecedenteDescargo, CanalNotificacion, DecisionAprobacion, Delegacion, Descargo, EstadoMulta, EstadoReunion,
     EstadoTicket, EvidenciaFoto, MedidaInmediata, Multa, ResolucionDescargo, ReunionApelacion,
     Ticket, TipoActo,
 )
@@ -39,11 +39,12 @@ from .serializers import (
     ResolverDescargoSerializer, TicketSerializer,
 )
 from .services import (
-    ETAPA_PARA_DENUNCIANTE, actualizar_multas_vencidas, aplicar_monto_con_reincidencia, avisar_apelacion_al_comite,
+    ETAPA_PARA_DENUNCIANTE, actualizar_multas_vencidas, avisar_apelacion_al_comite,
     buscar_expediente_abierto, cursar_multa_automatica, generar_audit_trail_pdf,
     confirmar_antes_del_cobro, convocar_reunion, notificar_multa, proponer_infraccion,
     proponer_resoluciones, quorum_efectivo, reevaluar_con_evidencia, registrar_acta_reunion, registrar_acuse,
     registrar_historial, registrar_voto_resolucion, resolver_descargo, resolver_posible_duplicado,
+    votar_aprobacion,
 )
 
 
@@ -55,9 +56,9 @@ def procesar_reporte_nuevo(ticket, usuario):
     reporte normal y la alerta inmediata. Devuelve el expediente.
     """
     # Analisis automatico: se identifica la infraccion del catalogo vigente,
-    # con su origen y fundamento. Si el encuadre es solido, el expediente se
-    # notifica de inmediato y el residente se defiende apelando; si no, queda
-    # EN_REVISION para que lo tipifique una persona.
+    # con su origen y fundamento. Si el encuadre es solido y corresponde una
+    # advertencia sin cobro, se notifica de inmediato; una multa con cobro
+    # queda propuesta EN_REVISION hasta que la apruebe la mayoria del Comite.
     sugerida, origen, confianza, fundamento = proponer_infraccion(ticket)
 
     # Varios vecinos suelen reportar el mismo hecho. Abrir un expediente por
@@ -301,20 +302,20 @@ class MultaViewSet(viewsets.ReadOnlyModelViewSet):
     @action(detail=True, methods=['post'])
     def aprobar(self, request, pk=None):
         """
-        Tipificacion humana de un expediente que el sistema no pudo cursar solo.
+        Voto de un miembro del Comite para aplicar la multa.
 
-        Ya no es el paso normal: en el ciclo vigente la denuncia se notifica de
-        inmediato y el comite interviene una sola vez, al resolver la apelacion.
-        Aqui llegan las excepciones —el reporte no calzo con ninguna infraccion,
-        la propuesta quedo bajo el umbral de confianza, o falto el correo del
-        residente— para que no se pierdan sin que nadie las mire.
+        La Ley 21.442 deja la imposicion de multas en el Comite: ninguna multa
+        con cobro se notifica sin la aprobacion de la mayoria de sus
+        integrantes. Cuando el sistema encuadro el caso con confianza, la
+        propuesta llega lista y basta con aprobarla; si no, el Comite elige la
+        infraccion. Con la mayoria queda APROBADA y la administracion la notifica.
         """
         multa = self.get_object()
         if multa.estado != EstadoMulta.EN_REVISION:
-            return Response({'detail': 'Solo se pueden tipificar expedientes en revision.'}, status=400)
+            return Response({'detail': 'Solo se pueden aprobar expedientes en revision.'}, status=400)
         if multa.posible_duplicado_de_id and not multa.duplicado_revisado:
             return Response({'detail': (
-                f'Antes de tipificar, indica si es el mismo hecho del expediente '
+                f'Antes de aprobar, indica si es el mismo hecho del expediente '
                 f'#{multa.posible_duplicado_de_id} o uno distinto.'
             )}, status=400)
 
@@ -333,26 +334,21 @@ class MultaViewSet(viewsets.ReadOnlyModelViewSet):
         if not multa.persona_infractor:
             return Response({'detail': 'Debe indicarse el sujeto responsable antes de aprobar.'}, status=400)
 
-        estado_anterior = multa.estado
-        factor_aplicado = aplicar_monto_con_reincidencia(
-            multa, infraccion, monto_base=datos.validated_data.get('monto'),
-        )
-        multa.estado = EstadoMulta.APROBADA
-        multa.aprobada_por = request.user
-        multa.fecha_aprobacion = timezone.now()
-        multa.save()
-
-        registrar_historial(multa, estado_anterior, multa.estado, request.user, 'Expediente tipificado por el Comite.')
-        sellar_acto(multa, TipoActo.APROBACION, request.user, extra={
-            'monto_aplicado': str(multa.monto),
-            'factor_reincidencia_aplicado': str(factor_aplicado),
-            'agravante_sugerido': multa.agravante_sugerido,
-            'multa_primera_sancion_id': multa.multa_primera_sancion_id,
-        })
-        return Response(MultaSerializer(multa).data)
+        try:
+            resultado, votos, requeridos = votar_aprobacion(
+                multa, request.user, DecisionAprobacion.APROBAR,
+                infraccion=infraccion, monto=datos.validated_data.get('monto'),
+            )
+        except ValueError as exc:
+            return Response({'detail': str(exc)}, status=400)
+        multa.refresh_from_db()
+        cuerpo = MultaSerializer(multa, context={'request': request}).data
+        cuerpo.update({'resultado_votacion': resultado, 'votos': votos, 'votos_requeridos': requeridos})
+        return Response(cuerpo)
 
     @action(detail=True, methods=['post'])
     def rechazar(self, request, pk=None):
+        """Voto de un miembro del Comite para no aplicar la multa; con mayoria, se descarta."""
         multa = self.get_object()
         if multa.estado != EstadoMulta.EN_REVISION:
             return Response({'detail': 'Solo se pueden rechazar expedientes en revision.'}, status=400)
@@ -360,14 +356,16 @@ class MultaViewSet(viewsets.ReadOnlyModelViewSet):
         datos = RechazarMultaSerializer(data=request.data)
         datos.is_valid(raise_exception=True)
 
-        estado_anterior = multa.estado
-        multa.estado = EstadoMulta.RECHAZADA
-        multa.motivo_rechazo = datos.validated_data['motivo']
-        multa.save()
-
-        registrar_historial(multa, estado_anterior, multa.estado, request.user, multa.motivo_rechazo)
-        sellar_acto(multa, TipoActo.RECHAZO, request.user, extra={'motivo': multa.motivo_rechazo})
-        return Response(MultaSerializer(multa).data)
+        try:
+            resultado, votos, requeridos = votar_aprobacion(
+                multa, request.user, DecisionAprobacion.RECHAZAR, motivo=datos.validated_data['motivo'],
+            )
+        except ValueError as exc:
+            return Response({'detail': str(exc)}, status=400)
+        multa.refresh_from_db()
+        cuerpo = MultaSerializer(multa, context={'request': request}).data
+        cuerpo.update({'resultado_votacion': resultado, 'votos': votos, 'votos_requeridos': requeridos})
+        return Response(cuerpo)
 
     @action(detail=True, methods=['post'])
     def notificar(self, request, pk=None):

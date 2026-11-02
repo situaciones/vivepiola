@@ -129,7 +129,12 @@ export default function ComiteDashboard() {
   const pendientes = [...enRevision, ...conDescargo, ...porConfirmar];
 
   const activa = pendientes.find((m) => m.id === seleccionId) || pendientes[0] || null;
-  const datosActiva = activa ? decision[activa.id] || {} : {};
+  // Si el sistema ya encuadro el caso, la infraccion propuesta viene marcada:
+  // el Comite solo la revisa y vota.
+  const datosActiva = activa
+    ? { infraccion_id: activa.estado === 'EN_REVISION' ? activa.infraccion || '' : '', ...(decision[activa.id] || {}) }
+    : {};
+  const votacion = activa?.aprobacion_comite;
   const infraccionElegida = infracciones.find((i) => i.id === Number(datosActiva.infraccion_id));
   const reincidenciaPreview = activa && infraccionElegida
     ? buscarReincidenciaPreview(activa, datosActiva.infraccion_id, multas)
@@ -174,12 +179,17 @@ export default function ComiteDashboard() {
       return;
     }
     try {
-      await client.post(`/multas/${activa.id}/aprobar/`, {
+      const res = await client.post(`/multas/${activa.id}/aprobar/`, {
         infraccion_id: Number(datosActiva.infraccion_id),
         ...(datosActiva.monto ? { monto: datosActiva.monto } : {}),
       });
-      setMensaje(`Expediente #${activa.id} tipificado. Pasa al Administrador para su notificacion legal.`);
-      setSeleccionId(null);
+      if (res.data.resultado_votacion === 'APROBADA') {
+        setMensaje(`Multa #${activa.id} aprobada por mayoria del Comite. Pasa a la administracion para notificarla.`);
+        setSeleccionId(null);
+      } else {
+        const faltan = res.data.votos_requeridos - res.data.votos;
+        setMensaje(`Tu voto quedo sellado. Faltan ${faltan} voto(s) iguales del Comite para aplicar la multa.`);
+      }
       cargarTodo();
     } catch (err) {
       setMensaje(err.response?.data?.detail || 'No se pudo cursar el expediente.');
@@ -202,11 +212,20 @@ export default function ComiteDashboard() {
   };
 
   const rechazar = async () => {
-    const motivo = prompt('Motivo del rechazo (queda en el historial):');
+    const motivo = prompt('Motivo para no aplicar la multa (queda en el historial):');
     if (!motivo) return;
-    await client.post(`/multas/${activa.id}/rechazar/`, { motivo });
-    setSeleccionId(null);
-    cargarTodo();
+    try {
+      const res = await client.post(`/multas/${activa.id}/rechazar/`, { motivo });
+      if (res.data.resultado_votacion === 'RECHAZADA') {
+        setMensaje(`Expediente #${activa.id} descartado por mayoria del Comite.`);
+        setSeleccionId(null);
+      } else {
+        setMensaje(`Tu voto quedo sellado. Faltan ${res.data.votos_requeridos - res.data.votos} voto(s) para descartarlo.`);
+      }
+      cargarTodo();
+    } catch (err) {
+      setMensaje(err.response?.data?.detail || 'No se pudo registrar tu voto.');
+    }
   };
 
   const resolverDescargo = async (resolucion, porcentaje_descuento = null) => {
@@ -566,15 +585,28 @@ export default function ComiteDashboard() {
                             aplicable antes de emitir una decision.
                           </label>
 
+                          {votacion && (
+                            <p className="texto-secundario" style={{ margin: 0 }}>
+                              Para aplicar la multa hacen falta {votacion.requeridos} voto(s) iguales del Comite
+                              (mayoria de sus integrantes). Van {votacion.votos_aprobar} a favor
+                              {votacion.votos_rechazar ? ` y ${votacion.votos_rechazar} en contra` : ''}.
+                              {votacion.mi_voto && ` Tu voto: ${votacion.mi_voto === 'APROBAR' ? 'aplicarla' : 'no aplicarla'}.`}
+                            </p>
+                          )}
                           <div className="acciones">
                             <button
                               className="btn btn-exito"
                               onClick={aprobar}
-                              disabled={!datosActiva.revisado || !datosActiva.infraccion_id || !activa.persona_nombre}
+                              disabled={
+                                Boolean(votacion?.mi_voto) || !datosActiva.revisado
+                                || !datosActiva.infraccion_id || !activa.persona_nombre
+                              }
                             >
-                              Tipificar y cursar
+                              Votar por aplicar la multa
                             </button>
-                            <button className="btn btn-peligro" onClick={rechazar}>Rechazar reporte</button>
+                            <button className="btn btn-peligro" onClick={rechazar} disabled={Boolean(votacion?.mi_voto)}>
+                              Votar por no aplicarla
+                            </button>
                           </div>
                         </>
                       )}

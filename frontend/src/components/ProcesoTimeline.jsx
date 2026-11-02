@@ -1,16 +1,16 @@
 import { Check, X } from 'lucide-react';
 
 /**
- * El ciclo ya no tiene un filtro previo del comite: la denuncia se tipifica y
- * se notifica sola. Solo cuando el sistema no puede (sin encuadre claro, sin
- * correo) la tipifica una persona, y eso es lo que refleja el segundo paso.
+ * Solo la advertencia sin cobro se tipifica y notifica sola. Toda multa con
+ * cobro la aprueba la mayoria del Comite (Ley 21.442), aunque el sistema haya
+ * dejado la propuesta lista: eso es lo que refleja el segundo paso.
  */
 const pasosBase = (multa) => [
   { id: 'reportado', label: 'Reportado', quien: 'Denunciante' },
   {
     id: 'tipificacion',
     label: 'Tipificacion',
-    quien: multa.fecha_aprobacion ? 'Comite' : 'Automatica',
+    quien: multa.fecha_aprobacion || multa.estado === 'EN_REVISION' ? 'Comite' : 'Automatica',
   },
   { id: 'notificacion', label: 'Notificacion', quien: multa.notificada_por ? 'Administrador' : 'Automatica' },
   { id: 'descargo', label: 'Apelacion', quien: 'Residente' },

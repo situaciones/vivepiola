@@ -734,7 +734,9 @@ def corresponde_cortesia(multa):
 
 def cursar_multa_automatica(multa, confianza):
     """
-    Tipifica y notifica el expediente sin intervencion humana previa.
+    Tipifica el expediente sin intervencion humana previa. Si corresponde una
+    advertencia sin cobro, la notifica; si corresponde una multa con cobro,
+    la deja propuesta para que el Comite la apruebe (ver votar_aprobacion).
 
     Si algo falla al notificar (correo caido, PDF, etc.) el expediente queda
     EN_REVISION con el motivo registrado: una falla tecnica no puede hacer
@@ -756,9 +758,20 @@ def cursar_multa_automatica(multa, confianza):
     # arriba se conserva en monto_sin_cortesia: sirve para decirle al residente
     # cuanto se le habria cobrado, que es lo que le da sentido al aviso.
     es_cortesia, motivo_cortesia = corresponde_cortesia(multa)
-    if es_cortesia:
-        multa.monto_sin_cortesia = multa.monto
-        multa.monto = Decimal('0.00')
+    if not es_cortesia:
+        # Una multa con cobro la impone el Comite (Ley 21.442, art. 2 N.5 y
+        # 17): el sistema deja la propuesta lista y espera que la mayoria del
+        # Comite la apruebe. Solo la advertencia sin cobro sale sola.
+        multa.save()
+        registrar_historial(
+            multa, multa.estado, multa.estado, None,
+            f'Propuesta lista: {multa.infraccion.codigo}, {multa.monto} '
+            f'{multa.infraccion.unidad_monto}. Falta la aprobacion del Comite por mayoria.',
+        )
+        avisar_ratificacion_al_comite(multa)
+        return False
+    multa.monto_sin_cortesia = multa.monto
+    multa.monto = Decimal('0.00')
     multa.save()
 
     try:
@@ -1537,6 +1550,151 @@ def quorum_efectivo(multa):
 
     habilitados = len(comite_habilitado(multa))
     return max(1, min(multa.condominio.quorum_resolucion_apelacion, habilitados))
+
+
+def votos_requeridos_aprobacion(multa):
+    """
+    Votos coincidentes que se exigen para aplicar (o descartar) una multa:
+    mayoria simple de los integrantes del Comite, la mitad mas uno.
+
+    Si alguno es parte del caso o perdio la facultad, no puede votar; exigir
+    igual su voto dejaria el expediente sin decidir para siempre. En ese caso
+    basta con que voten todos los que si pueden.
+    """
+    from accounts.models import Rol, Usuario
+    from condominios.comite import comite_habilitado, motivo_sin_facultad
+
+    integrantes = [
+        c for c in Usuario.objects.filter(
+            condominio_id=multa.condominio_id, rol=Rol.COMITE, is_active=True,
+        )
+        if motivo_sin_facultad(c) is None
+    ]
+    mayoria = len(integrantes) // 2 + 1
+    return max(1, min(mayoria, len(comite_habilitado(multa))))
+
+
+def estado_aprobacion(multa, usuario=None):
+    """Resumen de la votacion para mostrarla: votos por cada salida, requeridos y el propio."""
+    from .models import DecisionAprobacion
+
+    votos = list(multa.votos_aprobacion.all())
+    mio = next((v for v in votos if usuario is not None and v.actor_id == usuario.id), None)
+    return {
+        'votos_aprobar': sum(1 for v in votos if v.decision == DecisionAprobacion.APROBAR),
+        'votos_rechazar': sum(1 for v in votos if v.decision == DecisionAprobacion.RECHAZAR),
+        'requeridos': votos_requeridos_aprobacion(multa),
+        'mi_voto': mio.decision if mio else None,
+    }
+
+
+def votar_aprobacion(multa, usuario, decision, infraccion=None, monto=None, motivo=''):
+    """
+    Registra el voto de un miembro del Comite sobre una multa EN_REVISION y,
+    si con el se alcanza la mayoria, la aprueba o la descarta.
+
+    Devuelve (resultado, coincidentes, requeridos), donde resultado es
+    'APROBADA', 'RECHAZADA' o None si todavia faltan votos.
+    """
+    from .models import DecisionAprobacion, VotoAprobacion
+
+    voto, creado = VotoAprobacion.objects.get_or_create(
+        multa=multa, actor=usuario,
+        defaults={'decision': decision, 'infraccion': infraccion, 'monto': monto, 'motivo': motivo},
+    )
+    if not creado:
+        raise ValueError('Ya votaste este expediente. Tu voto no se puede cambiar.')
+
+    requeridos = votos_requeridos_aprobacion(multa)
+    coincidentes = multa.votos_aprobacion.filter(decision=decision)
+    if decision == DecisionAprobacion.APROBAR:
+        coincidentes = coincidentes.filter(infraccion=infraccion, monto=monto)
+    coincidentes = coincidentes.count()
+
+    sellar_acto(multa, TipoActo.VOTO_APROBACION, usuario, extra={
+        'decision': decision,
+        'infraccion_codigo': infraccion.codigo if infraccion else None,
+        'monto_pedido': str(monto) if monto is not None else None,
+        'motivo': motivo,
+        'votos_coincidentes': coincidentes,
+        'votos_requeridos': requeridos,
+    })
+    if coincidentes < requeridos:
+        registrar_historial(
+            multa, multa.estado, multa.estado, usuario,
+            f'Voto del Comite ({voto.get_decision_display().lower()}): {coincidentes} de {requeridos}.',
+        )
+        return None, coincidentes, requeridos
+
+    estado_anterior = multa.estado
+    if decision == DecisionAprobacion.RECHAZAR:
+        motivos = [v.motivo for v in multa.votos_aprobacion.filter(decision=decision) if v.motivo]
+        multa.estado = EstadoMulta.RECHAZADA
+        multa.motivo_rechazo = ' / '.join(motivos) or 'Rechazada por el Comite.'
+        multa.save()
+        registrar_historial(
+            multa, estado_anterior, multa.estado, usuario,
+            f'Rechazada por mayoria del Comite ({coincidentes} de {requeridos}): {multa.motivo_rechazo}',
+        )
+        sellar_acto(multa, TipoActo.RECHAZO, usuario, extra={
+            'motivo': multa.motivo_rechazo, 'votos': coincidentes, 'votos_requeridos': requeridos,
+        })
+        return 'RECHAZADA', coincidentes, requeridos
+
+    factor = aplicar_monto_con_reincidencia(multa, infraccion, monto_base=monto)
+    multa.estado = EstadoMulta.APROBADA
+    multa.aprobada_por = usuario
+    multa.fecha_aprobacion = timezone.now()
+    multa.save()
+    registrar_historial(
+        multa, estado_anterior, multa.estado, usuario,
+        f'Aprobada por mayoria del Comite ({coincidentes} de {requeridos}).',
+    )
+    sellar_acto(multa, TipoActo.APROBACION, usuario, extra={
+        'monto_aplicado': str(multa.monto),
+        'factor_reincidencia_aplicado': str(factor),
+        'agravante_sugerido': multa.agravante_sugerido,
+        'multa_primera_sancion_id': multa.multa_primera_sancion_id,
+        'votos': coincidentes,
+        'votos_requeridos': requeridos,
+    })
+    # Aprobada por el Comite, la notifica la administracion (un clic en su
+    # bandeja): el Comite impone la multa y la administracion la comunica.
+    return 'APROBADA', coincidentes, requeridos
+
+
+def avisar_ratificacion_al_comite(multa):
+    """Correo al Comite: hay una multa propuesta que espera su aprobacion."""
+    from condominios.comite import comite_habilitado
+
+    destinatarios = sorted({c.email for c in comite_habilitado(multa) if c.email})
+    if not destinatarios:
+        return
+    comunidad = multa.condominio.nombre
+    unidad = multa.unidad.identificador if multa.unidad else 'sin unidad'
+    infraccion = multa.infraccion
+    parrafos = [
+        f'Hay una multa propuesta para {unidad}: {infraccion.descripcion} '
+        f'({infraccion.articulo_referencia or infraccion.codigo}), por {multa.monto} {infraccion.unidad_monto}.',
+        'La propuesta ya trae la evidencia y el articulo del reglamento. Para que la multa '
+        f'se aplique hace falta el voto favorable de {votos_requeridos_aprobacion(multa)} '
+        'miembro(s) del Comite. Mientras no se apruebe, no se notifica ni se cobra.',
+        'Revise el caso en la Bandeja de decision de la app.',
+    ]
+    try:
+        correo_con_html(
+            asunto=f'Multa por aprobar: #{multa.id} ({unidad}) - {comunidad}',
+            texto='\n\n'.join(parrafos),
+            html=html_correo(
+                comunidad=comunidad, titulo='Una multa espera su aprobacion', parrafos=parrafos,
+                boton=('Revisar el caso', f'{settings.FRONTEND_URL.rstrip("/")}/app'),
+            ),
+            from_email=settings.DEFAULT_FROM_EMAIL,
+            to=destinatarios,
+            reply_to=correos_administracion(multa.condominio),
+        ).send(fail_silently=True)
+    except Exception:
+        logger.exception('No se pudo avisar al Comite la multa por aprobar %s', multa.id)
 
 
 def resolver_descargo(descargo, resolucion, usuario, comentario='', porcentaje_descuento=None):
