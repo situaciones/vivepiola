@@ -148,6 +148,7 @@ class MultaSerializer(serializers.ModelSerializer):
     historial = HistorialMultaSerializer(many=True, read_only=True)
     descargo = DescargoSerializer(read_only=True)
     corroboraciones = serializers.SerializerMethodField()
+    posible_duplicado = serializers.SerializerMethodField()
     # Por que se detuvo el cobro. Se calcula, no se guarda: depende del estado
     # actual de la persona y del canal por el que se acuso recibo.
     motivo_confirmacion = serializers.SerializerMethodField()
@@ -168,13 +169,29 @@ class MultaSerializer(serializers.ModelSerializer):
             'propuesta_origen', 'propuesta_confianza', 'propuesta_fundamento',
             'es_reincidencia', 'multa_primera_sancion', 'agravante_sugerido',
             'fecha_creacion', 'fecha_firme', 'historial', 'descargo', 'corroboraciones',
+            'posible_duplicado', 'duplicado_revisado',
         )
         read_only_fields = (
             'condominio', 'unidad', 'persona_infractor', 'estado', 'aprobada_por', 'fecha_aprobacion',
             'notificada_por', 'fecha_notificacion', 'pdf_notificacion', 'fecha_limite_descargo',
             'propuesta_origen', 'propuesta_confianza', 'propuesta_fundamento',
             'es_reincidencia', 'multa_primera_sancion', 'agravante_sugerido', 'fecha_creacion', 'fecha_firme',
+            'duplicado_revisado',
         )
+
+    def get_posible_duplicado(self, obj):
+        """El expediente con que se compara, para que el Comite vea ambos lado a lado."""
+        original = obj.posible_duplicado_de
+        if original is None:
+            return None
+        return {
+            'id': original.id,
+            'estado': original.estado,
+            'descripcion': original.ticket.descripcion,
+            'fecha_hecho': original.ticket.fecha_hecho,
+            'infraccion_descripcion': original.infraccion.descripcion if original.infraccion else None,
+            'reportes': original.corroboraciones.count() + 1,
+        }
 
 
     def get_motivo_confirmacion(self, obj):

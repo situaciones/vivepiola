@@ -325,7 +325,9 @@
   </div>
 
   <h3>3.2 Varios reportes del mismo hecho</h3>
-  <p>Si llega un reporte sobre la misma unidad dentro de <strong>24 horas</strong> (configurable) y por la misma falta, no se abre otro caso: se suma al existente como <strong>corroboración</strong>. Así nadie es sancionado dos veces por lo mismo, y el caso queda respaldado por más testigos. A quien reporta solo se le informa la etapa del caso, nunca el monto ni a quién se sancionó.</p>
+  <p>Se juntan solos en un caso, como <strong>corroboración</strong>, solo los reportes que sin duda son el mismo hecho: misma unidad, <strong>misma falta identificada</strong> en ambos, misma persona (o sin persona indicada) y hechos a menos de <strong>2 horas</strong> (configurable). Así nadie es sancionado dos veces por lo mismo, y el caso queda respaldado por más testigos.</p>
+  <p>Juntar de más es tan grave como duplicar: dos autos distintos bloqueando la misma salida en el día son dos faltas. Por eso, si un reporte <strong>se parece</strong> a un caso abierto de la misma unidad en las últimas 24 horas pero no calza del todo (la misma falta con horas de diferencia, o uno de los dos sin falta identificada), <strong>no se junta solo</strong>: abre su propio caso marcado como <span class="pill p-ambar">posible duplicado</span>, no se notifica, y el Comité ve ambos reportes lado a lado y decide: <em>es el mismo hecho</em> (se une como corroboración y el caso nuevo se anula, con acta sellada) o <em>es otro hecho</em> (sigue para tipificarse). Una falta distinta o una persona distinta de la unidad nunca se compara: es otro hecho.</p>
+  <p>A quien reporta solo se le informa la etapa del caso, nunca el monto ni a quién se sancionó.</p>
 
   <h3>3.3 Reincidencia</h3>
   <p>Si la unidad ya tuvo la misma falta dentro de los últimos <strong>6 meses</strong>, el monto se multiplica por el factor de reincidencia definido en el catálogo para esa infracción (por ejemplo ×2). El factor aplicado queda sellado en el acta.</p>
@@ -789,7 +791,7 @@
     <tr><td>Plazo del Comité para resolver</td><td class="c">15 días</td><td>Días corridos desde la apelación. Se extiende si cita a reunión.</td></tr>
     <tr><td>Quórum para resolver apelaciones</td><td class="c">1</td><td>Miembros que deben coincidir en la misma salida.</td></tr>
     <tr><td>Avisos de cortesía antes de multar</td><td class="c">2</td><td>Faltas no graves que se avisan sin cobro. 0 = se cobra desde la primera.</td></tr>
-    <tr><td>Ventana de reportes duplicados</td><td class="c">24 horas</td><td>Reportes de la misma unidad dentro de esta ventana se suman al mismo caso.</td></tr>
+    <tr><td>Ventana de reportes duplicados</td><td class="c">2 horas</td><td>Reportes de la misma falta, unidad y persona dentro de esta ventana se suman solos al mismo caso. Los parecidos dentro de 24 horas quedan como posible duplicado para el Comité.</td></tr>
   </table>
 
   <h3>Por infracción (catálogo)</h3>

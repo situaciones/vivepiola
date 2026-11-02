@@ -626,6 +626,11 @@ def puede_cursarse_sola(multa, confianza):
     """
     from .clasificador import ORIGEN_IA
 
+    if multa.posible_duplicado_de_id and not multa.duplicado_revisado:
+        return False, (
+            f'podria ser el mismo hecho del expediente #{multa.posible_duplicado_de_id}; '
+            'el Comite debe decidir si se une o sigue por separado'
+        )
     if multa.infraccion is None:
         return False, 'el reporte no calza con ninguna infraccion del catalogo vigente'
     persona = multa.persona_infractor
@@ -887,39 +892,103 @@ ETAPA_PARA_DENUNCIANTE = {
 }
 
 
-def buscar_expediente_abierto(condominio, unidad, fecha_hecho, infraccion_propuesta=None):
+def buscar_expediente_abierto(condominio, unidad, fecha_hecho, infraccion_propuesta=None, persona=None):
     """
-    Busca un expediente vivo sobre la misma unidad referido al mismo hecho.
+    Busca un expediente vivo de la misma unidad que pueda ser el mismo hecho.
 
-    Criterio: misma unidad + el hecho ocurrio dentro de la ventana que definio
-    la comunidad. Si ambos reportes traen una infraccion propuesta y son
-    distintas, se entienden hechos distintos (ruido y mascota suelta la misma
-    noche son dos cosas) y cada uno abre su expediente.
+    Devuelve (expediente, seguro):
+      - seguro=True: misma falta identificada en ambos reportes, dentro de la
+        ventana corta de la comunidad y sin personas distintas. Se suma solo
+        como corroboracion.
+      - seguro=False: se parece (misma unidad dentro de la ventana de
+        revision) pero falta certeza: un reporte sin falta identificada, o la
+        misma falta con horas de diferencia. NO se junta solo; el reporte abre
+        su expediente marcado como posible duplicado y decide el Comite.
+      - (None, False): nada parecido.
+
+    Juntar de mas es tan grave como duplicar: dos autos distintos bloqueando
+    la misma salida en el dia son dos faltas, y unirlas deja una sin sancion.
     """
     from .models import Multa
 
     horas = condominio.ventana_duplicados_horas or 0
     if not horas:
-        return None
+        return None, False
 
     ventana = timedelta(hours=horas)
+    revision = max(ventana, timedelta(hours=settings.DUPLICADOS_VENTANA_REVISION_HORAS))
     candidatas = Multa.objects.filter(
         condominio=condominio,
         unidad=unidad,
         estado__in=ESTADOS_EXPEDIENTE_ABIERTO,
-        ticket__fecha_hecho__gte=fecha_hecho - ventana,
-        ticket__fecha_hecho__lte=fecha_hecho + ventana,
-    ).order_by('fecha_creacion')
+        ticket__fecha_hecho__gte=fecha_hecho - revision,
+        ticket__fecha_hecho__lte=fecha_hecho + revision,
+    ).select_related('ticket').order_by('fecha_creacion')
 
+    parecida = None
     for candidata in candidatas:
         if (
             infraccion_propuesta is not None
             and candidata.infraccion_id is not None
             and candidata.infraccion_id != infraccion_propuesta.id
         ):
-            continue  # otro tipo de hecho: merece expediente propio
-        return candidata
-    return None
+            continue  # otra falta: hecho distinto
+        if persona is not None and candidata.persona_infractor_id not in (None, persona.id):
+            continue  # otra persona de la unidad: hecho distinto
+        misma_falta = (
+            infraccion_propuesta is not None and candidata.infraccion_id == infraccion_propuesta.id
+        )
+        cerca = abs(candidata.ticket.fecha_hecho - fecha_hecho) <= ventana
+        if misma_falta and cerca:
+            return candidata, True
+        if parecida is None:
+            parecida = candidata
+    return parecida, False
+
+
+def resolver_posible_duplicado(multa, es_el_mismo, usuario):
+    """
+    El Comite decide sobre un expediente marcado como posible duplicado.
+
+    Mismo hecho: el reporte pasa a corroborar el expediente original y este
+    expediente se anula (queda en el historial, sellado). Hecho distinto: la
+    marca se cierra y el expediente sigue su curso para tipificarse.
+    """
+    from .models import TipoActo
+
+    original = multa.posible_duplicado_de
+    if original is None or multa.duplicado_revisado:
+        raise ValueError('Este expediente no espera una decision sobre duplicado.')
+    if multa.estado != EstadoMulta.EN_REVISION:
+        raise ValueError('Solo se puede decidir mientras el expediente esta en revision.')
+
+    multa.duplicado_revisado = True
+    if es_el_mismo:
+        estado_anterior = multa.estado
+        multa.estado = EstadoMulta.ANULADA
+        multa.save(update_fields=['duplicado_revisado', 'estado'])
+        ticket = multa.ticket
+        ticket.corrobora = original
+        ticket.save(update_fields=['corrobora'])
+        registrar_historial(
+            multa, estado_anterior, multa.estado, usuario,
+            f'El Comite determino que es el mismo hecho del expediente #{original.id}: '
+            'el reporte queda como corroboracion de ese caso.',
+        )
+        registrar_historial(
+            original, original.estado, original.estado, usuario,
+            f'Reporte #{ticket.id} sumado como corroboracion del mismo hecho (decision del Comite).',
+        )
+        sellar_acto(multa, TipoActo.UNION_DUPLICADO, usuario, extra={'expediente_original': original.id})
+        return original
+
+    multa.save(update_fields=['duplicado_revisado'])
+    registrar_historial(
+        multa, multa.estado, multa.estado, usuario,
+        f'El Comite determino que es un hecho distinto del expediente #{original.id}.',
+    )
+    sellar_acto(multa, TipoActo.SEPARACION_DUPLICADO, usuario, extra={'expediente_comparado': original.id})
+    return multa
 
 
 def notificar_multa(multa, usuario):

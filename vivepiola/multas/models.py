@@ -138,6 +138,13 @@ class Multa(models.Model):
         'reglamentos.InfraccionCatalogo', on_delete=models.PROTECT, null=True, blank=True, related_name='multas'
     )
     monto = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True)
+    # Se parece a otro expediente abierto de la misma unidad, pero no lo
+    # bastante para juntarlos solo: el Comite decide si es el mismo hecho
+    # (se une) o uno distinto (sigue). Mientras no decida, no se notifica.
+    posible_duplicado_de = models.ForeignKey(
+        'self', on_delete=models.SET_NULL, null=True, blank=True, related_name='posibles_duplicados',
+    )
+    duplicado_revisado = models.BooleanField(default=False)
     # Cuanto se habria cobrado si no fuera una cortesia. Es lo que le da sentido
     # al aviso: sin ese numero, "esto no se cobra" no dice nada.
     monto_sin_cortesia = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True)
@@ -421,6 +428,8 @@ class EntregaNotificacion(models.Model):
 
 class TipoActo(models.TextChoices):
     CURSE_AUTOMATICO = 'CURSE_AUTOMATICO', 'Curse automatico de la multa (sin filtro previo)'
+    UNION_DUPLICADO = 'UNION_DUPLICADO', 'Unido a otro expediente por ser el mismo hecho'
+    SEPARACION_DUPLICADO = 'SEPARACION_DUPLICADO', 'Determinado como hecho distinto de otro expediente'
     APROBACION = 'APROBACION', 'Aprobacion de la multa'
     RECHAZO = 'RECHAZO', 'Rechazo del reporte'
     NOTIFICACION = 'NOTIFICACION', 'Notificacion al residente'

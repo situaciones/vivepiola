@@ -364,3 +364,7 @@ DESCARGO_PLAZO_DEFAULT_DIAS = config('DESCARGO_PLAZO_DEFAULT_DIAS', default=5, c
 # comunidad dicen otra cosa, se ajustan aqui sin tocar el codigo.
 COMITE_MIEMBROS_MINIMOS = config('COMITE_MIEMBROS_MINIMOS', default=3, cast=int)
 COMITE_DURACION_MAXIMA_ANOS = config('COMITE_DURACION_MAXIMA_ANOS', default=3, cast=int)
+
+# Reportes parecidos de la misma unidad dentro de estas horas, que no calzan
+# del todo para juntarse solos, quedan marcados como posible duplicado.
+DUPLICADOS_VENTANA_REVISION_HORAS = config('DUPLICADOS_VENTANA_REVISION_HORAS', default=24, cast=int)

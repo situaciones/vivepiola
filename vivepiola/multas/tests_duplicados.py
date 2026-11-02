@@ -187,3 +187,87 @@ class ReportesDuplicadosTestCase(APITestCase):
         self.client.force_authenticate(self.comite)
         datos = self.client.get(f'/api/multas/{multa.id}/').data
         self.assertEqual(datos['corroboraciones'][0]['reportado_por'], 'Denuncia anonima')
+
+
+class DuplicadosEstrictosTestCase(ReportesDuplicadosTestCase):
+    """
+    Juntar de mas es tan grave como duplicar. Solo se suma solo lo que es sin
+    duda el mismo hecho; lo parecido queda marcado y decide el Comite.
+    """
+
+    def setUp(self):
+        self.condominio.ventana_duplicados_horas = 2
+        self.condominio.save(update_fields=['ventana_duplicados_horas'])
+
+    def _dos_expedientes(self):
+        return list(Multa.objects.filter(unidad=self.unidad).order_by('id'))
+
+    def test_una_comunidad_nueva_parte_con_la_ventana_corta(self):
+        self.assertEqual(Condominio.objects.create(nombre='Nueva').ventana_duplicados_horas, 2)
+
+    def test_la_misma_falta_horas_despues_no_se_junta_sola(self):
+        self.reportar(self.conserje, horas_atras=1)
+        self.reportar(self.vecino, horas_atras=8)
+
+        primera, segunda = self._dos_expedientes()
+        self.assertEqual(segunda.posible_duplicado_de, primera)
+        self.assertEqual(segunda.estado, EstadoMulta.EN_REVISION, 'no se notifica hasta que el Comite decida')
+        self.assertIn('podria ser el mismo hecho', segunda.historial.last().comentario)
+
+    def test_un_reporte_sin_falta_identificada_no_se_junta_solo(self):
+        self.reportar(self.conserje)
+        self.reportar(self.vecino, 'Algo raro paso en el depto, mucha gente entrando')
+        primera, segunda = self._dos_expedientes()
+        self.assertEqual(segunda.posible_duplicado_de, primera)
+
+    def test_otra_persona_de_la_unidad_es_otro_hecho(self):
+        otra = Persona.objects.create(
+            condominio=self.condominio, unidad=self.unidad, rol_ocupacion=RolOcupacion.ARRENDATARIO,
+            nombre_completo='Otro Del 808', cedula_identidad='77.777.777-7',
+            domicilio='Depto 808', correo_electronico='otro808@test.local',
+        )
+        self.reportar(self.conserje)
+        self.client.force_authenticate(self.vecino)
+        self.client.post('/api/tickets/', {
+            'unidad': self.unidad.id, 'persona_reportada': otra.id,
+            'descripcion': 'Ruidos molestos a las 23:00',
+            'fecha_hecho': (timezone.now() - timedelta(hours=1)).isoformat(),
+        })
+        primera, segunda = self._dos_expedientes()
+        self.assertIsNone(segunda.posible_duplicado_de)
+
+    def test_el_comite_une_si_es_el_mismo_hecho(self):
+        self.reportar(self.conserje, horas_atras=1)
+        self.reportar(self.vecino, horas_atras=8)
+        primera, segunda = self._dos_expedientes()
+
+        self.client.force_authenticate(self.comite)
+        respuesta = self.client.post(f'/api/multas/{segunda.id}/resolver-duplicado/', {'mismo_hecho': True}, format='json')
+
+        self.assertEqual(respuesta.status_code, 200, respuesta.data)
+        segunda.refresh_from_db()
+        self.assertEqual(segunda.estado, EstadoMulta.ANULADA)
+        self.assertEqual(primera.corroboraciones.count(), 1)
+        self.assertTrue(segunda.actas_selladas.filter(tipo_acto=TipoActo.UNION_DUPLICADO).exists())
+
+    def test_el_comite_separa_y_recien_ahi_puede_tipificar(self):
+        self.reportar(self.conserje, horas_atras=1)
+        self.reportar(self.vecino, horas_atras=8)
+        _, segunda = self._dos_expedientes()
+        self.client.force_authenticate(self.comite)
+
+        antes = self.client.post(f'/api/multas/{segunda.id}/aprobar/', {'infraccion_id': self.ruido.id})
+        self.assertEqual(antes.status_code, 400)
+        self.assertIn('mismo hecho', antes.data['detail'])
+
+        self.client.post(f'/api/multas/{segunda.id}/resolver-duplicado/', {'mismo_hecho': False}, format='json')
+        despues = self.client.post(f'/api/multas/{segunda.id}/aprobar/', {'infraccion_id': self.ruido.id})
+        self.assertEqual(despues.status_code, 200, despues.data)
+
+    def test_solo_el_comite_decide_sobre_duplicados(self):
+        self.reportar(self.conserje, horas_atras=1)
+        self.reportar(self.vecino, horas_atras=8)
+        _, segunda = self._dos_expedientes()
+        self.client.force_authenticate(self.administrador)
+        respuesta = self.client.post(f'/api/multas/{segunda.id}/resolver-duplicado/', {'mismo_hecho': True}, format='json')
+        self.assertEqual(respuesta.status_code, 403)

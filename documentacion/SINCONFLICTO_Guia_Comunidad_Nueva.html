@@ -224,11 +224,11 @@
   <p>Estos parámetros los configura SinConflicto al crear la comunidad. Si no dices nada, se usan los valores por defecto. Conviene que el Comité los acuerde antes.</p>
   <table>
     <tr><th style="width:30%">Parámetro</th><th class="c" style="width:13%">Por defecto</th><th>Qué significa</th></tr>
-    <tr><td>Plazo para apelar</td><td class="c">5 días</td><td>Días corridos que tiene el residente para defenderse. Cuentan desde que confirma que recibió la notificación, no desde el envío.</td></tr>
+    <tr><td>Plazo para apelar</td><td class="c">5 días</td><td>Días corridos para defenderse, desde que confirma que recibió la notificación.</td></tr>
     <tr><td>Plazo del Comité</td><td class="c">15 días</td><td>Días corridos que tiene el Comité para resolver una apelación.</td></tr>
     <tr><td>Quórum para resolver</td><td class="c">1 miembro</td><td>Cuántos miembros del Comité deben coincidir para resolver una apelación. Con 2 o más, cada uno vota.</td></tr>
     <tr><td>Avisos de cortesía</td><td class="c">2</td><td>Las primeras faltas de cada unidad se avisan sin cobro. 0 = se cobra desde la primera. Nunca aplica a faltas gravísimas ni de riesgo.</td></tr>
-    <tr><td>Ventana de duplicados</td><td class="c">24 horas</td><td>Si llegan dos reportes de la misma falta en la misma unidad dentro de ese tiempo, se juntan en un solo caso.</td></tr>
+    <tr><td>Ventana de duplicados</td><td class="c">2 horas</td><td>Reportes de la misma falta y unidad dentro de ese tiempo se juntan solos. Los parecidos que no calzan del todo los decide el Comité.</td></tr>
   </table>
   <p>Además, para las <strong>medidas urgentes</strong> (capítulo 10) se configura una <strong>cadena de escalamiento</strong>: a quién se avisa, en qué orden, si nadie ratifica la medida a tiempo. Define esa lista con el Comité y envíala junto con lo anterior.</p>
 </section>
@@ -583,7 +583,7 @@
   <table>
     <tr><th style="width:5%" class="c">#</th><th>Qué pasa</th><th style="width:22%">Quién actúa</th></tr>
     <tr><td class="c">1</td><td>Un guardia reporta con evidencia.</td><td>Denunciante</td></tr>
-    <tr><td class="c">2</td><td>El sistema busca la infracción en el catálogo, junta reportes repetidos y aplica reincidencia y cortesía.</td><td>Automático</td></tr>
+    <tr><td class="c">2</td><td>El sistema busca la infracción en el catálogo, junta los reportes que sin duda son el mismo hecho (los dudosos los marca para el Comité) y aplica reincidencia y cortesía.</td><td>Automático</td></tr>
     <tr><td class="c">3</td><td>Si está seguro, se notifica solo. Si no, va a la Bandeja del Comité, que lo tipifica o lo rechaza, y tú lo notificas.</td><td>Automático o Comité + tú</td></tr>
     <tr><td class="c">4</td><td>El vecino confirma la recepción (o la constancia en buzón la perfecciona). Corre su plazo.</td><td>Residente / tú</td></tr>
     <tr><td class="c">5</td><td>Si apela, el Comité resuelve: acoger, rechazar, rebajar o cortesía. Puede citarlo a reunión.</td><td>Comité</td></tr>

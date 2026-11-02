@@ -186,6 +186,21 @@ export default function ComiteDashboard() {
     }
   };
 
+  // Un posible duplicado se decide antes de tipificar: unirlo al caso
+  // original (mismo hecho) o dejarlo seguir (hecho distinto).
+  const resolverDuplicado = async (mismoHecho) => {
+    try {
+      await client.post(`/multas/${activa.id}/resolver-duplicado/`, { mismo_hecho: mismoHecho });
+      setMensaje(mismoHecho
+        ? `Expediente #${activa.id} unido al #${activa.posible_duplicado.id} como el mismo hecho.`
+        : `Expediente #${activa.id} sigue como un hecho distinto: ya puedes tipificarlo.`);
+      if (mismoHecho) setSeleccionId(null);
+      cargarTodo();
+    } catch (err) {
+      setMensaje(err.response?.data?.detail || 'No se pudo registrar la decision.');
+    }
+  };
+
   const rechazar = async () => {
     const motivo = prompt('Motivo del rechazo (queda en el historial):');
     if (!motivo) return;
@@ -411,6 +426,36 @@ export default function ComiteDashboard() {
                         "{activa.ticket_detalle?.descripcion}"
                         <footer>— {activa.ticket_detalle?.creado_por_nombre || 'Denunciante'}, denuncia</footer>
                       </blockquote>
+
+                      {activa.estado === 'EN_REVISION' && activa.posible_duplicado && !activa.duplicado_revisado && (
+                        <div className="tarjeta" style={{ borderColor: 'var(--ambar, #b46d00)', background: '#fff8ec' }}>
+                          <strong>¿Es el mismo hecho del expediente #{activa.posible_duplicado.id}?</strong>
+                          <p className="texto-secundario" style={{ margin: '6px 0 10px' }}>
+                            Es de la misma unidad y cercano en el tiempo, pero no calza lo bastante para juntarlos solo.
+                            Decide antes de tipificar: unirlos evita sancionar dos veces; separarlos evita dejar una falta sin sancion.
+                          </p>
+                          <blockquote className="cita-reporte" style={{ margin: '0 0 10px' }}>
+                            "{activa.posible_duplicado.descripcion}"
+                            <footer>
+                              — expediente #{activa.posible_duplicado.id}
+                              {activa.posible_duplicado.fecha_hecho ? `, ${new Date(activa.posible_duplicado.fecha_hecho).toLocaleString('es-CL')}` : ''}
+                              {activa.posible_duplicado.infraccion_descripcion ? ` · ${activa.posible_duplicado.infraccion_descripcion}` : ''}
+                              {activa.posible_duplicado.reportes > 1 ? ` · ${activa.posible_duplicado.reportes} reportes` : ''}
+                            </footer>
+                          </blockquote>
+                          <p className="texto-secundario" style={{ margin: '0 0 10px' }}>
+                            Este reporte: {activa.ticket_detalle?.fecha_hecho ? new Date(activa.ticket_detalle.fecha_hecho).toLocaleString('es-CL') : ''}
+                          </p>
+                          <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+                            <button className="btn btn-primario" type="button" onClick={() => resolverDuplicado(true)}>
+                              Es el mismo hecho: unir
+                            </button>
+                            <button className="btn btn-secundario" type="button" onClick={() => resolverDuplicado(false)}>
+                              Es otro hecho: seguir por separado
+                            </button>
+                          </div>
+                        </div>
+                      )}
 
                       {activa.estado === 'EN_REVISION' && activa.propuesta_fundamento && (
                         <div className="propuesta-automatica">

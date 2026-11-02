@@ -86,11 +86,12 @@ class Condominio(models.Model):
     # comando corre varias veces al dia.
     ultimo_resumen_enviado = models.DateTimeField(null=True, blank=True, editable=False)
     ventana_duplicados_horas = models.PositiveSmallIntegerField(
-        default=24,
+        default=2,
         help_text=(
-            'Horas dentro de las cuales un nuevo reporte sobre la misma unidad se '
-            'entiende referido al mismo hecho y se suma como corroboracion, en vez '
-            'de abrir otro expediente (evita sancionar dos veces lo mismo).'
+            'Horas dentro de las cuales un nuevo reporte de la MISMA falta sobre la '
+            'misma unidad se suma solo al expediente abierto como corroboracion. '
+            'Lo que se parece pero no calza del todo no se junta solo: queda '
+            'marcado como posible duplicado para que decida el Comite.'
         ),
     )
     creado_en = models.DateTimeField(auto_now_add=True)

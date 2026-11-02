@@ -42,7 +42,7 @@ from .services import (
     buscar_expediente_abierto, cursar_multa_automatica, generar_audit_trail_pdf,
     confirmar_antes_del_cobro, convocar_reunion, notificar_multa, proponer_infraccion,
     proponer_resoluciones, reevaluar_con_evidencia, registrar_acta_reunion, registrar_acuse,
-    registrar_historial, registrar_voto_resolucion, resolver_descargo,
+    registrar_historial, registrar_voto_resolucion, resolver_descargo, resolver_posible_duplicado,
 )
 
 
@@ -107,10 +107,10 @@ class TicketViewSet(viewsets.ModelViewSet):
         # cada reporte permitiria sancionar dos veces lo mismo, asi que el
         # segundo y siguientes se suman al expediente ya abierto: en vez de
         # duplicar la sancion, la respaldan con mas testigos.
-        existente = buscar_expediente_abierto(
-            condominio, ticket.unidad, ticket.fecha_hecho, sugerida,
+        existente, seguro = buscar_expediente_abierto(
+            condominio, ticket.unidad, ticket.fecha_hecho, sugerida, ticket.persona_reportada,
         )
-        if existente is not None:
+        if existente is not None and seguro:
             ticket.corrobora = existente
             ticket.save(update_fields=['corrobora'])
             registrar_historial(
@@ -130,6 +130,9 @@ class TicketViewSet(viewsets.ModelViewSet):
             propuesta_origen=origen,
             propuesta_confianza=confianza,
             propuesta_fundamento=fundamento,
+            # Se parece a un caso abierto pero sin certeza: no se junta solo ni
+            # se notifica; el Comite decide (ver resolver_posible_duplicado).
+            posible_duplicado_de=existente,
         )
         # El comite ya no hace de filtro previo: interviene una sola vez, y solo
         # si el residente apela. Lo que no se puede cursar solo queda EN_REVISION.
@@ -237,7 +240,7 @@ class MultaViewSet(viewsets.ReadOnlyModelViewSet):
 
     def get_permissions(self):
         if self.action in (
-            'aprobar', 'rechazar', 'resolver_descargo_view',
+            'aprobar', 'rechazar', 'resolver_descargo_view', 'resolver_duplicado',
             'propuestas_resolucion', 'confirmar_cobro',
             'convocar_reunion_view', 'acta_reunion',
         ):
@@ -250,6 +253,23 @@ class MultaViewSet(viewsets.ReadOnlyModelViewSet):
 
     def get_queryset(self):
         return multas_visibles(self.request.user)
+
+    @action(detail=True, methods=['post'], url_path='resolver-duplicado')
+    def resolver_duplicado(self, request, pk=None):
+        """
+        El Comite decide si un posible duplicado es el mismo hecho de otro
+        expediente (mismo_hecho=true: se une como corroboracion) o uno
+        distinto (false: sigue para tipificarse).
+        """
+        multa = self.get_object()
+        valor = request.data.get('mismo_hecho')
+        if valor not in (True, False, 'true', 'false'):
+            return Response({'detail': 'Indica mismo_hecho: true o false.'}, status=400)
+        try:
+            resultado = resolver_posible_duplicado(multa, valor in (True, 'true'), request.user)
+        except ValueError as exc:
+            return Response({'detail': str(exc)}, status=400)
+        return Response(MultaSerializer(resultado, context={'request': request}).data)
 
     @action(detail=True, methods=['post'])
     def aprobar(self, request, pk=None):
@@ -265,6 +285,11 @@ class MultaViewSet(viewsets.ReadOnlyModelViewSet):
         multa = self.get_object()
         if multa.estado != EstadoMulta.EN_REVISION:
             return Response({'detail': 'Solo se pueden tipificar expedientes en revision.'}, status=400)
+        if multa.posible_duplicado_de_id and not multa.duplicado_revisado:
+            return Response({'detail': (
+                f'Antes de tipificar, indica si es el mismo hecho del expediente '
+                f'#{multa.posible_duplicado_de_id} o uno distinto.'
+            )}, status=400)
 
         datos = AprobarMultaSerializer(data=request.data)
         datos.is_valid(raise_exception=True)
