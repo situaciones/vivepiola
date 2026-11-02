@@ -659,3 +659,55 @@ class VotoRatificacion(models.Model):
 
     def __str__(self):
         return f'Voto de {self.actor_id} en medida #{self.medida_id} ({self.en_calidad_de})'
+
+
+class TipoAlerta(models.TextChoices):
+    SALIDA_BLOQUEADA = 'SALIDA_BLOQUEADA', 'Un vehiculo bloquea mi salida'
+    ESTACIONAMIENTO_OCUPADO = 'ESTACIONAMIENTO_OCUPADO', 'Un vehiculo ocupa mi estacionamiento'
+    OTRA = 'OTRA', 'Otra urgencia'
+
+
+class EstadoAlerta(models.TextChoices):
+    ABIERTA = 'ABIERTA', 'Esperando que un guardia la atienda'
+    ATENDIDA = 'ATENDIDA', 'Atendida'
+
+
+class AlertaInmediata(models.Model):
+    """
+    Aviso urgente de un vecino: por ejemplo, un auto que le bloquea la salida.
+
+    No reemplaza al reporte, lo acompana: avisa en el momento a los guardias
+    de turno y a la unidad duena del vehiculo para que se resuelva ya, y a la
+    vez deja un reporte normal sobre esa unidad para que la falta siga su
+    curso (notificacion, plazo, apelacion) como cualquier otra.
+    """
+
+    condominio = models.ForeignKey('condominios.Condominio', on_delete=models.CASCADE, related_name='alertas')
+    tipo = models.CharField(max_length=30, choices=TipoAlerta.choices, default=TipoAlerta.SALIDA_BLOQUEADA)
+    creada_por = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, related_name='alertas_creadas')
+    # Donde esta el problema (la unidad de quien avisa, si tiene).
+    unidad_afectada = models.ForeignKey(
+        'condominios.Unidad', on_delete=models.SET_NULL, null=True, blank=True, related_name='alertas_recibidas',
+    )
+    patente = models.CharField(max_length=12, blank=True)
+    # A quien pertenece el vehiculo, si la patente esta registrada.
+    unidad_vehiculo = models.ForeignKey(
+        'condominios.Unidad', on_delete=models.SET_NULL, null=True, blank=True, related_name='alertas_causadas',
+    )
+    descripcion = models.CharField(max_length=500, blank=True)
+    foto = models.ImageField(upload_to='alertas/%Y/%m/', null=True, blank=True)
+    estado = models.CharField(max_length=20, choices=EstadoAlerta.choices, default=EstadoAlerta.ABIERTA)
+    avisados = models.JSONField(default=list, blank=True, help_text='A quien se aviso y por que canal.')
+    ticket = models.OneToOneField(Ticket, on_delete=models.SET_NULL, null=True, blank=True, related_name='alerta')
+    atendida_por = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name='alertas_atendidas',
+    )
+    atendida_en = models.DateTimeField(null=True, blank=True)
+    nota_atencion = models.CharField(max_length=500, blank=True)
+    creada_en = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-creada_en']
+
+    def __str__(self):
+        return f'Alerta #{self.id} {self.get_tipo_display()} ({self.get_estado_display()})'

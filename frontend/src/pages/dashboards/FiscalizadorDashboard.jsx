@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Camera, ClipboardList, ListChecks, Siren } from 'lucide-react';
+import { BellRing, Camera, ClipboardList, ListChecks, Siren } from 'lucide-react';
 import client, { MEDIA_BASE } from '../../api/client';
 import EstadoBadge from '../../components/EstadoBadge';
 import EmptyState from '../../components/EmptyState';
@@ -7,6 +7,7 @@ import HoldToConfirm from '../../components/HoldToConfirm';
 import PageHeader from '../../components/PageHeader';
 import { resumenPermiso } from '../../components/PanelDenunciantes';
 import AppShell from '../../components/AppShell';
+import PanelAlertas from '../../components/PanelAlertas';
 import { useVocab } from '../../vocab';
 
 // Timestamp local prellenado: el guardia reporta "ahora" salvo que corrija.
@@ -16,6 +17,7 @@ const ahoraLocal = () =>
 export default function FiscalizadorDashboard() {
   const t = useVocab();
   const [tab, setTab] = useState('nuevo');
+  const [alertasAbiertas, setAlertasAbiertas] = useState(0);
   const [unidades, setUnidades] = useState([]);
   const [personas, setPersonas] = useState([]);
   const [tickets, setTickets] = useState([]);
@@ -132,6 +134,7 @@ export default function FiscalizadorDashboard() {
     <AppShell
       dark
       tabs={[
+        { id: 'alertas', corto: 'Alertas', label: 'Alertas de vecinos', icon: BellRing, badge: alertasAbiertas },
         { id: 'nuevo', label: t('reporte_corto'), icon: Camera },
         { id: 'contencion', corto: 'Medidas', label: t('contencion'), icon: Siren, badge: medidasActivas.length },
         { id: 'tickets', corto: 'Tickets', label: 'Mis tickets', icon: ListChecks, badge: tickets.length },
@@ -318,6 +321,15 @@ export default function FiscalizadorDashboard() {
             </div>
           </>
         )}
+
+        {/* Siempre montada: asi sigue revisando y suena aunque estes en otra pestana. */}
+        <div style={{ display: tab === 'alertas' ? 'block' : 'none' }}>
+          <PageHeader
+            titulo="Alertas de vecinos"
+            subtitulo="Urgencias como un auto bloqueando una salida. Se actualiza sola y suena cuando llega una nueva. Al resolverla, marcala como atendida."
+          />
+          <PanelAlertas onCantidad={setAlertasAbiertas} />
+        </div>
       </div>
     </AppShell>
   );

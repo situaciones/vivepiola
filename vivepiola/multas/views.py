@@ -46,6 +46,56 @@ from .services import (
 )
 
 
+def procesar_reporte_nuevo(ticket, usuario):
+    """
+    Lo que pasa con un reporte recien creado: se busca la infraccion, se
+    revisa si es el mismo hecho de un caso abierto y, si no, se abre su
+    expediente (y se notifica solo si el encuadre es solido). Lo usan el
+    reporte normal y la alerta inmediata. Devuelve el expediente.
+    """
+    # Analisis automatico: se identifica la infraccion del catalogo vigente,
+    # con su origen y fundamento. Si el encuadre es solido, el expediente se
+    # notifica de inmediato y el residente se defiende apelando; si no, queda
+    # EN_REVISION para que lo tipifique una persona.
+    sugerida, origen, confianza, fundamento = proponer_infraccion(ticket)
+
+    # Varios vecinos suelen reportar el mismo hecho. Abrir un expediente por
+    # cada reporte permitiria sancionar dos veces lo mismo, asi que el
+    # segundo y siguientes se suman al expediente ya abierto: en vez de
+    # duplicar la sancion, la respaldan con mas testigos.
+    existente, seguro = buscar_expediente_abierto(
+        ticket.condominio, ticket.unidad, ticket.fecha_hecho, sugerida, ticket.persona_reportada,
+    )
+    if existente is not None and seguro:
+        ticket.corrobora = existente
+        ticket.save(update_fields=['corrobora'])
+        registrar_historial(
+            existente, existente.estado, existente.estado, usuario,
+            f'Reporte #{ticket.id} sumado como corroboracion del mismo hecho.',
+        )
+        return existente
+
+    multa = Multa.objects.create(
+        condominio=ticket.condominio,
+        ticket=ticket,
+        unidad=ticket.unidad,
+        persona_infractor=ticket.persona_reportada,
+        estado=EstadoMulta.EN_REVISION,
+        infraccion=sugerida,
+        monto=sugerida.monto if sugerida else None,
+        propuesta_origen=origen,
+        propuesta_confianza=confianza,
+        propuesta_fundamento=fundamento,
+        # Se parece a un caso abierto pero sin certeza: no se junta solo ni
+        # se notifica; el Comite decide (ver resolver_posible_duplicado).
+        posible_duplicado_de=existente,
+    )
+    # El comite ya no hace de filtro previo: interviene una sola vez, y solo
+    # si el residente apela. Lo que no se puede cursar solo queda EN_REVISION.
+    cursar_multa_automatica(multa, confianza)
+    return multa
+
+
 class TicketViewSet(viewsets.ModelViewSet):
     """
     El reporte lo puede levantar el Denunciante, el Comite o un
@@ -97,46 +147,7 @@ class TicketViewSet(viewsets.ModelViewSet):
             estado=EstadoTicket.CONVERTIDO,
         )
 
-        # Analisis automatico: se identifica la infraccion del catalogo vigente,
-        # con su origen y fundamento. Si el encuadre es solido, el expediente se
-        # notifica de inmediato y el residente se defiende apelando; si no, queda
-        # EN_REVISION para que lo tipifique una persona.
-        sugerida, origen, confianza, fundamento = proponer_infraccion(ticket)
-
-        # Varios vecinos suelen reportar el mismo hecho. Abrir un expediente por
-        # cada reporte permitiria sancionar dos veces lo mismo, asi que el
-        # segundo y siguientes se suman al expediente ya abierto: en vez de
-        # duplicar la sancion, la respaldan con mas testigos.
-        existente, seguro = buscar_expediente_abierto(
-            condominio, ticket.unidad, ticket.fecha_hecho, sugerida, ticket.persona_reportada,
-        )
-        if existente is not None and seguro:
-            ticket.corrobora = existente
-            ticket.save(update_fields=['corrobora'])
-            registrar_historial(
-                existente, existente.estado, existente.estado, self.request.user,
-                f'Reporte #{ticket.id} sumado como corroboracion del mismo hecho.',
-            )
-            return
-
-        multa = Multa.objects.create(
-            condominio=ticket.condominio,
-            ticket=ticket,
-            unidad=ticket.unidad,
-            persona_infractor=ticket.persona_reportada,
-            estado=EstadoMulta.EN_REVISION,
-            infraccion=sugerida,
-            monto=sugerida.monto if sugerida else None,
-            propuesta_origen=origen,
-            propuesta_confianza=confianza,
-            propuesta_fundamento=fundamento,
-            # Se parece a un caso abierto pero sin certeza: no se junta solo ni
-            # se notifica; el Comite decide (ver resolver_posible_duplicado).
-            posible_duplicado_de=existente,
-        )
-        # El comite ya no hace de filtro previo: interviene una sola vez, y solo
-        # si el residente apela. Lo que no se puede cursar solo queda EN_REVISION.
-        cursar_multa_automatica(multa, confianza)
+        procesar_reporte_nuevo(ticket, self.request.user)
 
     def create(self, request, *args, **kwargs):
         """

@@ -3,12 +3,14 @@ from rest_framework.routers import DefaultRouter
 
 from .views import DelegacionViewSet, MedidaInmediataViewSet, MultaViewSet, TicketViewSet
 from .views_acuse import AcuseNotificacionView, ApelarView, DocumentoNotificacionView
+from .views_alertas import AlertaViewSet
 
 router = DefaultRouter()
 router.register('tickets', TicketViewSet, basename='ticket')
 router.register('multas', MultaViewSet, basename='multa')
 router.register('medidas-inmediatas', MedidaInmediataViewSet, basename='medida_inmediata')
 router.register('delegaciones', DelegacionViewSet, basename='delegacion')
+router.register('alertas', AlertaViewSet, basename='alerta')
 
 urlpatterns = [
     # Publicas a proposito: el buzon del residente tiene que funcionar sin

@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react';
-import { Clock3, MessageSquareText, ShieldCheck } from 'lucide-react';
+import { Clock3, MessageSquareText, ShieldCheck, Siren } from 'lucide-react';
 import client, { MEDIA_BASE } from '../../api/client';
 import EstadoBadge from '../../components/EstadoBadge';
 import EmptyState from '../../components/EmptyState';
 import PageHeader from '../../components/PageHeader';
 import Semaforo from '../../components/Semaforo';
+import AlertaVecino from '../../components/AlertaVecino';
 import AppShell from '../../components/AppShell';
 import ProcesoTimeline from '../../components/ProcesoTimeline';
 import { useVocab } from '../../vocab';
@@ -118,6 +119,7 @@ export default function ResidenteDashboard() {
     <AppShell
       tabs={[
         { id: 'multas', label: t('mis_multas'), icon: ShieldCheck, badge: activas.length },
+        { id: 'alerta', corto: 'Alerta', label: 'Alerta inmediata', icon: Siren },
         { id: 'novedades', corto: 'Solicitudes', label: 'Solicitudes y reclamos', icon: MessageSquareText, badge: novedadesPendientes.length },
       ]}
       active={tab}
@@ -297,6 +299,16 @@ export default function ResidenteDashboard() {
               ))}
               {novedades.length === 0 && <EmptyState icon={MessageSquareText} mensaje="Aun no has enviado novedades." />}
             </div>
+          </>
+        )}
+
+        {tab === 'alerta' && (
+          <>
+            <PageHeader
+              titulo="Alerta inmediata"
+              subtitulo="Para lo que no puede esperar, como un auto que te bloquea la salida. Avisa al instante a los guardias de turno y al dueno del auto."
+            />
+            <AlertaVecino />
           </>
         )}
       </div>

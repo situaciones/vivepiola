@@ -1,12 +1,14 @@
 import { useEffect, useState } from 'react';
-import { BellRing, FileText, KeyRound, MessageSquareText, UserPlus, Users, Wallet } from 'lucide-react';
+import { BellRing, FileText, KeyRound, MessageSquareText, Siren, UserPlus, Users, Wallet } from 'lucide-react';
 import client, { MEDIA_BASE } from '../../api/client';
 import { useAuth } from '../../context/AuthContext';
 import EstadoBadge from '../../components/EstadoBadge';
 import EmptyState from '../../components/EmptyState';
 import PageHeader from '../../components/PageHeader';
 import AppShell from '../../components/AppShell';
+import PanelAlertas from '../../components/PanelAlertas';
 import PanelEquipo from '../../components/PanelEquipo';
+import PanelVehiculos from '../../components/PanelVehiculos';
 import PanelFirmasDelegadas from '../../components/PanelFirmasDelegadas';
 import { useVocab } from '../../vocab';
 
@@ -14,6 +16,7 @@ export default function AdministradorDashboard() {
   const t = useVocab();
   const { usuario } = useAuth();
   const [tab, setTab] = useState('notificar');
+  const [alertasAbiertas, setAlertasAbiertas] = useState(0);
   const [multas, setMultas] = useState([]);
   const [novedades, setNovedades] = useState([]);
   const [reglamentos, setReglamentos] = useState([]);
@@ -160,6 +163,7 @@ export default function AdministradorDashboard() {
         { id: 'registro', corto: 'Registro', label: t('registro_titulo'), icon: Users },
         { id: 'reglamento', corto: 'Reglamento', label: `${t('infraccion')} y reglamento`, icon: FileText },
         { id: 'novedades', corto: 'Solicitudes', label: 'Solicitudes y reclamos', icon: MessageSquareText, badge: novedadesPendientes.length },
+        { id: 'alertas', corto: 'Alertas', label: 'Alertas de vecinos', icon: Siren, badge: alertasAbiertas },
         { id: 'gastos', corto: 'Cobros', label: t('destino_cobro').charAt(0).toUpperCase() + t('destino_cobro').slice(1), icon: Wallet },
       ]}
       active={tab}
@@ -244,6 +248,7 @@ export default function AdministradorDashboard() {
                 </div>
               )}
             </div>
+            <PanelVehiculos />
           </>
         )}
 
@@ -357,6 +362,14 @@ export default function AdministradorDashboard() {
             )}
           </>
         )}
+
+        <div style={{ display: tab === 'alertas' ? 'block' : 'none' }}>
+          <PageHeader
+            titulo="Alertas de vecinos"
+            subtitulo="Lo mismo que ven los guardias de turno. Normalmente las atienden ellos; tambien puedes marcarlas como atendidas."
+          />
+          <PanelAlertas onCantidad={setAlertasAbiertas} />
+        </div>
       </div>
     </AppShell>
   );

@@ -1,4 +1,5 @@
 import io
+import re
 
 import openpyxl
 import openpyxl.comments
@@ -8,13 +9,14 @@ from django.core.exceptions import ValidationError
 from django.core.validators import validate_email
 
 from .models import (
-    CondicionEspecial, Permanencia, Persona, RolOcupacion, Unidad, VinculoCopropietario,
+    CondicionEspecial, Permanencia, Persona, RolOcupacion, Unidad, Vehiculo, VinculoCopropietario,
+    normalizar_patente,
 )
 
 COLUMNAS_PLANTILLA = [
     'unidad', 'rol_ocupacion', 'nombre_completo', 'cedula_identidad',
     'domicilio', 'correo_electronico', 'telefono', 'permanencia', 'vinculo_copropietario',
-    'condicion_especial',
+    'condicion_especial', 'patentes',
 ]
 
 ROLES_VALIDOS = {choice.value for choice in RolOcupacion}
@@ -50,6 +52,11 @@ AYUDA_COLUMNAS = {
         'Solo si corresponde: FALLECIDO, DISCAPACIDAD o REQUIERE_APOYO. Detiene el '
         'cobro automatico para que el Comite revise el caso antes de cobrarlo.',
     ),
+    'patentes': (
+        'Opcional',
+        'Patentes de los vehiculos de la unidad, separadas por coma. Ej: ABCD12, XY1234. '
+        'Sirve para avisar al dueño si su auto bloquea una salida.',
+    ),
 }
 
 # Columnas con valores cerrados: van como lista desplegable para que no haya
@@ -81,7 +88,7 @@ def generar_plantilla_excel():
     ws.title = 'Registro Copropietarios'
     ws.append(COLUMNAS_PLANTILLA)
     ws.freeze_panes = 'A2'
-    for i, ancho in enumerate([16, 16, 30, 18, 38, 30, 18, 16, 22, 22], start=1):
+    for i, ancho in enumerate([16, 16, 30, 18, 38, 30, 18, 16, 22, 22, 22], start=1):
         ws.column_dimensions[openpyxl.utils.get_column_letter(i)].width = ancho
 
     for i, columna in enumerate(COLUMNAS_PLANTILLA, start=1):
@@ -148,6 +155,9 @@ def generar_plantilla_excel():
         (None, 'condicion_especial',
          'Opcional. FALLECIDO, DISCAPACIDAD o REQUIERE_APOYO. Detiene el cobro automatico '
          'para que el Comite confirme antes de cobrar.'),
+        (None, 'patentes',
+         'Opcional. Patentes de los autos de la unidad, separadas por coma (ABCD12, XY1234). '
+         'Basta ponerlas en una de las filas de la unidad.'),
         (None, '', ''),
         (TITULO, 'QUIEN PAGA', ''),
         (None, 'El PROPIETARIO es el obligado al pago ante la comunidad.', ''),
@@ -248,6 +258,7 @@ ALIAS_COLUMNAS = {
     'permanencia': ('permanencia',),
     'vinculo_copropietario': ('vinculo_copropietario', 'vinculo'),
     'condicion_especial': ('condicion_especial', 'condicion'),
+    'patentes': ('patentes', 'patente'),
 }
 
 # Se guardan en mayusculas porque son codigos, no texto libre.
@@ -323,6 +334,13 @@ def _guardar_persona(condominio, campos):
     unidad, _ = Unidad.objects.get_or_create(
         condominio=condominio, identificador=campos['unidad'],
     )
+    for patente in re.split(r'[,;/]+', campos.get('patentes') or ''):
+        patente = normalizar_patente(patente)
+        if patente:
+            # Si la patente ya estaba en otra unidad, el auto se cambio: se mueve.
+            Vehiculo.objects.update_or_create(
+                condominio=condominio, patente=patente, defaults={'unidad': unidad},
+            )
     Persona.objects.update_or_create(
         condominio=condominio,
         unidad=unidad,

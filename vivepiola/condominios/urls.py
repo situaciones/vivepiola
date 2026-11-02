@@ -6,12 +6,14 @@ from .views_comite import (
 )
 from .views import (
     CondominioViewSet, ImportarRegistroView, PersonaViewSet, PlantillaRegistroView, UnidadViewSet,
+    VehiculoViewSet,
 )
 
 router = DefaultRouter()
 router.register('condominios', CondominioViewSet, basename='condominio')
 router.register('unidades', UnidadViewSet, basename='unidad')
 router.register('personas', PersonaViewSet, basename='persona')
+router.register('vehiculos', VehiculoViewSet, basename='vehiculo')
 
 urlpatterns = [
     path('registro/plantilla/', PlantillaRegistroView.as_view(), name='plantilla_registro'),

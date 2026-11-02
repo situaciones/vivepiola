@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from .models import Condominio, Persona, RegistroImportacion, Unidad
+from .models import Condominio, Persona, RegistroImportacion, Unidad, Vehiculo, normalizar_patente
 
 
 class CondominioSerializer(serializers.ModelSerializer):
@@ -47,3 +47,18 @@ class RegistroImportacionSerializer(serializers.ModelSerializer):
             'filas_totales', 'filas_ok', 'filas_error', 'detalle_errores', 'estado',
         )
         read_only_fields = fields
+
+
+class VehiculoSerializer(serializers.ModelSerializer):
+    unidad_identificador = serializers.CharField(source='unidad.identificador', read_only=True)
+
+    class Meta:
+        model = Vehiculo
+        fields = ('id', 'unidad', 'unidad_identificador', 'patente', 'descripcion', 'creado_en')
+        read_only_fields = ('creado_en',)
+
+    def validate_patente(self, value):
+        patente = normalizar_patente(value)
+        if len(patente) < 4:
+            raise serializers.ValidationError('Patente invalida.')
+        return patente

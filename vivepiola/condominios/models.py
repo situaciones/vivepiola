@@ -354,3 +354,33 @@ class MiembroComite(models.Model):
 
     def __str__(self):
         return f'{self.persona.nombre_completo} - {self.designacion}'
+
+
+def normalizar_patente(texto):
+    """ABCD-12, abcd 12 y ABCD12 son la misma patente."""
+    return ''.join(c for c in (texto or '').upper() if c.isalnum())
+
+
+class Vehiculo(models.Model):
+    """
+    Un vehiculo asociado a una unidad. Sirve para saber a quien avisar cuando
+    un auto bloquea una salida o un estacionamiento: con la patente se llega a
+    la unidad, y de ahi a sus residentes.
+    """
+
+    condominio = models.ForeignKey(Condominio, on_delete=models.CASCADE, related_name='vehiculos')
+    unidad = models.ForeignKey(Unidad, on_delete=models.CASCADE, related_name='vehiculos')
+    patente = models.CharField(max_length=12, help_text='Se guarda sin guiones ni espacios, en mayusculas.')
+    descripcion = models.CharField(max_length=120, blank=True, help_text='Ej: Toyota Yaris gris.')
+    creado_en = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ('condominio', 'patente')
+        ordering = ['unidad__identificador', 'patente']
+
+    def save(self, *args, **kwargs):
+        self.patente = normalizar_patente(self.patente)
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return f'{self.patente} - {self.unidad.identificador}'

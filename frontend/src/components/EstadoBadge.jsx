@@ -23,6 +23,8 @@ const ESTILOS = {
   RATIFICADA: { color: '#9a3412', fondo: '#fff7ed', etiqueta: 'Ratificada · activa' },
   EN_ESCALAMIENTO: { color: '#b91c1c', fondo: '#fef2f2', etiqueta: 'En escalamiento · ACTIVA' },
   LEVANTADA: { color: '#065f46', fondo: '#ecfdf5', etiqueta: 'Levantada' },
+  ALERTA_ABIERTA: { color: '#b91c1c', fondo: '#fef2f2', etiqueta: 'Esperando guardia' },
+  ALERTA_ATENDIDA: { color: '#065f46', fondo: '#ecfdf5', etiqueta: 'Atendida' },
 };
 
 export default function EstadoBadge({ estado }) {

@@ -320,6 +320,7 @@
     <tr><td><strong>Equipo y accesos</strong></td><td>Registrar el Comité con su acta, invitar personas, ver invitaciones pendientes y poner límites a los guardias.</td><td>Etapas 4, 7, 9</td></tr>
     <tr><td><strong>Registro de copropietarios</strong></td><td>El registro de copropietarios: unidades y personas.</td><td>Etapa 3</td></tr>
     <tr><td><strong>Infracción y reglamento</strong></td><td>Subir documentos y pedir a la IA que proponga infracciones.</td><td>Etapa 5</td></tr>
+    <tr><td><strong>Alertas de vecinos</strong></td><td>Urgencias como un auto bloqueando una salida (las atienden los guardias; tú también las ves).</td><td>Operación</td></tr>
     <tr><td><strong>Solicitudes y reclamos</strong></td><td>Reclamos y solicitudes de los residentes, con plazo legal de 20 días.</td><td>Operación</td></tr>
     <tr><td><strong>Gastos comunes</strong> (en el teléfono, "Cobros")</td><td>Exportar las multas firmes al aviso de gasto común.</td><td>Mensual</td></tr>
   </table>
@@ -357,14 +358,10 @@
     <tr><td>permanencia</td><td class="c">No</td><td>PERMANENTE (30 días corridos o más) o TRANSITORIO. Del transitorio, el dueño recibe copia de las notificaciones.</td></tr>
     <tr><td>vinculo_copropietario</td><td class="c">No</td><td>CONYUGE, CONVIVIENTE_CIVIL o FAMILIAR del dueño.</td></tr>
     <tr><td>condicion_especial</td><td class="c">No</td><td>FALLECIDO, DISCAPACIDAD o REQUIERE_APOYO (para trámites digitales). <strong>Detiene el cobro automático</strong>: si vence el plazo sin apelación, el Comité confirma antes de cobrar.</td></tr>
+    <tr><td>patentes</td><td class="c">No</td><td>Patentes de los autos de la unidad, separadas por coma. Sirven para que una alerta de "me bloquean la salida" le llegue al dueño del auto.</td></tr>
   </table>
 
-  <div class="grid2">
-    <div class="caja verde"><h4>Al terminar deberías ver</h4><p>"Con error: 0". Todas las unidades de la comunidad aparecen en las listas de la plataforma (por ejemplo, al invitar a alguien con unidad).</p></div>
-    <div class="caja alerta"><h4>Errores comunes</h4>
-      <ul><li>Correo mal escrito: la multa no llegará.</li><li>RUT sin guion o con formato distinto.</li><li>La misma unidad escrita de dos formas: se crean dos unidades.</li><li>Dejar filas de ejemplo o de prueba: se importan como personas reales.</li></ul>
-    </div>
-  </div>
+  <div class="caja alerta"><p><strong>Al terminar deberías ver "Con error: 0".</strong> Errores comunes: correo mal escrito (la multa no llegará), RUT sin guion, la misma unidad escrita de dos formas (se crean dos unidades) y filas de ejemplo que se importan como personas reales.</p></div>
 </section>
 
 <!-- ================= 7 ETAPA 4 ================= -->
@@ -483,7 +480,6 @@
     <tr><td>Días</td><td>Los días de su turno.</td></tr>
     <tr><td>Horario</td><td>Su turno. Admite turnos de noche: "22:00 a 06:00" funciona, y la madrugada cuenta como parte del turno del día en que empezó.</td></tr>
     <tr><td>Unidades</td><td>Solo puede denunciar estas unidades (por ejemplo, el guardia de estacionamientos).</td></tr>
-    <tr><td>Notas</td><td>Para recordar por qué pusiste el límite.</td></tr>
   </table>
   <p>Fuera de sus límites, la plataforma le rechaza el reporte y le dice cuál límite no cumple. Él ve sus límites arriba de su pantalla. Sin límites, puede denunciar siempre.</p>
 
@@ -496,9 +492,14 @@
     <li>Envía. El reporte no se puede editar ni borrar. En <strong>Mis tickets</strong> ve en qué etapa va, pero nunca el monto ni a quién se sancionó.</li>
   </ol>
 
+  <div class="caja alerta">
+    <h4>Alertas de vecinos</h4>
+    <p>Cuando un vecino toca <strong>Alerta inmediata</strong> (por ejemplo, "me bloquean la salida"), al guardia <strong>de turno</strong> le llega un correo (y WhatsApp cuando esté activo) y la alerta aparece en su pestaña <strong>Alertas de vecinos</strong>, que se actualiza sola y suena. Ve la patente, de qué unidad es el auto (si está registrada) y quién avisa. Al resolverlo toca <strong>Marcar como atendida</strong>, con una nota que le llega al vecino.</p>
+  </div>
+
   <div class="caja clave">
     <h4>Medidas urgentes y delegación</h4>
-    <p>Si el catálogo tiene faltas que <strong>conllevan contención</strong>, el guardia puede activar una medida urgente desde <strong>Medidas</strong>. La medida queda activa de inmediato y el Comité tiene que ratificarla en el plazo; si nadie lo hace, avisa a la cadena de escalamiento que se configuró en la etapa 1. Si el Comité no siempre está disponible, un miembro puede <strong>delegarte</strong> la ratificación por un tiempo y hasta cierta gravedad; entonces te aparece la sección <strong>Firmas por delegación</strong>.</p>
+    <p>Si una falta del catálogo <strong>conlleva contención</strong>, el guardia puede activar una medida urgente desde <strong>Medidas</strong>; el Comité debe ratificarla en el plazo o se avisa a la cadena de escalamiento. Un miembro del Comité puede <strong>delegarte</strong> esa ratificación por un tiempo: te aparece <strong>Firmas por delegación</strong>.</p>
   </div>
 </section>
 
@@ -543,6 +544,7 @@
   <table>
     <tr><th style="width:26%">Sección</th><th>Qué hay</th></tr>
     <tr><td>Mis multas</td><td>Sus casos con la línea de tiempo, la evidencia, el artículo aplicado, el monto y su plazo para apelar.</td></tr>
+    <tr><td>Alerta inmediata</td><td>Para lo que no puede esperar ("me bloquean la salida", "ocupan mi estacionamiento"): patente y foto, y llega al instante a los guardias de turno y al dueño del auto. Queda un reporte y la multa sigue su curso.</td></tr>
     <tr><td>Solicitudes y reclamos</td><td>Sus reclamos y solicitudes a la administración, con respuesta garantizada en 20 días corridos.</td></tr>
   </table>
 

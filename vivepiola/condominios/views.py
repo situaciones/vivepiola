@@ -10,9 +10,10 @@ from rest_framework.views import APIView
 from accounts.models import Rol
 from accounts.permissions import EsAdministrador, EsSuperadmin
 
-from .models import Condominio, Persona, RegistroImportacion, Unidad
+from .models import Condominio, Persona, RegistroImportacion, Unidad, Vehiculo
 from .serializers import (
     CondominioSerializer, PersonaSerializer, RegistroImportacionSerializer, UnidadSerializer,
+    VehiculoSerializer,
 )
 from .utils import generar_plantilla_excel, importar_registro_copropietarios
 
@@ -129,3 +130,37 @@ class ImportarRegistroView(APIView):
             estado=estado,
         )
         return Response(RegistroImportacionSerializer(registro).data, status=201)
+
+
+class VehiculoViewSet(viewsets.ModelViewSet):
+    """
+    Los vehiculos de cada unidad. Solo los ve y edita el Administrador: una
+    lista de patentes con su departamento no es algo que cualquier vecino deba
+    poder recorrer. Los guardias ven la patente solo dentro de una alerta.
+    """
+
+    serializer_class = VehiculoSerializer
+    permission_classes = [EsAdministrador]
+    filterset_fields = ['unidad']
+
+    def get_queryset(self):
+        return Vehiculo.objects.filter(condominio_id=self.request.user.condominio_id).select_related('unidad')
+
+    def perform_create(self, serializer):
+        self._guardar(serializer)
+
+    def perform_update(self, serializer):
+        self._guardar(serializer)
+
+    def _guardar(self, serializer):
+        condominio = self.request.user.condominio
+        unidad = serializer.validated_data.get('unidad')
+        if unidad and unidad.condominio_id != condominio.id:
+            raise ValidationError({'unidad': 'La unidad no pertenece a su comunidad.'})
+        patente = serializer.validated_data.get('patente')
+        otro = Vehiculo.objects.filter(condominio=condominio, patente=patente)
+        if serializer.instance:
+            otro = otro.exclude(pk=serializer.instance.pk)
+        if patente and otro.exists():
+            raise ValidationError({'patente': f'La patente {patente} ya esta registrada en {otro.first().unidad.identificador}.'})
+        serializer.save(condominio=condominio)
