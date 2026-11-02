@@ -1,5 +1,6 @@
 import io
 import json
+import logging
 from datetime import timedelta
 from decimal import Decimal
 
@@ -18,6 +19,8 @@ from condominios.vocab import frase, termino
 from .correo_html import correo_con_html, html_correo
 from .models import Descargo, EstadoMulta, HistorialMulta, TipoActo
 from .sellado import sellar_acto
+
+logger = logging.getLogger(__name__)
 
 
 def registrar_historial(multa, estado_anterior, estado_nuevo, usuario, comentario=''):
@@ -1080,6 +1083,8 @@ def actualizar_multas_vencidas(condominio=None):
     """
     from .models import Multa
 
+    firmar_apelaciones_sin_respuesta(condominio)
+
     qs = Multa.objects.filter(estado=EstadoMulta.NOTIFICADA, fecha_limite_descargo__lt=timezone.now())
     if condominio is not None:
         qs = qs.filter(condominio=condominio)
@@ -1114,6 +1119,100 @@ def actualizar_multas_vencidas(condominio=None):
             'estado_resultante': destino,
             'motivo_confirmacion': motivo,
         })
+
+
+def firmar_apelaciones_sin_respuesta(condominio=None):
+    """
+    Cierra las apelaciones que el Comite dejo vencer sin resolver.
+
+    Regla de la comunidad: si el Comite no responde dentro de su plazo, la
+    apelacion no detiene el cobro para siempre. La multa queda FIRME (o como
+    cortesia si era un aviso sin cobro) y se le avisa al residente por correo
+    que pasa a gastos comunes porque el Comite no respondio, para que sepa por
+    que y pueda reclamar ante la administracion. Antes de vencer, el resumen
+    diario ya le marco el caso como urgente al Comite y a la administracion.
+
+    Devuelve las multas cerradas.
+    """
+    from .models import Multa, ResolucionDescargo, TipoActo
+
+    qs = Multa.objects.filter(
+        estado=EstadoMulta.CON_DESCARGO,
+        descargo__resolucion=ResolucionDescargo.PENDIENTE,
+        descargo__fecha_limite_resolucion__lt=timezone.now(),
+    ).select_related('descargo', 'condominio', 'persona_infractor')
+    if condominio is not None:
+        qs = qs.filter(condominio=condominio)
+
+    cerradas = []
+    for multa in qs:
+        descargo = multa.descargo
+        vencio = descargo.fecha_limite_resolucion
+        estado_anterior = multa.estado
+        multa.estado = EstadoMulta.CORTESIA if multa.es_aviso_de_cortesia else EstadoMulta.FIRME
+        multa.fecha_firme = timezone.now()
+        multa.save(update_fields=['estado', 'fecha_firme'])
+        descargo.resolucion = ResolucionDescargo.SIN_RESPUESTA
+        descargo.fecha_resolucion = timezone.now()
+        descargo.comentario_resolucion = (
+            f'El Comite no resolvio la apelacion dentro de su plazo (vencia el '
+            f'{timezone.localtime(vencio):%d-%m-%Y}).'
+        )
+        descargo.save(update_fields=['resolucion', 'fecha_resolucion', 'comentario_resolucion'])
+        registrar_historial(
+            multa, estado_anterior, multa.estado, None,
+            'El Comite no resolvio la apelacion en plazo: la multa queda firme y pasa a '
+            'gastos comunes. Se informo al residente el motivo.'
+            if multa.estado == EstadoMulta.FIRME else
+            'El Comite no resolvio la apelacion en plazo: el aviso de cortesia queda cerrado sin cobro.',
+        )
+        sellar_acto(multa, TipoActo.FIRMEZA_SIN_RESPUESTA_COMITE, None, auth_metodo='sistema', extra={
+            'fecha_limite_resolucion': vencio.isoformat(),
+            'estado_resultante': multa.estado,
+            'texto_descargo': descargo.texto,
+        })
+        _avisar_firmeza_sin_respuesta(multa, vencio)
+        cerradas.append(multa)
+    return cerradas
+
+
+def _avisar_firmeza_sin_respuesta(multa, vencio):
+    """Correo al residente: por que su apelacion termino sin resolverse."""
+    from .correo_html import correo_con_html, html_correo
+
+    persona = multa.persona_infractor
+    if persona is None or not persona.correo_electronico:
+        return
+    comunidad = multa.condominio.nombre
+    fecha = f'{timezone.localtime(vencio):%d-%m-%Y}'
+    if multa.estado == EstadoMulta.FIRME:
+        unidad = multa.infraccion.unidad_monto if multa.infraccion else ''
+        consecuencia = (
+            f'Por esa falta de respuesta, la multa #{multa.id} queda firme por {multa.monto} {unidad} '
+            'y se incluira en el proximo cobro de gastos comunes de su unidad.'
+        ).replace('  ', ' ')
+    else:
+        consecuencia = f'Como la multa #{multa.id} era un aviso de cortesia, queda cerrada sin cobro.'
+    parrafos = [
+        f'El Comite de Administracion no resolvio su apelacion dentro del plazo, que vencia el {fecha}.',
+        consecuencia,
+        'Si tiene dudas o quiere reclamar por la falta de respuesta, responda este correo: '
+        'le llegara a la administracion de su comunidad.',
+    ]
+    try:
+        correo_con_html(
+            asunto=f'Su apelacion de la multa #{multa.id} no fue resuelta - {comunidad}',
+            texto='\n\n'.join(parrafos),
+            html=html_correo(
+                comunidad=comunidad, titulo='Su apelacion no fue resuelta en plazo', parrafos=parrafos,
+                boton=('Ver el caso', enlace_acuse(multa)),
+            ),
+            from_email=settings.DEFAULT_FROM_EMAIL,
+            to=[persona.correo_electronico],
+            reply_to=correos_administracion(multa.condominio),
+        ).send(fail_silently=True)
+    except Exception:
+        logger.exception('No se pudo avisar la firmeza sin respuesta de la multa %s', multa.id)
 
 
 def confirmar_antes_del_cobro(multa, usuario, dar_cortesia=False, comentario=''):

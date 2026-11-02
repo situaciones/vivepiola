@@ -39,6 +39,7 @@ def resumen_para_comite(condominio):
         descargo__resolucion=ResolucionDescargo.PENDIENTE,
         descargo__fecha_limite_resolucion__lt=timezone.now(),
     ).count()
+    por_vencer = _apelaciones_por_vencer(condominio)
     por_confirmar = Multa.objects.filter(
         condominio=condominio, estado=EstadoMulta.POR_CONFIRMAR,
     ).count()
@@ -55,6 +56,8 @@ def resumen_para_comite(condominio):
         puntos.append(
             f'{_linea(vencidos, "apelacion", "apelaciones")} con el plazo de respuesta VENCIDO'
         )
+    if por_vencer:
+        puntos.append(_linea_por_vencer(por_vencer, 'Si no las resuelves, quedan firmes y se cobran en gastos comunes.'))
     if en_revision:
         puntos.append(f'{_linea(en_revision, "caso", "casos")} por revisar')
     if descargos:
@@ -67,9 +70,30 @@ def resumen_para_comite(condominio):
     return {
         'rol': Rol.COMITE,
         'puntos': puntos,
-        'urgente': bool(contenciones or vencidos),
+        'urgente': bool(contenciones or vencidos or por_vencer),
         'total': en_revision + descargos + contenciones + por_confirmar,
     }
+
+
+def _apelaciones_por_vencer(condominio):
+    """Apelaciones sin resolver cuyo plazo del Comite vence en los proximos dias."""
+    ahora = timezone.now()
+    return list(Multa.objects.filter(
+        condominio=condominio, estado=EstadoMulta.CON_DESCARGO,
+        descargo__resolucion=ResolucionDescargo.PENDIENTE,
+        descargo__fecha_limite_resolucion__gte=ahora,
+        descargo__fecha_limite_resolucion__lte=ahora + timedelta(days=DIAS_URGENCIA),
+    ).select_related('descargo').order_by('descargo__fecha_limite_resolucion'))
+
+
+def _linea_por_vencer(multas, consecuencia):
+    casos = ', '.join(
+        f'#{m.id} vence el {timezone.localtime(m.descargo.fecha_limite_resolucion):%d-%m}' for m in multas
+    )
+    return (
+        f'URGENTE: {_linea(len(multas), "apelacion vence", "apelaciones vencen")} en menos de '
+        f'{DIAS_URGENCIA} dias ({casos}). {consecuencia}'
+    )
 
 
 def resumen_para_administracion(condominio):
@@ -97,7 +121,13 @@ def resumen_para_administracion(condominio):
         descargo__fecha_limite_resolucion__lt=timezone.now(),
     ).count()
 
+    por_vencer = _apelaciones_por_vencer(condominio)
+
     puntos = []
+    if por_vencer:
+        puntos.append(_linea_por_vencer(
+            por_vencer, 'Recuerdaselo al Comite: si no las resuelve, quedan firmes y se cobran.',
+        ))
     if apelaciones_vencidas:
         puntos.append(
             f'{_linea(apelaciones_vencidas, "apelacion", "apelaciones")} que el Comite '
@@ -120,7 +150,7 @@ def resumen_para_administracion(condominio):
     return {
         'rol': Rol.ADMINISTRADOR,
         'puntos': puntos,
-        'urgente': bool(urgentes or apelaciones_vencidas),
+        'urgente': bool(urgentes or apelaciones_vencidas or por_vencer),
         'total': por_notificar + por_responder + firmes + apelaciones_vencidas,
     }
 

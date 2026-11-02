@@ -18,6 +18,7 @@ const ESTILOS = {
   VENCIDA: { color: '#b91c1c', fondo: '#fef2f2', etiqueta: 'Vencida' },
   ACEPTADO: { color: '#065f46', fondo: '#ecfdf5', etiqueta: 'Aceptado' },
   RECHAZADO: { color: '#b91c1c', fondo: '#fef2f2', etiqueta: 'Rechazado' },
+  SIN_RESPUESTA: { color: '#92400e', fondo: '#fffbeb', etiqueta: 'Sin respuesta del Comite' },
   EJECUTADA: { color: '#b91c1c', fondo: '#fef2f2', etiqueta: 'Contencion activa' },
   RATIFICADA: { color: '#9a3412', fondo: '#fff7ed', etiqueta: 'Ratificada · activa' },
   EN_ESCALAMIENTO: { color: '#b91c1c', fondo: '#fef2f2', etiqueta: 'En escalamiento · ACTIVA' },

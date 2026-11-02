@@ -17,6 +17,7 @@ from django.utils import timezone
 
 from accounts.models import Rol, Usuario
 from condominios.models import Condominio
+from multas.services import actualizar_multas_vencidas
 from multas.resumenes import (
     enviar_resumen, redactar_mensaje, resumen_para_administracion, resumen_para_comite,
 )
@@ -41,6 +42,11 @@ class Command(BaseCommand):
         avisados = omitidos = 0
 
         for condominio in comunidades:
+            # Antes de resumir se cierran los plazos vencidos (apelaciones que
+            # el Comite no respondio, descargos que nadie presento): asi corren
+            # aunque nadie haya abierto la app, y el residente recibe su aviso.
+            if not opciones['simular']:
+                actualizar_multas_vencidas(condominio)
             if not opciones['forzar'] and condominio.ultimo_resumen_enviado and condominio.ultimo_resumen_enviado > corte:
                 omitidos += 1
                 continue

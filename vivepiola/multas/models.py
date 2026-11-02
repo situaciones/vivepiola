@@ -217,6 +217,9 @@ class ResolucionDescargo(models.TextChoices):
     RECHAZADO = 'RECHAZADO', 'Rechazado (multa se mantiene firme)'
     DESCUENTO = 'DESCUENTO', 'Descuento parcial (firme, con el monto rebajado)'
     CORTESIA = 'CORTESIA', 'Parte de cortesia (falta acreditada, sin cobro)'
+    # El Comite no respondio dentro de su plazo: la multa queda firme y se le
+    # explica al residente que va a gastos comunes por esa falta de respuesta.
+    SIN_RESPUESTA = 'SIN_RESPUESTA', 'Sin respuesta del Comite en plazo (multa firme)'
 
 
 class Descargo(models.Model):
@@ -441,6 +444,9 @@ class TipoActo(models.TextChoices):
     VOTO_RESOLUCION = 'VOTO_RESOLUCION', 'Voto del Comite sobre la apelacion'
     RESOLUCION_DESCARGO = 'RESOLUCION_DESCARGO', 'Resolucion del descargo'
     FIRMEZA_AUTOMATICA = 'FIRMEZA_AUTOMATICA', 'Firmeza automatica por vencimiento de plazo'
+    FIRMEZA_SIN_RESPUESTA_COMITE = (
+        'FIRMEZA_SIN_RESPUESTA_COMITE', 'Firme porque el Comite no resolvio la apelacion en plazo'
+    )
     CONFIRMACION_PREVIA_COBRO = 'CONFIRMACION_PREVIA_COBRO', 'Confirmacion antes del cobro'
     # Carril de contencion (manifiesto polimorfico tipo CONTENCION)
     CONTENCION_EJECUTADA = 'CONTENCION_EJECUTADA', 'Medida inmediata ejecutada'
