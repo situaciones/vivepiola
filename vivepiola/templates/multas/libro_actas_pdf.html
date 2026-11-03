@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8" />
+<style>
+  body { font-family: Helvetica, Arial, sans-serif; font-size: 9.5px; color: #16233a; }
+  h1 { font-size: 15px; margin: 0; color: #ffffff; }
+  .encabezado { background-color: #1a2b45; color: #ffffff; padding: 14px 16px; }
+  .encabezado .sub { color: #b7c3d6; font-size: 9px; margin-top: 4px; }
+  p { margin: 8px 0; }
+  table { width: 100%; border-collapse: collapse; margin-top: 8px; }
+  th { background-color: #eef1f6; border: 1px solid #c7ced9; padding: 4px 5px; font-size: 8px; text-align: left; }
+  td { border: 1px solid #d3d8e0; padding: 4px 5px; font-size: 8.5px; vertical-align: top; }
+  .mono { font-family: Courier; font-size: 7px; }
+  .firma { margin-top: 36px; }
+  .footer { margin-top: 18px; font-size: 7.5px; color: #66758c; }
+</style>
+</head>
+<body>
+  <div class="encabezado">
+    <h1>Libro de Actas del Comite de Administracion</h1>
+    <div class="sub">{{ condominio.nombre }} &middot; del {{ desde|date:"d-m-Y" }} al {{ hasta|date:"d-m-Y" }}</div>
+  </div>
+
+  <p>
+    Registro de los acuerdos del Comite adoptados en la plataforma: cada voto, cada aprobacion o
+    rechazo de multa, cada resolucion de apelacion y cada derivacion. Los acuerdos se adoptan por la
+    mitad mas uno de los miembros del Comite (Ley 21.442, art. 17). Cada fila queda sellada en la
+    cadena del expediente; el codigo de sello permite verificarla.
+  </p>
+
+  <table>
+    <tr>
+      <th width="12%">Fecha y hora</th><th width="7%">Caso</th><th width="10%">Unidad</th>
+      <th width="17%">Acto</th><th width="15%">Quien</th><th width="39%">Detalle y sello</th>
+    </tr>
+    {% for fila in filas %}
+    <tr>
+      <td>{{ fila.ts|date:"d-m-Y H:i" }}</td>
+      <td>#{{ fila.caso }}</td>
+      <td>{{ fila.unidad }}</td>
+      <td>{{ fila.acto }}</td>
+      <td>{{ fila.quien }}</td>
+      <td>{{ fila.detalle }}{% if fila.detalle %}<br />{% endif %}<span class="mono">Sello {{ fila.sello }}</span></td>
+    </tr>
+    {% empty %}
+    <tr><td colspan="6">No hubo acuerdos del Comite en este periodo.</td></tr>
+    {% endfor %}
+  </table>
+
+  <p class="firma">______________________________<br />Presidente(a) del Comite de Administracion</p>
+
+  <p class="footer">
+    Emitido por SinConflicto el {{ emitido|date:"d-m-Y H:i" }} a solicitud de {{ solicitante }}. Este documento
+    respalda los acuerdos para su incorporacion al Libro de Actas que custodia el presidente del Comite.
+  </p>
+</body>
+</html>

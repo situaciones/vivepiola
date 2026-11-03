@@ -139,6 +139,10 @@ def elementos_minimos_notificacion(multa):
             frase(c, 'notificacion_automatizada')
             if copropiedad and multa.es_aviso_de_cortesia and not multa.aprobada_por_id else ''
         ),
+        'responsable': (
+            frase(c, 'notificacion_responsable_solidario', unidad_id=multa.unidad.identificador)
+            if multa.responsable_solidario else ''
+        ),
     }
 
 
@@ -185,6 +189,64 @@ def generar_pdf_notificacion(multa):
         raise RuntimeError('No se pudo generar el PDF de notificacion.')
     buffer.seek(0)
     return buffer.read()
+
+
+def _detalle_acuerdo(acta):
+    """Resumen legible de lo que se acordo, a partir del manifiesto sellado."""
+    extra = (acta.manifiesto or {}).get('extra') or {}
+    partes = []
+    for clave, etiqueta in (
+        ('decision', 'decision'), ('resolucion', 'resolucion'), ('infraccion_codigo', 'falta'),
+        ('monto_aplicado', 'monto'), ('monto_pedido', 'monto pedido'), ('porcentaje_descuento', 'rebaja %'),
+        ('destino', 'derivado a'), ('motivo', 'motivo'), ('comentario', 'comentario'),
+    ):
+        valor = extra.get(clave)
+        if valor not in (None, '', []):
+            partes.append(f'{etiqueta}: {valor}')
+    votos = extra.get('votos_coincidentes', extra.get('votos'))
+    requeridos = extra.get('votos_requeridos', extra.get('quorum_requerido'))
+    if votos is not None and requeridos is not None:
+        partes.append(f'votos {votos} de {requeridos}')
+    return '; '.join(partes)
+
+
+def generar_libro_actas_pdf(condominio, desde, hasta, solicitante):
+    """
+    Libro de Actas digital: los acuerdos del Comite de un periodo, con quien
+    voto que y el sello de cada acto. Respalda los acuerdos adoptados en la app
+    para incorporarlos al Libro de Actas que custodia el presidente.
+    """
+    from .models import ActaSellada
+
+    acuerdos = (
+        TipoActo.VOTO_APROBACION, TipoActo.APROBACION, TipoActo.RECHAZO, TipoActo.VOTO_RESOLUCION,
+        TipoActo.RESOLUCION_DESCARGO, TipoActo.DERIVACION, TipoActo.CONFIRMACION_PREVIA_COBRO,
+        TipoActo.UNION_DUPLICADO, TipoActo.SEPARACION_DUPLICADO,
+        TipoActo.VOTO_RATIFICACION, TipoActo.CONTENCION_RATIFICADA, TipoActo.CONTENCION_LEVANTADA,
+    )
+    actas = (
+        ActaSellada.objects
+        .filter(multa__condominio=condominio, tipo_acto__in=acuerdos, ts__date__gte=desde, ts__date__lte=hasta)
+        .select_related('multa__unidad', 'actor')
+        .order_by('ts')
+    )
+    filas = [{
+        'ts': timezone.localtime(a.ts),
+        'caso': a.multa_id,
+        'unidad': a.multa.unidad.identificador if a.multa.unidad else '',
+        'acto': a.get_tipo_acto_display(),
+        'quien': (a.actor.get_full_name() or a.actor.username) if a.actor else 'Sistema',
+        'detalle': _detalle_acuerdo(a),
+        'sello': a.hash_acto[:16],
+    } for a in actas]
+    html = render_to_string('multas/libro_actas_pdf.html', {
+        'condominio': condominio, 'desde': desde, 'hasta': hasta, 'filas': filas,
+        'emitido': timezone.localtime(), 'solicitante': solicitante.get_full_name() or solicitante.username,
+    })
+    buffer = io.BytesIO()
+    if pisa.CreatePDF(src=html, dest=buffer).err:
+        raise RuntimeError('No se pudo generar el Libro de Actas.')
+    return buffer.getvalue()
 
 
 def generar_audit_trail_pdf(multa, solicitante):
@@ -536,7 +598,8 @@ def enviar_notificacion_email(multa, pdf_bytes):
     minimos = elementos_minimos_notificacion(multa)
     detalle = ' '.join([minimos['hecho_fecha'], minimos['antecedentes'], minimos['calificacion']])
     cuerpo = '\n\n'.join(p for p in [
-        saludo, hecho, detalle, monto, minimos['automatizada'], plazo, minimos['jpl'], pide_acuse, canal_legal,
+        saludo, hecho, minimos['responsable'], detalle, monto, minimos['automatizada'], plazo, minimos['jpl'],
+        pide_acuse, canal_legal,
     ] if p)
     if nota_copia:
         cuerpo += '\n\n' + nota_copia
@@ -545,7 +608,8 @@ def enviar_notificacion_email(multa, pdf_bytes):
         comunidad=c.nombre,
         titulo=asunto.rsplit(' - ', 1)[0],
         parrafos=[p for p in (
-            saludo, hecho, detalle, minimos['automatizada'], plazo, minimos['jpl'], pide_acuse, nota_copia,
+            saludo, hecho, minimos['responsable'], detalle, minimos['automatizada'], plazo, minimos['jpl'],
+            pide_acuse, nota_copia,
         ) if p],
         destacado=monto,
         boton=('Ver mi caso y confirmar recepcion', enlace),
@@ -681,6 +745,29 @@ def confianza_minima_para(infraccion):
     )
 
 
+def asignar_responsable_de_unidad(multa):
+    """
+    Si no se identifico a quien cometio la falta, responde el propietario de la
+    unidad: la ley lo hace solidariamente responsable de las multas causadas
+    por sus ocupantes y visitas, y puede repetir contra quien la cometio.
+    Devuelve True si lo asigno.
+    """
+    if multa.persona_infractor_id or multa.unidad is None:
+        return False
+    propietario = multa.unidad.propietario
+    if propietario is None:
+        return False
+    multa.persona_infractor = propietario
+    multa.responsable_solidario = True
+    multa.save(update_fields=['persona_infractor', 'responsable_solidario'])
+    registrar_historial(
+        multa, multa.estado, multa.estado, None,
+        f'No se identifico a quien cometio la falta: responde {propietario.nombre_completo}, '
+        'propietario(a) de la unidad, como responsable solidario.',
+    )
+    return True
+
+
 def puede_cursarse_sola(multa, confianza):
     """
     Decide si el expediente puede notificarse sin que un humano lo tipifique.
@@ -707,9 +794,10 @@ def puede_cursarse_sola(multa, confianza):
         )
     if multa.infraccion is None:
         return False, 'el reporte no calza con ninguna infraccion del catalogo vigente'
+    asignar_responsable_de_unidad(multa)
     persona = multa.persona_infractor
     if persona is None:
-        return False, 'no hay un sujeto responsable identificado'
+        return False, 'no hay un sujeto responsable identificado ni propietario registrado en la unidad'
     if not persona.correo_electronico:
         return False, 'el sujeto responsable no tiene correo registrado'
 
@@ -1716,6 +1804,65 @@ def votar_aprobacion(multa, usuario, decision, infraccion=None, monto=None, moti
     # Aprobada por el Comite, la notifica la administracion (un clic en su
     # bandeja): el Comite impone la multa y la administracion la comunica.
     return 'APROBADA', coincidentes, requeridos
+
+
+def puede_derivarse(multa):
+    """Nadie del Comite puede decidir este caso: todos son parte o no tienen facultad."""
+    from condominios.comite import comite_habilitado
+
+    return (
+        multa.estado in (EstadoMulta.EN_REVISION, EstadoMulta.CON_DESCARGO)
+        and not comite_habilitado(multa)
+    )
+
+
+def derivar_caso(multa, usuario, destino, comentario=''):
+    """
+    Lleva al Juzgado de Policia Local (Ley 21.442, art. 44) o a mediacion
+    municipal (art. 47) un caso que nadie del Comite puede decidir. La multa
+    no se cobra: queda DERIVADA y lo que se resuelva alla se registra aparte.
+    """
+    from .models import TipoActo
+
+    destinos = {
+        'JPL': 'Juzgado de Policia Local',
+        'MEDIACION': 'mediacion municipal',
+    }
+    if destino not in destinos:
+        raise ValueError('Indica destino: JPL o MEDIACION.')
+    if not puede_derivarse(multa):
+        raise ValueError('Solo se deriva un caso que ningun miembro del Comite puede decidir.')
+
+    estado_anterior = multa.estado
+    multa.estado = EstadoMulta.DERIVADA
+    multa.save(update_fields=['estado'])
+    texto = f'Derivado a {destinos[destino]}: ningun miembro del Comite puede decidirlo.'
+    if comentario:
+        texto += f' {comentario}'
+    registrar_historial(multa, estado_anterior, multa.estado, usuario, texto)
+    sellar_acto(multa, TipoActo.DERIVACION, usuario, extra={'destino': destino, 'comentario': comentario})
+
+    persona = multa.persona_infractor
+    if estado_anterior == EstadoMulta.CON_DESCARGO and persona and persona.correo_electronico:
+        comunidad = multa.condominio.nombre
+        parrafos = [
+            f'Ningun miembro del Comite de Administracion puede resolver su apelacion de la multa '
+            f'#{multa.id}, porque todos son parte del caso o no tienen facultad para decidirlo.',
+            f'Por eso la administracion lo llevo a {destinos[destino]}. Mientras tanto, la multa no '
+            'se le cobra.',
+        ]
+        try:
+            correo_con_html(
+                asunto=f'Su apelacion de la multa #{multa.id} fue derivada - {comunidad}',
+                texto='\n\n'.join(parrafos),
+                html=html_correo(comunidad=comunidad, titulo='Su caso fue derivado', parrafos=parrafos),
+                from_email=settings.DEFAULT_FROM_EMAIL,
+                to=[persona.correo_electronico],
+                reply_to=correos_administracion(multa.condominio),
+            ).send(fail_silently=True)
+        except Exception:
+            logger.exception('No se pudo avisar la derivacion de la multa %s', multa.id)
+    return multa
 
 
 def avisar_ratificacion_al_comite(multa):

@@ -7,16 +7,17 @@ import openpyxl.utils
 import openpyxl.worksheet.datavalidation
 from django.core.exceptions import ValidationError
 from django.core.validators import validate_email
+from django.utils import timezone
 
 from .models import (
-    CondicionEspecial, Permanencia, Persona, RolOcupacion, Unidad, Vehiculo, VinculoCopropietario,
+    CONDICIONES_SENSIBLES, CondicionEspecial, Permanencia, Persona, RolOcupacion, Unidad, Vehiculo, VinculoCopropietario,
     normalizar_patente,
 )
 
 COLUMNAS_PLANTILLA = [
     'unidad', 'rol_ocupacion', 'nombre_completo', 'cedula_identidad',
     'domicilio', 'correo_electronico', 'telefono', 'permanencia', 'vinculo_copropietario',
-    'condicion_especial', 'patentes',
+    'condicion_especial', 'consentimiento_condicion', 'patentes',
 ]
 
 ROLES_VALIDOS = {choice.value for choice in RolOcupacion}
@@ -51,6 +52,11 @@ AYUDA_COLUMNAS = {
         'Opcional',
         'Solo si corresponde: FALLECIDO, DISCAPACIDAD o REQUIERE_APOYO. Detiene el '
         'cobro automatico para que el Comite revise el caso antes de cobrarlo.',
+    ),
+    'consentimiento_condicion': (
+        'Opcional',
+        'Obligatorio con DISCAPACIDAD o REQUIERE_APOYO: SI solo si la persona autorizo registrar su condicion: es un dato sensible y '
+        'sin su consentimiento no se puede guardar.',
     ),
     'patentes': (
         'Opcional',
@@ -155,6 +161,9 @@ def generar_plantilla_excel():
         (None, 'condicion_especial',
          'Opcional. FALLECIDO, DISCAPACIDAD o REQUIERE_APOYO. Detiene el cobro automatico '
          'para que el Comite confirme antes de cobrar.'),
+        (None, 'consentimiento_condicion',
+         'SI si la persona autorizo registrar DISCAPACIDAD o REQUIERE_APOYO (dato sensible). '
+         'Sin su consentimiento esa condicion no se puede registrar.'),
         (None, 'patentes',
          'Opcional. Patentes de los autos de la unidad, separadas por coma (ABCD12, XY1234). '
          'Basta ponerlas en una de las filas de la unidad.'),
@@ -258,11 +267,14 @@ ALIAS_COLUMNAS = {
     'permanencia': ('permanencia',),
     'vinculo_copropietario': ('vinculo_copropietario', 'vinculo'),
     'condicion_especial': ('condicion_especial', 'condicion'),
+    'consentimiento_condicion': ('consentimiento_condicion', 'consentimiento'),
     'patentes': ('patentes', 'patente'),
 }
 
 # Se guardan en mayusculas porque son codigos, no texto libre.
-CAMPOS_EN_MAYUSCULAS = ('rol_ocupacion', 'permanencia', 'vinculo_copropietario', 'condicion_especial')
+CAMPOS_EN_MAYUSCULAS = (
+    'rol_ocupacion', 'permanencia', 'vinculo_copropietario', 'condicion_especial', 'consentimiento_condicion',
+)
 
 
 def _campos_de_fila(fila):
@@ -316,6 +328,11 @@ def _errores_de_fila(campos):
             f"condicion_especial invalida: '{campos['condicion_especial']}' "
             f"(use FALLECIDO, DISCAPACIDAD o REQUIERE_APOYO)"
         )
+    if campos['condicion_especial'] in CONDICIONES_SENSIBLES and campos['consentimiento_condicion'] not in ('SI', 'SÍ'):
+        errores.append(
+            f"condicion_especial {campos['condicion_especial']} es un dato sensible: solo se registra "
+            "si la persona lo autorizo (ponga SI en consentimiento_condicion)"
+        )
 
     correo = campos['correo_electronico']
     if not correo:
@@ -350,6 +367,9 @@ def _guardar_persona(condominio, campos):
             'permanencia': campos['permanencia'],
             'vinculo_copropietario': campos['vinculo_copropietario'],
             'condicion_especial': campos['condicion_especial'],
+            'consentimiento_condicion_en': (
+                timezone.now() if campos['condicion_especial'] in CONDICIONES_SENSIBLES else None
+            ),
             'nombre_completo': campos['nombre_completo'],
             'domicilio': campos['domicilio'],
             'correo_electronico': campos['correo_electronico'],

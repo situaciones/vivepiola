@@ -59,6 +59,11 @@ FRASES_DEFAULT = {
     'notificacion_hecho_fecha': 'El hecho se registro el {fecha} a las {hora}{lugar}.',
     'notificacion_antecedentes': 'Antecedentes del caso: {antecedentes}.',
     'notificacion_calificacion': 'Calificacion de la falta: {gravedad}.',
+    'notificacion_responsable_solidario': (
+        'No se identifico a la persona que cometio la falta. Como propietario(a) de la '
+        '{unidad} {unidad_id}, usted responde por las multas de su unidad, aunque las cause '
+        'un ocupante o una visita, y puede cobrarselas a quien la cometio.'
+    ),
     'notificacion_jpl': (
         'Si no esta de acuerdo con lo que resuelva el {organo_sancionador}, puede recurrir '
         'al Juzgado de Policia Local de su comuna dentro de {meses} meses.'

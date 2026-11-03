@@ -5,7 +5,7 @@ from decimal import Decimal
 
 from django.core import mail
 from django.core.files.uploadedfile import SimpleUploadedFile
-from django.test import override_settings
+from django.test import SimpleTestCase, override_settings
 from django.utils import timezone
 from rest_framework.test import APITestCase
 
@@ -500,3 +500,27 @@ class CopiaAlCopropietarioTestCase(APITestCase):
 
         acta = multa.actas_selladas.filter(tipo_acto=TipoActo.NOTIFICACION).latest('id')
         self.assertEqual(acta.manifiesto['extra']['copias_copropietario'], ['rosa@test.local'])
+
+
+class ConsentimientoCondicionTestCase(SimpleTestCase):
+    """DISCAPACIDAD y REQUIERE_APOYO son datos sensibles: solo con consentimiento."""
+
+    def _importar(self, condicion, consentimiento):
+        from condominios.utils import _campos_de_fila, _errores_de_fila
+
+        campos = _campos_de_fila({
+            'unidad': 'Depto 1', 'rol_ocupacion': 'PROPIETARIO', 'nombre_completo': 'Ana Sensible',
+            'cedula_identidad': '11.111.111-1', 'domicilio': 'Depto 1', 'correo_electronico': 'ana@test.local',
+            'condicion_especial': condicion, 'consentimiento_condicion': consentimiento,
+        })
+        return _errores_de_fila(campos)
+
+    def test_sin_consentimiento_no_se_registra(self):
+        errores = self._importar('DISCAPACIDAD', '')
+        self.assertTrue(any('dato sensible' in e for e in errores), errores)
+
+    def test_con_consentimiento_si(self):
+        self.assertEqual(self._importar('REQUIERE_APOYO', 'si'), [])
+
+    def test_fallecido_no_es_dato_sensible(self):
+        self.assertEqual(self._importar('FALLECIDO', ''), [])

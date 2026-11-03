@@ -153,6 +153,22 @@ export default function ComiteDashboard() {
     }
   };
 
+  // Los acuerdos del Comite adoptados en la app, para el Libro de Actas que
+  // custodia el presidente.
+  const descargarLibroActas = async () => {
+    try {
+      const res = await client.get('/multas/libro-actas/', { responseType: 'blob' });
+      const url = URL.createObjectURL(res.data);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'libro_de_actas.pdf';
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch {
+      setMensaje('No se pudo generar el Libro de Actas.');
+    }
+  };
+
   const descargarAuditTrail = async () => {
     try {
       const res = await client.get(`/multas/${activa.id}/audit-trail/`, { responseType: 'blob' });
@@ -378,14 +394,18 @@ export default function ComiteDashboard() {
           <>
             <PageHeader
               titulo="Bandeja de decision"
-              subtitulo="Aqui llegan las apelaciones de los residentes y los casos que el sistema no pudo tipificar solo. Compara la evidencia con el articulo aplicable antes de decidir."
+              subtitulo="Aqui llegan las multas que esperan el voto del Comite y las apelaciones de los residentes. Compara la evidencia con el articulo aplicable antes de decidir."
               stats={[
-                { label: 'Sin tipificar', valor: enRevision.length, alerta: enRevision.length > 0 },
+                { label: 'Por votar', valor: enRevision.length, alerta: enRevision.length > 0 },
                 { label: 'Apelaciones por resolver', valor: conDescargo.length, alerta: conDescargo.length > 0 },
                 { label: 'Por confirmar antes del cobro', valor: porConfirmar.length, alerta: porConfirmar.length > 0 },
                 { label: 'Infracciones activas', valor: infracciones.length },
               ]}
             />
+
+            <button type="button" className="btn btn-secundario" onClick={descargarLibroActas} style={{ marginTop: 12 }}>
+              Descargar Libro de Actas (ultimos 12 meses)
+            </button>
 
             {pendientes.length === 0 ? (
               <div style={{ marginTop: 24 }}>

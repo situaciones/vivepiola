@@ -261,6 +261,11 @@ class CondicionEspecial(models.TextChoices):
     REQUIERE_APOYO = 'REQUIERE_APOYO', 'Requiere apoyo para tramites digitales'
 
 
+# Datos sensibles (Ley 19.628 / 21.719): solo se registran si el titular lo
+# consintio. Fallecido no lo es: no describe la salud ni la vida de nadie vivo.
+CONDICIONES_SENSIBLES = (CondicionEspecial.DISCAPACIDAD, CondicionEspecial.REQUIERE_APOYO)
+
+
 class Persona(models.Model):
     """
     Ficha individual del registro de copropietarios exigido por la Ley 21.442:
@@ -283,6 +288,9 @@ class Persona(models.Model):
         max_length=20, choices=CondicionEspecial.choices, blank=True, default='',
         help_text='Detiene el cobro automatico para que alguien revise el caso antes.',
     )
+    # Cuando el titular consintio que se registre su condicion (dato sensible).
+    # Sin ese consentimiento, DISCAPACIDAD o REQUIERE_APOYO no se guardan.
+    consentimiento_condicion_en = models.DateTimeField(null=True, blank=True)
     nombre_completo = models.CharField(max_length=255)
     cedula_identidad = models.CharField(max_length=20)
     domicilio = models.CharField(max_length=255)

@@ -155,12 +155,14 @@ class MultaSerializer(serializers.ModelSerializer):
     es_aviso_de_cortesia = serializers.BooleanField(read_only=True)
     # Votacion del Comite para aplicar la multa (solo mientras esta EN_REVISION).
     aprobacion_comite = serializers.SerializerMethodField()
+    # Ningun miembro del Comite puede decidir: la administracion puede derivarlo.
+    sin_comite_habilitado = serializers.SerializerMethodField()
 
     class Meta:
         model = Multa
         fields = (
             'id', 'condominio', 'ticket', 'ticket_detalle', 'unidad', 'unidad_identificador',
-            'persona_infractor', 'persona_nombre', 'infraccion', 'infraccion_descripcion',
+            'persona_infractor', 'persona_nombre', 'responsable_solidario', 'infraccion', 'infraccion_descripcion',
             'infraccion_codigo', 'infraccion_articulo', 'infraccion_texto_fuente', 'infraccion_unidad_monto',
             'monto', 'estado',
             'monto_sin_cortesia', 'es_aviso_de_cortesia',
@@ -171,7 +173,7 @@ class MultaSerializer(serializers.ModelSerializer):
             'propuesta_origen', 'propuesta_confianza', 'propuesta_fundamento',
             'es_reincidencia', 'multa_primera_sancion', 'agravante_sugerido',
             'fecha_creacion', 'fecha_firme', 'historial', 'descargo', 'corroboraciones',
-            'posible_duplicado', 'duplicado_revisado', 'aprobacion_comite',
+            'posible_duplicado', 'duplicado_revisado', 'aprobacion_comite', 'sin_comite_habilitado',
         )
         read_only_fields = (
             'condominio', 'unidad', 'persona_infractor', 'estado', 'aprobada_por', 'fecha_aprobacion',
@@ -195,6 +197,11 @@ class MultaSerializer(serializers.ModelSerializer):
             'reportes': original.corroboraciones.count() + 1,
         }
 
+
+    def get_sin_comite_habilitado(self, obj):
+        from .services import puede_derivarse
+
+        return puede_derivarse(obj)
 
     def get_aprobacion_comite(self, obj):
         from .models import EstadoMulta

@@ -76,9 +76,13 @@ def clasificar_con_ia(ticket, infracciones):
     import anthropic
 
     client = anthropic.Anthropic(api_key=settings.ANTHROPIC_API_KEY)
+    from .seudonimo import seudonimizar
+
+    # Sale hacia un proveedor en el extranjero: sin nombres, RUT ni contactos.
+    condominio = ticket.condominio
     reporte = {
-        'descripcion': (ticket.descripcion or '')[:4000],
-        'ubicacion': ticket.ubicacion or '',
+        'descripcion': seudonimizar((ticket.descripcion or '')[:4000], condominio),
+        'ubicacion': seudonimizar(ticket.ubicacion or '', condominio),
         'fecha_hecho': ticket.fecha_hecho.isoformat() if ticket.fecha_hecho else '',
         'unidad': ticket.unidad.identificador,
     }
@@ -87,7 +91,7 @@ def clasificar_con_ia(ticket, infracciones):
     # que el modelo distinga lo que alguien escribio de lo que la camara
     # registro: si se contradicen, eso mismo es informacion.
     if ticket.analisis_evidencia:
-        reporte['observado_en_la_evidencia'] = ticket.analisis_evidencia[:2000]
+        reporte['observado_en_la_evidencia'] = seudonimizar(ticket.analisis_evidencia[:2000], condominio)
     contenido_usuario = (
         f'CATALOGO DE INFRACCIONES VIGENTE:\n{json.dumps(_catalogo_para_prompt(infracciones), ensure_ascii=False)}\n\n'
         f'REPORTE A CLASIFICAR:\n{json.dumps(reporte, ensure_ascii=False)}'

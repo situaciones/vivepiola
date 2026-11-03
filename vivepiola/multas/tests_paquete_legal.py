@@ -161,3 +161,18 @@ class PaqueteLegalTestCase(APITestCase):
         unidades = {int(f['multa_id']): f['unidad_monto'] for f in filas}
         self.assertEqual(unidades, {uf.id: 'UF', clp.id: 'CLP'})
         self.assertEqual(lote.totales_por_unidad(), {'UF': Decimal('1.00'), 'CLP': Decimal('20000.00')})
+
+    # -- Sin persona identificada responde el propietario --------------------
+
+    def test_sin_autor_identificado_responde_el_propietario(self):
+        multa = self._multa()
+        Multa.objects.filter(id=multa.id).update(persona_infractor=None)
+        multa.refresh_from_db()
+
+        self.assertEqual(self._aprobar(multa, '1.00').status_code, 200)
+        multa.refresh_from_db()
+        self.assertEqual(multa.persona_infractor, self.persona)
+        self.assertTrue(multa.responsable_solidario)
+
+        notificar_multa(multa, usuario=None)
+        self.assertIn('No se identifico a la persona que cometio la falta', mail.outbox[-1].body)

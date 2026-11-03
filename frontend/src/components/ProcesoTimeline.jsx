@@ -76,6 +76,13 @@ function construirPasos(multa) {
       pasos[3].fecha = fmt(multa.descargo?.fecha_presentacion);
       pasos[4].fecha = fmt(multa.descargo?.fecha_resolucion);
       return { pasos, detenido: null };
+    case 'DERIVADA':
+      completar(0);
+      pasos[1].estado = 'rechazado';
+      return {
+        pasos: pasos.slice(0, 2),
+        detenido: 'Ningun miembro del Comite podia decidir: el caso se derivo al Juzgado de Policia Local o a mediacion.',
+      };
     case 'ANULADA':
       completar(3);
       pasos[1].fecha = fmt(multa.fecha_aprobacion || multa.fecha_notificacion);

@@ -19,7 +19,7 @@
 
   <table>
     <tr><th>{{ voc.termino_unidad_cap }}</th><td>{{ multa.unidad.identificador }}</td></tr>
-    <tr><th>{{ voc.termino_sujeto_cap }}</th><td>{{ multa.persona_infractor.nombre_completo }}</td></tr>
+    <tr><th>{% if multa.responsable_solidario %}Responsable (propietario){% else %}{{ voc.termino_sujeto_cap }}{% endif %}</th><td>{{ multa.persona_infractor.nombre_completo }}</td></tr>
     <tr><th>Cedula / identificacion</th><td>{{ multa.persona_infractor.cedula_identidad }}</td></tr>
     <tr><th>Domicilio</th><td>{{ multa.persona_infractor.domicilio }}</td></tr>
     <tr><th>Infraccion</th><td>{{ multa.infraccion.descripcion }}</td></tr>
@@ -36,6 +36,7 @@
   <p><strong>Descripcion del reporte:</strong></p>
   <p>{{ multa.ticket.descripcion }}</p>
 
+  {% if voc.minimos.responsable %}<p>{{ voc.minimos.responsable }}</p>{% endif %}
   <p>{{ voc.minimos.antecedentes }}</p>
   {% if voc.minimos.automatizada %}<p>{{ voc.minimos.automatizada }}</p>{% endif %}
 

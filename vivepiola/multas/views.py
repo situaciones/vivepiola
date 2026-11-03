@@ -40,11 +40,11 @@ from .serializers import (
 )
 from .services import (
     ETAPA_PARA_DENUNCIANTE, actualizar_multas_vencidas, avisar_apelacion_al_comite,
-    buscar_expediente_abierto, cursar_multa_automatica, generar_audit_trail_pdf,
+    buscar_expediente_abierto, cursar_multa_automatica, generar_audit_trail_pdf, generar_libro_actas_pdf,
     confirmar_antes_del_cobro, convocar_reunion, notificar_multa, proponer_infraccion,
     proponer_resoluciones, quorum_efectivo, reevaluar_con_evidencia, registrar_acta_reunion, registrar_acuse,
     registrar_historial, registrar_voto_resolucion, resolver_descargo, resolver_posible_duplicado,
-    votar_aprobacion,
+    asignar_responsable_de_unidad, derivar_caso, votar_aprobacion,
 )
 
 
@@ -258,7 +258,7 @@ class MultaViewSet(viewsets.ReadOnlyModelViewSet):
             'convocar_reunion_view', 'acta_reunion',
         ):
             return [EsComite()]
-        if self.action in ('notificar', 'constancia_buzon'):
+        if self.action in ('notificar', 'constancia_buzon', 'derivar'):
             return [EsAdministrador()]
         if self.action in ('presentar_descargo', 'aportar_antecedente'):
             return [EsResidente()]
@@ -331,8 +331,12 @@ class MultaViewSet(viewsets.ReadOnlyModelViewSet):
         except InfraccionCatalogo.DoesNotExist:
             return Response({'detail': 'La infraccion no existe o no esta activa en el catalogo.'}, status=400)
 
+        asignar_responsable_de_unidad(multa)
         if not multa.persona_infractor:
-            return Response({'detail': 'Debe indicarse el sujeto responsable antes de aprobar.'}, status=400)
+            return Response({'detail': (
+                'No se sabe quien cometio la falta y la unidad no tiene propietario registrado: '
+                'registralo o indica el responsable antes de aprobar.'
+            )}, status=400)
 
         try:
             resultado, votos, requeridos = votar_aprobacion(
@@ -366,6 +370,23 @@ class MultaViewSet(viewsets.ReadOnlyModelViewSet):
         cuerpo = MultaSerializer(multa, context={'request': request}).data
         cuerpo.update({'resultado_votacion': resultado, 'votos': votos, 'votos_requeridos': requeridos})
         return Response(cuerpo)
+
+    @action(detail=True, methods=['post'])
+    def derivar(self, request, pk=None):
+        """
+        La administracion lleva al Juzgado de Policia Local o a mediacion un
+        caso que ningun miembro del Comite puede decidir (todos son parte).
+        """
+        multa = self.get_object()
+        try:
+            derivar_caso(
+                multa, request.user, str(request.data.get('destino', '')).upper(),
+                str(request.data.get('comentario', ''))[:500],
+            )
+        except ValueError as exc:
+            return Response({'detail': str(exc)}, status=400)
+        multa.refresh_from_db()
+        return Response(MultaSerializer(multa, context={'request': request}).data)
 
     @action(detail=True, methods=['post'])
     def notificar(self, request, pk=None):
@@ -654,6 +675,27 @@ class MultaViewSet(viewsets.ReadOnlyModelViewSet):
         """
         multa = self.get_object()
         return Response(verificar_expediente(multa))
+
+    @action(detail=False, methods=['get'], url_path='libro-actas')
+    def libro_actas(self, request):
+        """
+        Libro de Actas digital del Comite: los acuerdos de un periodo (por
+        defecto, los ultimos 12 meses) en un PDF para el presidente.
+        """
+        from datetime import date
+
+        if request.user.rol not in (Rol.COMITE, Rol.ADMINISTRADOR) or not request.user.condominio_id:
+            return Response({'detail': 'Solo el Comite y la administracion descargan el Libro de Actas.'}, status=403)
+        hoy = timezone.localdate()
+        try:
+            desde = date.fromisoformat(request.query_params.get('desde') or str(hoy - timedelta(days=365)))
+            hasta = date.fromisoformat(request.query_params.get('hasta') or str(hoy))
+        except ValueError:
+            return Response({'detail': 'Fechas en formato AAAA-MM-DD.'}, status=400)
+        pdf = generar_libro_actas_pdf(request.user.condominio, desde, hasta, request.user)
+        respuesta = HttpResponse(pdf, content_type='application/pdf')
+        respuesta['Content-Disposition'] = f'attachment; filename="libro_actas_{desde}_{hasta}.pdf"'
+        return respuesta
 
     @action(detail=True, methods=['get'], url_path='audit-trail')
     def audit_trail(self, request, pk=None):

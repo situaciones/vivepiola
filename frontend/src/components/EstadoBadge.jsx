@@ -10,6 +10,7 @@ const ESTILOS = {
   POR_CONFIRMAR: { color: '#92400e', fondo: '#fffbeb', etiqueta: 'Por confirmar' },
   CORTESIA: { color: '#0e7490', fondo: '#ecfeff', etiqueta: 'Parte de cortesia' },
   ANULADA: { color: '#475569', fondo: '#f1f5f9', etiqueta: 'Anulada' },
+  DERIVADA: { color: '#475569', fondo: '#f1f5f9', etiqueta: 'Derivada fuera de la comunidad' },
   EXPORTADA: { color: '#065f46', fondo: '#ecfdf5', etiqueta: 'Exportada a GGCC' },
   BORRADOR: { color: '#92400e', fondo: '#fffbeb', etiqueta: 'Borrador IA' },
   ACTIVA: { color: '#065f46', fondo: '#ecfdf5', etiqueta: 'Activa' },

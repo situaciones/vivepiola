@@ -23,6 +23,7 @@ from django.utils import timezone
 
 from accounts.models import Rol
 from multas.models import EstadoMulta, ResolucionDescargo
+from multas.seudonimo import seudonimizar
 from multas.views import multas_visibles
 from reglamentos.models import EstadoInfraccion, InfraccionCatalogo, Reglamento
 
@@ -189,7 +190,8 @@ def detalle_caso(usuario, caso):
         'caso': multa.id,
         'unidad': multa.unidad.identificador,
         'estado': multa.get_estado_display(),
-        'lo_reportado': multa.ticket.descripcion[:1500],
+        # El asistente corre en un proveedor extranjero: sin nombres ni contactos.
+        'lo_reportado': seudonimizar(multa.ticket.descripcion[:1500], multa.condominio),
         'fecha_del_hecho': _fecha(getattr(multa.ticket, 'fecha_hecho', None)),
         'infraccion': infraccion.descripcion if infraccion else 'Sin tipificar todavia',
         'articulo': infraccion.articulo_referencia if infraccion else None,
@@ -211,7 +213,7 @@ def detalle_caso(usuario, caso):
                 _fecha(descargo.fecha_limite_resolucion)
                 if descargo.resolucion == ResolucionDescargo.PENDIENTE else None
             ),
-            'comentario_del_comite': descargo.comentario_resolucion or None,
+            'comentario_del_comite': seudonimizar(descargo.comentario_resolucion, multa.condominio) or None,
         }
     if multa.estado == EstadoMulta.RECHAZADA and multa.motivo_rechazo:
         detalle['motivo_rechazo'] = multa.motivo_rechazo

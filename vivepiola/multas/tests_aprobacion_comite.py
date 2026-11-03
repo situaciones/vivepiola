@@ -33,7 +33,7 @@ def _persona(condominio, unidad, nombre, rut):
 
 
 @override_settings(MEDIA_ROOT=MEDIA_TEMP)
-class AprobacionComiteTestCase(APITestCase):
+class _BaseComite(APITestCase):
     @classmethod
     def setUpTestData(cls):
         cls.condominio = Condominio.objects.create(nombre='Edificio Mayoria', cortesias_antes_de_multar=0)
@@ -78,6 +78,9 @@ class AprobacionComiteTestCase(APITestCase):
         datos.update(extra)
         return self.client.post(f'/api/multas/{multa.id}/{accion}/', datos, format='json', SERVER_NAME='localhost')
 
+
+
+class AprobacionComiteTestCase(_BaseComite):
     def test_con_tres_integrantes_hacen_falta_dos_votos(self):
         multa = self._multa()
         self.assertEqual(votos_requeridos_aprobacion(multa), 2)
@@ -145,3 +148,60 @@ class AprobacionComiteTestCase(APITestCase):
         self.client.force_authenticate(admin)
         r = self.client.post(f'/api/multas/{multa.id}/notificar/', SERVER_NAME='localhost')
         self.assertEqual(r.status_code, 400)
+
+
+@override_settings(MEDIA_ROOT=MEDIA_TEMP)
+class DerivacionTestCase(_BaseComite):
+    """Si nadie del Comite puede decidir, la administracion lo deriva."""
+
+    def test_se_deriva_cuando_todos_son_parte(self):
+        Usuario.objects.filter(id__in=[self.bruno.id, self.carla.id]).update(is_active=False)
+        multa = self._multa(self.d202, self.miembro_p)  # la unidad de Ana, unica del Comite
+        admin = Usuario.objects.create_user(
+            username='admin_d', password='x', rol=Rol.ADMINISTRADOR, condominio=self.condominio,
+        )
+        self.client.force_authenticate(admin)
+        r = self.client.get(f'/api/multas/{multa.id}/', SERVER_NAME='localhost')
+        self.assertTrue(r.data['sin_comite_habilitado'])
+        r = self.client.post(f'/api/multas/{multa.id}/derivar/', {'destino': 'JPL'}, format='json',
+                             SERVER_NAME='localhost')
+        self.assertEqual(r.status_code, 200, r.data)
+        multa.refresh_from_db()
+        self.assertEqual(multa.estado, EstadoMulta.DERIVADA)
+        self.assertTrue(multa.actas_selladas.filter(tipo_acto=TipoActo.DERIVACION).exists())
+
+    def test_no_se_deriva_si_alguien_puede_decidir(self):
+        multa = self._multa()
+        admin = Usuario.objects.create_user(
+            username='admin_d2', password='x', rol=Rol.ADMINISTRADOR, condominio=self.condominio,
+        )
+        self.client.force_authenticate(admin)
+        r = self.client.post(f'/api/multas/{multa.id}/derivar/', {'destino': 'JPL'}, format='json',
+                             SERVER_NAME='localhost')
+        self.assertEqual(r.status_code, 400)
+
+
+@override_settings(MEDIA_ROOT=MEDIA_TEMP)
+class LibroActasTestCase(_BaseComite):
+    def test_el_libro_trae_los_votos_y_la_aprobacion(self):
+        multa = self._multa()
+        self._votar(self.ana, multa)
+        self._votar(self.bruno, multa)
+        from multas.services import generar_libro_actas_pdf
+        from django.utils import timezone as tz
+        hoy = tz.localdate()
+        pdf = generar_libro_actas_pdf(self.condominio, hoy, hoy, self.ana)
+        self.assertTrue(pdf.startswith(b'%PDF'))
+
+        self.client.force_authenticate(self.ana)
+        r = self.client.get('/api/multas/libro-actas/', SERVER_NAME='localhost')
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(r['Content-Type'], 'application/pdf')
+
+    def test_el_residente_no_lo_descarga(self):
+        vecino = Usuario.objects.create_user(
+            username='vecino_l', password='x', rol=Rol.RESIDENTE, condominio=self.condominio,
+        )
+        self.client.force_authenticate(vecino)
+        r = self.client.get('/api/multas/libro-actas/', SERVER_NAME='localhost')
+        self.assertEqual(r.status_code, 403)

@@ -55,6 +55,8 @@ export default function AdministradorDashboard() {
   useEffect(cargarTodo, []);
 
   const aprobadas = multas.filter((m) => m.estado === 'APROBADA');
+  // Casos que ningun miembro del Comite puede decidir (todos son parte).
+  const sinComite = multas.filter((m) => m.sin_comite_habilitado);
   const novedadesPendientes = novedades.filter((n) => n.estado !== 'RESPONDIDA');
 
   const notificar = async (multaId) => {
@@ -65,6 +67,17 @@ export default function AdministradorDashboard() {
       cargarTodo();
     } catch (err) {
       setMensaje(err.response?.data?.detail || 'Error al notificar.');
+    }
+  };
+
+  const derivar = async (multaId, destino) => {
+    const comentario = prompt('Comentario para el expediente (opcional):') || '';
+    try {
+      await client.post(`/multas/${multaId}/derivar/`, { destino, comentario });
+      setMensaje(`${t('multa')} #${multaId} derivada. No se cobra mientras se resuelve fuera de la comunidad.`);
+      cargarTodo();
+    } catch (err) {
+      setMensaje(err.response?.data?.detail || 'No se pudo derivar el caso.');
     }
   };
 
@@ -175,7 +188,7 @@ export default function AdministradorDashboard() {
         {tab === 'notificar' && (
           <>
             <PageHeader
-              titulo={`Notificar ${t('multa_plural').toLowerCase()} tipificadas a mano`}
+              titulo={`Notificar ${t('multa_plural').toLowerCase()} aprobadas por el Comite`}
               subtitulo={`Genera el PDF formal y lo envia al correo registrado del ${t('residente').toLowerCase()}: ese envio es el canal legal de notificacion.`}
               stats={[{ label: 'Pendientes de notificar', valor: aprobadas.length, alerta: aprobadas.length > 0 }]}
             />
@@ -193,8 +206,33 @@ export default function AdministradorDashboard() {
                   </button>
                 </div>
               ))}
-              {aprobadas.length === 0 && <EmptyState icon={BellRing} mensaje={`Nada pendiente: las ${t('multa_plural').toLowerCase()} se notifican solas al ingresar la denuncia. Aqui solo aparecen las que el Comite tuvo que tipificar a mano.`} />}
+              {aprobadas.length === 0 && <EmptyState icon={BellRing} mensaje={`Nada pendiente. Aqui aparecen las ${t('multa_plural').toLowerCase()} que el Comite aprobo por mayoria, listas para notificar. Las advertencias sin cobro se notifican solas.`} />}
             </div>
+
+            {sinComite.length > 0 && (
+              <>
+                <h3 style={{ marginTop: 32 }}>Casos que el Comite no puede decidir</h3>
+                <p className="texto-secundario">
+                  Todos los miembros del Comite son parte de estos casos o no tienen facultad. La ley permite
+                  llevarlos al Juzgado de Policia Local o a mediacion en la municipalidad. Mientras tanto no se cobran.
+                </p>
+                <div className="lista-tarjetas">
+                  {sinComite.map((m) => (
+                    <div key={m.id} className="tarjeta">
+                      <div className="tarjeta-header">
+                        <strong>{t('multa')} #{m.id} - {m.unidad_identificador}</strong>
+                        <EstadoBadge estado={m.estado} />
+                      </div>
+                      <p>{m.infraccion_descripcion || m.ticket_detalle?.descripcion}</p>
+                      <div className="acciones">
+                        <button className="btn btn-secundario" onClick={() => derivar(m.id, 'JPL')}>Derivar al Juzgado de Policia Local</button>
+                        <button className="btn btn-secundario" onClick={() => derivar(m.id, 'MEDIACION')}>Derivar a mediacion</button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </>
+            )}
           </>
         )}
 

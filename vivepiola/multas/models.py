@@ -119,6 +119,9 @@ class EstadoMulta(models.TextChoices):
     CORTESIA = 'CORTESIA', 'Parte de cortesia (sin cobro)'
     ANULADA = 'ANULADA', 'Anulada'
     EXPORTADA = 'EXPORTADA', 'Exportada a gastos comunes'
+    # Nadie del Comite puede decidir (todos son parte o no tienen facultad):
+    # el caso se lleva al Juzgado de Policia Local o a mediacion municipal.
+    DERIVADA = 'DERIVADA', 'Derivada al Juzgado de Policia Local o mediacion'
 
 
 class Multa(models.Model):
@@ -134,6 +137,10 @@ class Multa(models.Model):
     persona_infractor = models.ForeignKey(
         'condominios.Persona', on_delete=models.SET_NULL, null=True, related_name='multas'
     )
+    # No se supo quien cometio la falta, pero esta ligada a la unidad (su auto,
+    # ruido que sale de ella): responde el propietario, solidariamente (Ley
+    # 21.442), y persona_infractor apunta a el como responsable, no como autor.
+    responsable_solidario = models.BooleanField(default=False)
     infraccion = models.ForeignKey(
         'reglamentos.InfraccionCatalogo', on_delete=models.PROTECT, null=True, blank=True, related_name='multas'
     )
@@ -486,6 +493,7 @@ class TipoActo(models.TextChoices):
     FIRMEZA_SIN_RESPUESTA_COMITE = (
         'FIRMEZA_SIN_RESPUESTA_COMITE', 'Firme porque el Comite no resolvio la apelacion en plazo'
     )
+    DERIVACION = 'DERIVACION', 'Derivado al Juzgado de Policia Local o mediacion'
     SUSPENSION_SIN_RESPUESTA_COMITE = (
         'SUSPENSION_SIN_RESPUESTA', 'Cobro suspendido porque el Comite no resolvio la apelacion en plazo'
     )
