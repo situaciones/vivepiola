@@ -148,7 +148,7 @@ export default function AdministradorDashboard() {
     try {
       const res = await client.post('/gastos-comunes/exportar/', { periodo });
       setLote(res.data);
-      setMensaje(`Lote generado: ${res.data.cargos.length} ${t('multa_plural').toLowerCase()} exportadas por un total de ${res.data.total_monto}.`);
+      setMensaje(`Lote generado: ${res.data.cargos.length} ${t('multa_plural').toLowerCase()} exportadas por un total de ${res.data.total_texto}. Los montos en UF o UTM se pasan a pesos con el valor del dia del aviso de cobro.`);
     } catch (err) {
       setMensaje(err.response?.data?.detail || `No hay ${t('multa_plural').toLowerCase()} firmes para exportar.`);
     }
@@ -300,9 +300,14 @@ export default function AdministradorDashboard() {
               {reglamentos.map((r) => (
                 <div key={r.id} className="tarjeta tarjeta-compacta">
                   <span>{r.referencia_citable} {r.procesado_ia ? '(IA ya proceso este documento)' : ''}</span>
-                  <button className="btn btn-primario" onClick={() => generarBorradoresIA(r.id)}>
-                    Extraer infracciones con IA
-                  </button>
+                  {/* Solo el reglamento de copropiedad crea faltas; los demas documentos detallan. */}
+                  {r.tipo === 'REGLAMENTO_COPROPIEDAD' ? (
+                    <button className="btn btn-primario" onClick={() => generarBorradoresIA(r.id)}>
+                      Extraer infracciones con IA
+                    </button>
+                  ) : (
+                    <span className="texto-secundario">Detalla el reglamento; no crea faltas nuevas</span>
+                  )}
                 </div>
               ))}
               {reglamentos.length === 0 && <EmptyState icon={FileText} mensaje="Sube el PDF del reglamento para digitalizar el catalogo." />}
@@ -352,7 +357,7 @@ export default function AdministradorDashboard() {
             </form>
             {lote && (
               <div className="resultado-importacion">
-                <p>Lote {lote.periodo}: {lote.cargos.length} cargos, total {lote.total_monto}</p>
+                <p>Lote {lote.periodo}: {lote.cargos.length} cargos, total {lote.total_texto || lote.total_monto}</p>
                 {lote.archivo_csv && (
                   <a href={`${MEDIA_BASE}${lote.archivo_csv}`} target="_blank" rel="noreferrer">
                     Descargar CSV

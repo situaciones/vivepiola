@@ -102,14 +102,13 @@ class HallazgosSimulacionTestCase(APITestCase):
     # -- Resolucion: aviso al residente -------------------------------------
 
     def test_resolver_le_avisa_al_residente_con_el_detalle(self):
-        self.condominio.quorum_resolucion_apelacion = 1
-        self.condominio.save()
         multa = self._con_descargo(self.d302, self.matias)
-        self.client.force_authenticate(self.javiera)
-        r = self.client.post(f'/api/multas/{multa.id}/resolver-descargo/', {
-            'resolucion': 'DESCUENTO', 'porcentaje_descuento': 50,
-            'comentario': 'Las camaras no permiten identificar a quien dejo las bolsas.',
-        }, format='json', SERVER_NAME='localhost')
+        for miembro in (self.javiera, self.luis):  # mayoria: 2 de 2
+            self.client.force_authenticate(miembro)
+            r = self.client.post(f'/api/multas/{multa.id}/resolver-descargo/', {
+                'resolucion': 'DESCUENTO', 'porcentaje_descuento': 50,
+                'comentario': 'Las camaras no permiten identificar a quien dejo las bolsas.',
+            }, format='json', SERVER_NAME='localhost')
         self.assertEqual(r.status_code, 200, r.content)
         correo = [m for m in mail.outbox if 'Resolucion de su apelacion' in m.subject]
         self.assertEqual(len(correo), 1)
@@ -119,12 +118,11 @@ class HallazgosSimulacionTestCase(APITestCase):
         self.assertIn('Las camaras no permiten', correo[0].body)
 
     def test_rechazo_explica_que_va_a_gastos_comunes(self):
-        self.condominio.quorum_resolucion_apelacion = 1
-        self.condominio.save()
         multa = self._con_descargo(self.d302, self.matias)
-        self.client.force_authenticate(self.javiera)
-        self.client.post(f'/api/multas/{multa.id}/resolver-descargo/', {'resolucion': 'RECHAZADO'},
-                         format='json', SERVER_NAME='localhost')
+        for miembro in (self.javiera, self.luis):
+            self.client.force_authenticate(miembro)
+            self.client.post(f'/api/multas/{multa.id}/resolver-descargo/', {'resolucion': 'RECHAZADO'},
+                             format='json', SERVER_NAME='localhost')
         cuerpo = [m for m in mail.outbox if 'Resolucion' in m.subject][0].body
         self.assertIn('queda firme', cuerpo)
         self.assertIn('gastos comunes', cuerpo)

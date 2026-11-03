@@ -1,6 +1,7 @@
 import secrets
 
 from django.conf import settings
+from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 
 MARCO_LEGAL_DEFAULT = (
@@ -52,21 +53,25 @@ class Condominio(models.Model):
         Vertical, on_delete=models.PROTECT, null=True, blank=True, related_name='organizaciones',
         help_text='Paquete de vertical al que se adhiere esta organizacion. Vacio = copropiedad (Ley 21.442).',
     )
+    # Dias HABILES (5 a 10): no corren fines de semana ni feriados de Chile.
     plazo_descargo_dias = models.PositiveSmallIntegerField(
-        default=5,
-        help_text='Dias corridos que tiene el residente para presentar descargos tras la notificacion.',
+        default=10,
+        validators=[MinValueValidator(1)],
+        help_text='Dias que tiene el residente para apelar desde que acusa recibo. En copropiedad: habiles, de 5 a 10.',
     )
     # El plazo tambien corre para el organo que resuelve. Sin el, una apelacion
     # puede quedar meses sin respuesta y el residente sin saber en que esta.
     plazo_resolucion_dias = models.PositiveSmallIntegerField(
         default=15,
-        help_text='Dias corridos que tiene el Comite para resolver una apelacion presentada.',
+        validators=[MinValueValidator(1), MaxValueValidator(20)],
+        help_text='Dias corridos (maximo 20, Ley 21.442 art. 17) que tiene el Comite para resolver una apelacion.',
     )
-    # Con 1 resuelve quien entre primero, como hasta ahora. Con 2 o mas, la
-    # resolucion exige acuerdo: los votos se acumulan hasta reunir el quorum.
+    # Ya no se usa: la Ley 21.442 (art. 17) exige para todo acuerdo del Comite
+    # la mitad mas uno de sus miembros, y eso se calcula solo. Se conserva la
+    # columna para no romper datos existentes.
     quorum_resolucion_apelacion = models.PositiveSmallIntegerField(
         default=1,
-        help_text='Cuantos miembros del Comite deben coincidir para resolver una apelacion.',
+        help_text='Sin uso: las apelaciones se resuelven por mayoria de los integrantes del Comite.',
     )
     # Las primeras faltas se avisan sin cobrar. El objetivo de una comunidad no
     # es recaudar sino que la gente sepa que hay una norma; quien la incumple
@@ -98,6 +103,13 @@ class Condominio(models.Model):
 
     class Meta:
         ordering = ['nombre']
+
+    def clean(self):
+        from django.core.exceptions import ValidationError
+
+        es_copropiedad = self.vertical_id is None or self.vertical.slug == 'copropiedad'
+        if es_copropiedad and not 5 <= self.plazo_descargo_dias <= 10:
+            raise ValidationError({'plazo_descargo_dias': 'En copropiedad el plazo para apelar es de 5 a 10 dias habiles.'})
 
     def save(self, *args, **kwargs):
         if not self.codigo_comunidad:

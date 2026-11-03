@@ -128,10 +128,12 @@ class ReunionConElResidenteTestCase(BaseApelacionTestCase):
 
     def test_no_se_cita_sobre_una_apelacion_ya_resuelta(self):
         multa = self._apelada()
+        for miembro in (self.comite1, self.comite2):  # mayoria de 2 integrantes
+            self.client.force_authenticate(miembro)
+            self.client.post(
+                f'/api/multas/{multa.id}/resolver-descargo/', {'resolucion': 'RECHAZADO'}, format='json',
+            )
         self.client.force_authenticate(self.comite1)
-        self.client.post(
-            f'/api/multas/{multa.id}/resolver-descargo/', {'resolucion': 'RECHAZADO'}, format='json',
-        )
         respuesta = self.client.post(
             f'/api/multas/{multa.id}/convocar-reunion/',
             {
@@ -195,11 +197,12 @@ class ReunionConElResidenteTestCase(BaseApelacionTestCase):
 
 
 class ResolucionSinQuorumTestCase(BaseApelacionTestCase):
-    """Con quorum 1 nada cambia: resuelve quien entre primero."""
+    """Con un Comite de un solo integrante, su voto es la mayoria."""
 
     quorum = 1
 
     def test_un_solo_miembro_resuelve(self):
+        Usuario.objects.filter(id=self.comite2.id).update(is_active=False)
         multa = self._apelada()
         self.client.force_authenticate(self.comite1)
         respuesta = self.client.post(

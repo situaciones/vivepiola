@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from .models import InfraccionCatalogo, Reglamento
+from .models import EstadoInfraccion, InfraccionCatalogo, Reglamento
 from .utils import ReglamentoIlegible, extraer_texto_pdf
 
 
@@ -44,10 +44,32 @@ class InfraccionCatalogoSerializer(serializers.ModelSerializer):
         model = InfraccionCatalogo
         fields = (
             'id', 'condominio', 'reglamento', 'codigo', 'descripcion', 'articulo_referencia',
-            'monto', 'unidad_monto', 'gravedad', 'factor_reincidencia', 'estado', 'generado_por_ia', 'texto_fuente',
+            'monto', 'monto_minimo', 'monto_maximo', 'unidad_monto', 'gravedad', 'factor_reincidencia',
+            'estado', 'generado_por_ia', 'texto_fuente',
             'conlleva_contencion', 'plazo_ratificacion_horas', 'quorum_ratificacion',
             'creado_por', 'confirmado_por', 'fecha_creacion', 'fecha_confirmacion',
         )
         read_only_fields = (
             'condominio', 'generado_por_ia', 'creado_por', 'confirmado_por', 'fecha_creacion', 'fecha_confirmacion',
         )
+
+    def validate(self, datos):
+        monto = datos.get('monto', getattr(self.instance, 'monto', None))
+        minimo = datos.get('monto_minimo', getattr(self.instance, 'monto_minimo', None))
+        maximo = datos.get('monto_maximo', getattr(self.instance, 'monto_maximo', None))
+        if monto is not None:
+            if minimo is not None and minimo > monto:
+                raise serializers.ValidationError({'monto_minimo': 'El minimo no puede ser mayor que el monto.'})
+            if maximo is not None and maximo < monto:
+                raise serializers.ValidationError({'monto_maximo': 'El maximo no puede ser menor que el monto.'})
+        # Una falta activa tiene que fundarse en el reglamento de copropiedad o la ley.
+        estado = datos.get('estado', getattr(self.instance, 'estado', None))
+        if estado == EstadoInfraccion.ACTIVA:
+            borrador = InfraccionCatalogo(
+                articulo_referencia=datos.get('articulo_referencia', getattr(self.instance, 'articulo_referencia', '')),
+                reglamento=datos.get('reglamento', getattr(self.instance, 'reglamento', None)),
+            )
+            motivo = borrador.motivo_sin_base_legal()
+            if motivo:
+                raise serializers.ValidationError({'articulo_referencia': motivo})
+        return datos

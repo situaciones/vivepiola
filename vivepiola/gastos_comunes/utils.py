@@ -43,8 +43,11 @@ def exportar_multas_firmes(condominio, periodo, usuario):
     # El infractor se conserva aparte para que el cargo sea explicable.
     escritor.writerow([
         'unidad', 'obligado_al_pago', 'cedula_obligado',
-        'infractor', 'cedula_infractor', 'concepto', 'monto', 'multa_id',
+        'infractor', 'cedula_infractor', 'concepto', 'monto', 'unidad_monto', 'multa_id',
     ])
+    # El monto va en la unidad de la falta (UF, UTM o CLP). La conversion a
+    # pesos se hace con el valor del dia en que se emite el aviso de cobro, no
+    # el del dia de la multa: por eso aqui no se convierte.
     total = 0
     for cargo in cargos:
         infractor = cargo.multa.persona_infractor
@@ -57,6 +60,7 @@ def exportar_multas_firmes(condominio, periodo, usuario):
             infractor.cedula_identidad if infractor else '',
             cargo.descripcion,
             cargo.monto,
+            cargo.unidad_monto,
             cargo.multa_id,
         ])
         total += cargo.monto

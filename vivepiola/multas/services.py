@@ -57,6 +57,12 @@ def verificar_reincidencia(unidad, infraccion, ventana_meses=None):
                 EstadoMulta.CORTESIA,
             ],
         )
+        # Pero una advertencia automatica solo cuenta cuando ya quedo cerrada:
+        # mientras corre su plazo el residente puede pedir revision humana y
+        # dar descargos, y antes de eso no puede agravar otra sancion.
+        .exclude(monto_sin_cortesia__isnull=False, estado__in=[
+            EstadoMulta.NOTIFICADA, EstadoMulta.CON_DESCARGO,
+        ])
         # Las multas que se cursan solas no tienen fecha_aprobacion, porque
         # nadie las aprobo. Tomar solo esa fecha las dejaba fuera del conteo y
         # la reincidencia dejaba de detectarse justo en el camino normal.
@@ -83,6 +89,59 @@ def verificar_reincidencia(unidad, infraccion, ventana_meses=None):
     return True, primera_sancion, agravante
 
 
+def _tipo_dias(condominio):
+    from .plazos import usa_dias_habiles
+
+    return 'habiles' if usa_dias_habiles(condominio) else 'corridos'
+
+
+def elementos_minimos_notificacion(multa):
+    """
+    Lo que toda notificacion tiene que decir ademas de la infraccion y el
+    monto: cuando y donde fue el hecho, con que pruebas, como se califica y a
+    quien se puede reclamar. Lo usan el correo y el PDF, para que digan lo mismo.
+    El denunciante no se nombra: se dice solo de donde vino el reporte.
+    """
+    from accounts.models import Rol
+
+    from .plazos import usa_dias_habiles
+
+    c = multa.condominio
+    copropiedad = usa_dias_habiles(c)
+    ticket = multa.ticket
+    hecho = timezone.localtime(ticket.fecha_hecho)
+    lugar = f', en {ticket.ubicacion}' if ticket.ubicacion else ''
+
+    origen = {
+        Rol.FISCALIZADOR: f'reporte del personal de {c.nombre}',
+        Rol.ADMINISTRADOR: 'reporte de la administracion',
+        Rol.COMITE: 'reporte de un miembro del Comite',
+    }.get(getattr(ticket.creado_por, 'rol', None), 'reporte de un vecino')
+    partes = [origen]
+    fotos = ticket.evidencias.count()
+    if fotos:
+        partes.append(f'{fotos} fotografia(s) o video(s) adjuntos')
+    otros = multa.corroboraciones.count()
+    if otros:
+        partes.append(f'{otros} reporte(s) mas del mismo hecho')
+
+    inf = multa.infraccion
+    return {
+        'hecho_fecha': frase(
+            c, 'notificacion_hecho_fecha', fecha=f'{hecho:%d-%m-%Y}', hora=f'{hecho:%H:%M}', lugar=lugar,
+        ),
+        'antecedentes': frase(c, 'notificacion_antecedentes', antecedentes=', '.join(partes)),
+        'calificacion': frase(c, 'notificacion_calificacion', gravedad=inf.get_gravedad_display().lower()),
+        # El Juzgado de Policia Local y la revision humana son de la copropiedad
+        # (Ley 21.442 y datos personales); otros verticales tienen su propio cauce.
+        'jpl': frase(c, 'notificacion_jpl', meses=settings.PLAZO_RECLAMO_JPL_MESES) if copropiedad else '',
+        'automatizada': (
+            frase(c, 'notificacion_automatizada')
+            if copropiedad and multa.es_aviso_de_cortesia and not multa.aprobada_por_id else ''
+        ),
+    }
+
+
 def _contexto_vocab_notificacion(multa):
     """
     Terminos y frases del vertical, resueltos para el PDF. Se exponen como
@@ -101,8 +160,11 @@ def _contexto_vocab_notificacion(multa):
         'label_origen': termino(
             c, 'pdf_label_organo' if multa.aprobada_por_id else 'pdf_label_organo_automatica',
         ),
-        'aviso_descargo': frase(c, 'pdf_aviso_descargo', dias=dias, fecha_limite=fecha_limite),
+        'aviso_descargo': frase(
+            c, 'pdf_aviso_descargo', dias=dias, fecha_limite=fecha_limite, tipo_dias=_tipo_dias(c),
+        ),
         'multa_num': frase(c, 'pdf_titulo', numero=multa.id),
+        'minimos': elementos_minimos_notificacion(multa),
     }
 
 
@@ -312,7 +374,9 @@ def registrar_acuse(multa, canal, usuario=None, destino='', detalle=''):
 
     multa.fecha_acuse = ahora
     multa.canal_acuse = canal
-    multa.fecha_limite_descargo = ahora + timedelta(days=dias)
+    # En copropiedad, dias habiles: no corren fines de semana ni feriados de Chile.
+    from .plazos import vencimiento_descargo
+    multa.fecha_limite_descargo = vencimiento_descargo(multa.condominio, ahora, dias)
     multa.save(update_fields=['fecha_acuse', 'canal_acuse', 'fecha_limite_descargo'])
 
     entrega = multa.entregas.filter(canal=canal).order_by('-enviada_en').first()
@@ -452,9 +516,9 @@ def enviar_notificacion_email(multa, pdf_bytes):
     # Antes del acuse no hay fecha de vencimiento que anunciar: prometer una
     # que todavia no existe seria confundir a quien lee.
     plazo = (
-        frase(c, 'notificacion_plazo', dias=dias, fecha_limite=fecha_limite)
+        frase(c, 'notificacion_plazo', dias=dias, fecha_limite=fecha_limite, tipo_dias=_tipo_dias(c))
         if multa.fecha_limite_descargo
-        else frase(c, 'notificacion_plazo_sin_acuse', dias=dias)
+        else frase(c, 'notificacion_plazo_sin_acuse', dias=dias, tipo_dias=_tipo_dias(c))
     )
     # El acuse es lo que hace correr el plazo, asi que la instruccion va
     # antes del cierre legal y no perdida al final.
@@ -469,14 +533,20 @@ def enviar_notificacion_email(multa, pdf_bytes):
         nombre=copia.nombre_completo, unidad_id=multa.unidad.identificador,
     ) if copia else ''
 
-    cuerpo = '\n\n'.join([saludo, hecho, monto, plazo, pide_acuse, canal_legal])
+    minimos = elementos_minimos_notificacion(multa)
+    detalle = ' '.join([minimos['hecho_fecha'], minimos['antecedentes'], minimos['calificacion']])
+    cuerpo = '\n\n'.join(p for p in [
+        saludo, hecho, detalle, monto, minimos['automatizada'], plazo, minimos['jpl'], pide_acuse, canal_legal,
+    ] if p)
     if nota_copia:
         cuerpo += '\n\n' + nota_copia
 
     html = html_correo(
         comunidad=c.nombre,
         titulo=asunto.rsplit(' - ', 1)[0],
-        parrafos=[p for p in (saludo, hecho, plazo, pide_acuse, nota_copia) if p],
+        parrafos=[p for p in (
+            saludo, hecho, detalle, minimos['automatizada'], plazo, minimos['jpl'], pide_acuse, nota_copia,
+        ) if p],
         destacado=monto,
         boton=('Ver mi caso y confirmar recepcion', enlace),
         pie=canal_legal,
@@ -580,7 +650,8 @@ def aplicar_monto_con_reincidencia(multa, infraccion, monto_base=None):
     es_reincidencia, primera_sancion, agravante = verificar_reincidencia(multa.unidad, infraccion)
 
     monto = monto_base if monto_base is not None else infraccion.monto
-    factor = infraccion.factor_reincidencia or Decimal('1.00')
+    # La reincidencia permite a lo mas doblar la multa.
+    factor = min(infraccion.factor_reincidencia or Decimal('1.00'), Decimal('2.00'))
     factor_aplicado = Decimal('1.00')
     if es_reincidencia and factor > Decimal('1.00'):
         factor_aplicado = factor
@@ -1096,7 +1167,7 @@ def actualizar_multas_vencidas(condominio=None):
     """
     from .models import Multa
 
-    firmar_apelaciones_sin_respuesta(condominio)
+    suspender_apelaciones_sin_respuesta(condominio)
 
     qs = Multa.objects.filter(estado=EstadoMulta.NOTIFICADA, fecha_limite_descargo__lt=timezone.now())
     if condominio is not None:
@@ -1134,18 +1205,17 @@ def actualizar_multas_vencidas(condominio=None):
         })
 
 
-def firmar_apelaciones_sin_respuesta(condominio=None):
+def suspender_apelaciones_sin_respuesta(condominio=None):
     """
-    Cierra las apelaciones que el Comite dejo vencer sin resolver.
+    Marca las apelaciones que el Comite dejo vencer sin resolver.
 
-    Regla de la comunidad: si el Comite no responde dentro de su plazo, la
-    apelacion no detiene el cobro para siempre. La multa queda FIRME (o como
-    cortesia si era un aviso sin cobro) y se le avisa al residente por correo
-    que pasa a gastos comunes porque el Comite no respondio, para que sepa por
-    que y pueda reclamar ante la administracion. Antes de vencer, el resumen
-    diario ya le marco el caso como urgente al Comite y a la administracion.
+    El silencio del Comite no puede perjudicar al residente (Ley 21.442, art.
+    17): mientras no haya una resolucion expresa, la multa no queda firme ni
+    se cobra. Sigue CON_DESCARGO, a la espera de que el Comite resuelva, y el
+    resumen diario lo sigue marcando como VENCIDO hasta que lo haga. Al vencer
+    se le avisa una vez al residente que su cobro esta suspendido.
 
-    Devuelve las multas cerradas.
+    Devuelve las multas que se marcaron en esta pasada.
     """
     from .models import Multa, ResolucionDescargo, TipoActo
 
@@ -1153,44 +1223,33 @@ def firmar_apelaciones_sin_respuesta(condominio=None):
         estado=EstadoMulta.CON_DESCARGO,
         descargo__resolucion=ResolucionDescargo.PENDIENTE,
         descargo__fecha_limite_resolucion__lt=timezone.now(),
+        descargo__aviso_vencimiento_en__isnull=True,
     ).select_related('descargo', 'condominio', 'persona_infractor')
     if condominio is not None:
         qs = qs.filter(condominio=condominio)
 
-    cerradas = []
+    marcadas = []
     for multa in qs:
         descargo = multa.descargo
         vencio = descargo.fecha_limite_resolucion
-        estado_anterior = multa.estado
-        multa.estado = EstadoMulta.CORTESIA if multa.es_aviso_de_cortesia else EstadoMulta.FIRME
-        multa.fecha_firme = timezone.now()
-        multa.save(update_fields=['estado', 'fecha_firme'])
-        descargo.resolucion = ResolucionDescargo.SIN_RESPUESTA
-        descargo.fecha_resolucion = timezone.now()
-        descargo.comentario_resolucion = (
-            f'El Comite no resolvio la apelacion dentro de su plazo (vencia el '
-            f'{timezone.localtime(vencio):%d-%m-%Y}).'
-        )
-        descargo.save(update_fields=['resolucion', 'fecha_resolucion', 'comentario_resolucion'])
+        descargo.aviso_vencimiento_en = timezone.now()
+        descargo.save(update_fields=['aviso_vencimiento_en'])
         registrar_historial(
-            multa, estado_anterior, multa.estado, None,
-            'El Comite no resolvio la apelacion en plazo: la multa queda firme y pasa a '
-            'gastos comunes. Se informo al residente el motivo.'
-            if multa.estado == EstadoMulta.FIRME else
-            'El Comite no resolvio la apelacion en plazo: el aviso de cortesia queda cerrado sin cobro.',
+            multa, multa.estado, multa.estado, None,
+            'El Comite no resolvio la apelacion en plazo: el cobro queda suspendido hasta que '
+            'resuelva. Se informo al residente.',
         )
-        sellar_acto(multa, TipoActo.FIRMEZA_SIN_RESPUESTA_COMITE, None, auth_metodo='sistema', extra={
+        sellar_acto(multa, TipoActo.SUSPENSION_SIN_RESPUESTA_COMITE, None, auth_metodo='sistema', extra={
             'fecha_limite_resolucion': vencio.isoformat(),
-            'estado_resultante': multa.estado,
             'texto_descargo': descargo.texto,
         })
-        _avisar_firmeza_sin_respuesta(multa, vencio)
-        cerradas.append(multa)
-    return cerradas
+        _avisar_suspension_sin_respuesta(multa, vencio)
+        marcadas.append(multa)
+    return marcadas
 
 
-def _avisar_firmeza_sin_respuesta(multa, vencio):
-    """Correo al residente: por que su apelacion termino sin resolverse."""
+def _avisar_suspension_sin_respuesta(multa, vencio):
+    """Correo al residente: el Comite no respondio a tiempo y su cobro queda suspendido."""
     from .correo_html import correo_con_html, html_correo
 
     persona = multa.persona_infractor
@@ -1198,34 +1257,27 @@ def _avisar_firmeza_sin_respuesta(multa, vencio):
         return
     comunidad = multa.condominio.nombre
     fecha = f'{timezone.localtime(vencio):%d-%m-%Y}'
-    if multa.estado == EstadoMulta.FIRME:
-        unidad = multa.infraccion.unidad_monto if multa.infraccion else ''
-        consecuencia = (
-            f'Por esa falta de respuesta, la multa #{multa.id} queda firme por {multa.monto} {unidad} '
-            'y se incluira en el proximo cobro de gastos comunes de su unidad.'
-        ).replace('  ', ' ')
-    else:
-        consecuencia = f'Como la multa #{multa.id} era un aviso de cortesia, queda cerrada sin cobro.'
     parrafos = [
-        f'El Comite de Administracion no resolvio su apelacion dentro del plazo, que vencia el {fecha}.',
-        consecuencia,
-        'Si tiene dudas o quiere reclamar por la falta de respuesta, responda este correo: '
-        'le llegara a la administracion de su comunidad.',
+        f'El Comite de Administracion no resolvio su apelacion de la multa #{multa.id} '
+        f'dentro del plazo, que vencia el {fecha}.',
+        'Mientras el Comite no resuelva, la multa no queda firme y no se le cobra.',
+        'Si quiere reclamar por la falta de respuesta, responda este correo: le llegara a la '
+        'administracion de su comunidad. Tambien puede recurrir al Juzgado de Policia Local '
+        f'de su comuna dentro de {settings.PLAZO_RECLAMO_JPL_MESES} meses.',
     ]
     try:
         correo_con_html(
-            asunto=f'Su apelacion de la multa #{multa.id} no fue resuelta - {comunidad}',
+            asunto=f'Su apelacion de la multa #{multa.id} sigue sin respuesta - {comunidad}',
             texto='\n\n'.join(parrafos),
             html=html_correo(
-                comunidad=comunidad, titulo='Su apelacion no fue resuelta en plazo', parrafos=parrafos,
-                boton=('Ver el caso', enlace_acuse(multa)),
+                comunidad=comunidad, titulo='Su cobro queda suspendido', parrafos=parrafos,
             ),
             from_email=settings.DEFAULT_FROM_EMAIL,
             to=[persona.correo_electronico],
             reply_to=correos_administracion(multa.condominio),
         ).send(fail_silently=True)
     except Exception:
-        logger.exception('No se pudo avisar la firmeza sin respuesta de la multa %s', multa.id)
+        logger.exception('No se pudo avisar la suspension de la multa %s', multa.id)
 
 
 def avisar_apelacion_al_comite(multa):
@@ -1249,8 +1301,8 @@ def avisar_apelacion_al_comite(multa):
     parrafos = [
         f'El residente de {unidad} apelo la multa #{multa.id}.',
         f'El Comite tiene hasta el {vence} para resolverla. Si no responde en ese plazo, '
-        'la multa queda firme y se cobra en los gastos comunes, y al residente se le '
-        'informa que fue por falta de respuesta del Comite.',
+        'la multa queda suspendida sin cobro hasta que el Comite resuelva, y al residente '
+        'se le informa que fue por falta de respuesta del Comite.',
         'Revise la apelacion y la evidencia en la Bandeja de decision de la app.',
     ]
     try:
@@ -1541,15 +1593,12 @@ def quorum_efectivo(multa):
     """
     Votos coincidentes que se exigen para resolver la apelacion de `multa`.
 
-    Es el quorum de la comunidad, salvo que no queden suficientes miembros
-    habilitados: si uno es parte del caso (o su cuenta no esta activa), exigir
-    su voto dejaria la apelacion sin resolver y la multa quedaria firme por
-    un motivo que no es culpa del residente.
+    Resolver una apelacion es un acuerdo del Comite, y la Ley 21.442 (art.
+    17) exige para sus acuerdos la mitad mas uno de sus miembros: es la misma
+    mayoria que para aplicar la multa (ver votos_requeridos_aprobacion), con
+    la misma salida para quien es parte del caso.
     """
-    from condominios.comite import comite_habilitado
-
-    habilitados = len(comite_habilitado(multa))
-    return max(1, min(multa.condominio.quorum_resolucion_apelacion, habilitados))
+    return votos_requeridos_aprobacion(multa)
 
 
 def votos_requeridos_aprobacion(multa):
@@ -1597,6 +1646,12 @@ def votar_aprobacion(multa, usuario, decision, infraccion=None, monto=None, moti
     'APROBADA', 'RECHAZADA' o None si todavia faltan votos.
     """
     from .models import DecisionAprobacion, VotoAprobacion
+
+    # El Comite gradua la multa solo dentro del rango que fija el reglamento.
+    if decision == DecisionAprobacion.APROBAR and monto is not None:
+        motivo_rango = infraccion.motivo_monto_fuera_de_rango(monto)
+        if motivo_rango:
+            raise ValueError(motivo_rango)
 
     voto, creado = VotoAprobacion.objects.get_or_create(
         multa=multa, actor=usuario,

@@ -24,8 +24,9 @@
     <tr><th>Domicilio</th><td>{{ multa.persona_infractor.domicilio }}</td></tr>
     <tr><th>Infraccion</th><td>{{ multa.infraccion.descripcion }}</td></tr>
     <tr><th>Articulo / clausula</th><td>{{ multa.infraccion.articulo_referencia }}</td></tr>
+    <tr><th>Calificacion</th><td>{{ multa.infraccion.get_gravedad_display }}</td></tr>
     <tr><th>Monto</th><td>{{ multa.monto }} {{ multa.infraccion.unidad_monto }}</td></tr>
-    <tr><th>Fecha del hecho</th><td>{{ multa.ticket.fecha_hecho|date:"d-m-Y H:i" }}</td></tr>
+    <tr><th>Fecha del hecho</th><td>{{ multa.ticket.fecha_hecho|date:"d-m-Y H:i" }}{% if multa.ticket.ubicacion %}, {{ multa.ticket.ubicacion }}{% endif %}</td></tr>
     <tr><th>{{ voc.label_origen }}</th><td>{{ multa.fecha_aprobacion|default:multa.fecha_notificacion|date:"d-m-Y H:i" }}</td></tr>
     {% if multa.es_reincidencia %}
     <tr><th>Reincidencia</th><td>{{ multa.agravante_sugerido }}</td></tr>
@@ -35,10 +36,14 @@
   <p><strong>Descripcion del reporte:</strong></p>
   <p>{{ multa.ticket.descripcion }}</p>
 
+  <p>{{ voc.minimos.antecedentes }}</p>
+  {% if voc.minimos.automatizada %}<p>{{ voc.minimos.automatizada }}</p>{% endif %}
+
   <div class="aviso">{{ voc.aviso_descargo }}</div>
+  <p>{{ voc.minimos.jpl }}</p>
 
   <p class="footer">
-    {{ marco_legal }} Emitido por Debido. Este correo y su adjunto constituyen el
+    {{ marco_legal }} Emitido por SinConflicto. Este correo y su adjunto constituyen el
     canal legal de notificacion del sistema.
   </p>
 </body>

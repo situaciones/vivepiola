@@ -167,12 +167,6 @@ export default function ComiteDashboard() {
     }
   };
 
-  const aplicarAgravante = () => {
-    if (!infraccionElegida) return;
-    const sugerido = (Number(infraccionElegida.monto) * 1.5).toFixed(2);
-    setDatoActiva('monto', sugerido);
-  };
-
   const aprobar = async () => {
     if (!datosActiva.infraccion_id) {
       setMensaje('Selecciona una infraccion del catalogo antes de cursar.');
@@ -320,7 +314,12 @@ export default function ComiteDashboard() {
   };
 
   const confirmarInfraccion = async (id) => {
-    await client.post(`/infracciones/${id}/confirmar/`);
+    try {
+      await client.post(`/infracciones/${id}/confirmar/`);
+    } catch (err) {
+      setMensaje(err.response?.data?.detail || 'No se pudo confirmar la infraccion.');
+      return;
+    }
     cargarTodo();
   };
 
@@ -331,7 +330,16 @@ export default function ComiteDashboard() {
 
   const crearInfraccion = async (e) => {
     e.preventDefault();
-    await client.post('/infracciones/', { ...formInfraccion, estado: 'ACTIVA' });
+    const datos = { ...formInfraccion, estado: 'ACTIVA' };
+    if (!datos.monto_minimo) delete datos.monto_minimo;
+    if (!datos.monto_maximo) delete datos.monto_maximo;
+    try {
+      await client.post('/infracciones/', datos);
+    } catch (err) {
+      const d = err.response?.data || {};
+      setMensaje(d.detail || d.articulo_referencia?.[0] || d.monto_minimo?.[0] || d.monto_maximo?.[0] || 'No se pudo agregar la infraccion.');
+      return;
+    }
     setFormInfraccion({ codigo: '', descripcion: '', articulo_referencia: '', monto: '', unidad_monto: 'UF', gravedad: 'LEVE', conlleva_contencion: false, plazo_ratificacion_horas: 24 });
     cargarTodo();
   };
@@ -556,24 +564,31 @@ export default function ComiteDashboard() {
                                 <strong>Reincidencia detectada</strong>
                                 La unidad {activa.unidad_identificador} ya fue sancionada por esta misma infraccion
                                 el {new Date(reincidenciaPreview.fecha_aprobacion).toLocaleDateString('es-CL')} (multa #{reincidenciaPreview.id}),
-                                dentro de los {REINCIDENCIA_MESES} meses que establece la ley.
+                                dentro de los {REINCIDENCIA_MESES} meses que establece la ley. El agravante del
+                                catalogo (x{infraccionElegida.factor_reincidencia}, como maximo el doble) se aplica solo.
                               </p>
-                              <button type="button" className="btn btn-secundario" onClick={aplicarAgravante}>
-                                Aplicar agravante (+50% sugerido)
-                              </button>
                             </div>
                           )}
 
-                          <label>
-                            Monto a aplicar (opcional, sobreescribe el del catalogo)
-                            <input
-                              type="number"
-                              step="0.01"
-                              min="0.01"
-                              value={datosActiva.monto || ''}
-                              onChange={(e) => setDatoActiva('monto', e.target.value)}
-                            />
-                          </label>
+                          {infraccionElegida && (infraccionElegida.monto_minimo || infraccionElegida.monto_maximo) ? (
+                            <label>
+                              Graduar el monto dentro del rango del reglamento
+                              ({infraccionElegida.monto_minimo || infraccionElegida.monto} a {infraccionElegida.monto_maximo || infraccionElegida.monto} {infraccionElegida.unidad_monto})
+                              <input
+                                type="number"
+                                step="0.01"
+                                min={infraccionElegida.monto_minimo || infraccionElegida.monto}
+                                max={infraccionElegida.monto_maximo || infraccionElegida.monto}
+                                value={datosActiva.monto || ''}
+                                placeholder={String(infraccionElegida.monto)}
+                                onChange={(e) => setDatoActiva('monto', e.target.value)}
+                              />
+                            </label>
+                          ) : infraccionElegida && (
+                            <p className="texto-secundario" style={{ margin: 0 }}>
+                              El reglamento fija {infraccionElegida.monto} {infraccionElegida.unidad_monto} para esta falta.
+                            </p>
+                          )}
 
                           <label className="check-gate">
                             <input
@@ -618,7 +633,8 @@ export default function ComiteDashboard() {
                               <h4>Descargo del residente</h4>
                               {activa.descargo?.resolucion_vencida && (
                                 <p className="alerta-reincidencia">
-                                  El plazo para responder esta apelacion ya vencio.
+                                  El plazo para responder esta apelacion ya vencio. El cobro queda suspendido
+                                  hasta que el Comite la resuelva.
                                 </p>
                               )}
                               <p>{activa.descargo?.texto}</p>
@@ -928,8 +944,8 @@ export default function ComiteDashboard() {
                   <input value={formInfraccion.codigo} onChange={(e) => setFormInfraccion({ ...formInfraccion, codigo: e.target.value })} required />
                 </label>
                 <label>
-                  Articulo del reglamento
-                  <input value={formInfraccion.articulo_referencia} onChange={(e) => setFormInfraccion({ ...formInfraccion, articulo_referencia: e.target.value })} />
+                  Articulo del reglamento de copropiedad (o de la ley)
+                  <input value={formInfraccion.articulo_referencia} onChange={(e) => setFormInfraccion({ ...formInfraccion, articulo_referencia: e.target.value })} required />
                 </label>
               </div>
               <label>
@@ -940,6 +956,14 @@ export default function ComiteDashboard() {
                 <label>
                   Monto
                   <input type="number" step="0.01" value={formInfraccion.monto} onChange={(e) => setFormInfraccion({ ...formInfraccion, monto: e.target.value })} required />
+                </label>
+                <label>
+                  Minimo del reglamento (opcional)
+                  <input type="number" step="0.01" value={formInfraccion.monto_minimo || ''} onChange={(e) => setFormInfraccion({ ...formInfraccion, monto_minimo: e.target.value })} />
+                </label>
+                <label>
+                  Maximo del reglamento (opcional)
+                  <input type="number" step="0.01" value={formInfraccion.monto_maximo || ''} onChange={(e) => setFormInfraccion({ ...formInfraccion, monto_maximo: e.target.value })} />
                 </label>
                 <label>
                   Unidad
@@ -1002,7 +1026,10 @@ export default function ComiteDashboard() {
                         <td><strong>{i.codigo}</strong></td>
                         <td>{i.descripcion}</td>
                         <td>{i.articulo_referencia || '—'}</td>
-                        <td>{i.monto} {i.unidad_monto}</td>
+                        <td>
+                          {i.monto} {i.unidad_monto}
+                          {(i.monto_minimo || i.monto_maximo) && ` (${i.monto_minimo || i.monto} a ${i.monto_maximo || i.monto})`}
+                        </td>
                         <td>{i.gravedad}</td>
                         <td>{i.conlleva_contencion ? `Si (${i.plazo_ratificacion_horas}h)` : '—'}</td>
                       </tr>

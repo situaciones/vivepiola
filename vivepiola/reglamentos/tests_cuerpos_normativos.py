@@ -87,14 +87,46 @@ class CuerposNormativosTestCase(APITestCase):
     # -- La IA lee cada documento como lo que es -----------------------
 
     def test_a_la_ia_se_le_dice_que_clase_de_documento_esta_leyendo(self):
-        respuesta = self._subir(texto=ACTA_TEXTO, tipo=TipoNorma.ACTA_ASAMBLEA)
+        respuesta = self._subir(tipo=TipoNorma.REGLAMENTO_COPROPIEDAD)
         reglamento = Reglamento.objects.get(id=respuesta.data['id'])
 
         with patch('reglamentos.views.sugerir_infracciones_desde_texto', return_value=[]) as ia:
             self.client.post(f'/api/reglamentos/{reglamento.id}/generar-borradores-ia/')
 
         ia.assert_called_once()
-        self.assertEqual(ia.call_args.args[1], TipoNorma.ACTA_ASAMBLEA)
+        self.assertEqual(ia.call_args.args[1], TipoNorma.REGLAMENTO_COPROPIEDAD)
+
+    def test_un_acta_no_crea_faltas_nuevas(self):
+        """Solo el reglamento de copropiedad crea faltas y montos; las actas solo detallan."""
+        respuesta = self._subir(texto=ACTA_TEXTO, tipo=TipoNorma.ACTA_ASAMBLEA)
+        reglamento = Reglamento.objects.get(id=respuesta.data['id'])
+
+        with patch('reglamentos.views.sugerir_infracciones_desde_texto', return_value=[]) as ia:
+            r = self.client.post(f'/api/reglamentos/{reglamento.id}/generar-borradores-ia/')
+
+        self.assertEqual(r.status_code, 400)
+        self.assertIn('Solo el reglamento de copropiedad', r.data['detail'])
+        ia.assert_not_called()
+
+    def test_una_falta_que_salio_de_una_norma_interna_no_se_activa(self):
+        respuesta = self._subir(tipo=TipoNorma.ESTACIONAMIENTOS, titulo='Estacionamientos')
+        reglamento = Reglamento.objects.get(id=respuesta.data['id'])
+        falta = InfraccionCatalogo.objects.create(
+            condominio=reglamento.condominio, reglamento=reglamento, codigo='EST-01',
+            descripcion='Estacionar en lugar ajeno', articulo_referencia='Punto 4', monto=1,
+        )
+        self.client.force_authenticate(self.admin)
+        r = self.client.post(f'/api/infracciones/{falta.id}/confirmar/')
+        self.assertEqual(r.status_code, 400)
+        self.assertIn('solo detallan', r.data['detail'])
+
+    def test_una_falta_sin_articulo_no_se_activa(self):
+        self.client.force_authenticate(self.admin)
+        r = self.client.post('/api/infracciones/', {
+            'codigo': 'SIN-ART', 'descripcion': 'Algo', 'monto': '1.00', 'estado': 'ACTIVA',
+        }, format='json')
+        self.assertEqual(r.status_code, 400)
+        self.assertIn('articulo_referencia', r.data)
 
     def test_la_instruccion_del_acta_prohibe_inventar_articulos(self):
         instruccion = INSTRUCCIONES_POR_TIPO['ACTA_ASAMBLEA']
@@ -108,15 +140,13 @@ class CuerposNormativosTestCase(APITestCase):
 
     def test_la_infraccion_recuerda_de_que_documento_salio(self):
         """Sin eso no se puede explicar en que norma se funda la sancion."""
-        respuesta = self._subir(
-            texto=ACTA_TEXTO, tipo=TipoNorma.ACTA_ASAMBLEA, fecha_documento='2026-03-12',
-        )
+        respuesta = self._subir(tipo=TipoNorma.REGLAMENTO_COPROPIEDAD)
         reglamento = Reglamento.objects.get(id=respuesta.data['id'])
 
         sugerencias = [{
             'codigo': 'QUINCHO-01',
             'descripcion': 'Uso del quincho despues de las 23:00',
-            'articulo_referencia': 'Acuerdo 3 de la asamblea',
+            'articulo_referencia': 'Art. 22',
             'monto': 1, 'unidad_monto': 'UF', 'gravedad': 'LEVE',
             'texto_fuente': 'se prohibe el uso del quincho despues de las 23:00 horas',
         }]
@@ -125,11 +155,8 @@ class CuerposNormativosTestCase(APITestCase):
 
         infraccion = InfraccionCatalogo.objects.get(codigo='QUINCHO-01')
         self.assertEqual(infraccion.reglamento, reglamento)
-        self.assertEqual(infraccion.articulo_referencia, 'Acuerdo 3 de la asamblea')
+        self.assertEqual(infraccion.articulo_referencia, 'Art. 22')
         self.assertEqual(infraccion.monto, Decimal('1.00'))
-        self.assertEqual(
-            infraccion.reglamento.referencia_citable, 'Acuerdo de asamblea del 12-03-2026',
-        )
 
     def test_conviven_varios_cuerpos_normativos_en_la_misma_comunidad(self):
         self._subir(tipo=TipoNorma.REGLAMENTO_COPROPIEDAD)

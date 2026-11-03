@@ -1,10 +1,10 @@
 """
 Plazo del Comite para resolver una apelacion.
 
-Regla de la comunidad: antes de vencer se avisa como urgente; si vence sin
-respuesta, la multa no queda detenida para siempre, pasa a cobro, y el
-residente recibe un correo que le dice que va a gastos comunes porque el
-Comite no respondio.
+Antes de vencer se avisa como urgente. Si vence sin respuesta, el silencio no
+puede perjudicar al residente (Ley 21.442, art. 17): la multa no queda firme
+ni se cobra, el residente recibe un correo que se lo explica y el resumen
+diario lo sigue marcando como VENCIDO hasta que el Comite resuelva.
 """
 
 import tempfile
@@ -22,7 +22,7 @@ from accounts.models import Rol, Usuario
 from condominios.models import Condominio, Persona, RolOcupacion, Unidad
 from multas.models import Descargo, EstadoMulta, Multa, ResolucionDescargo, Ticket, TipoActo
 from multas.resumenes import resumen_para_administracion, resumen_para_comite
-from multas.services import firmar_apelaciones_sin_respuesta
+from multas.services import suspender_apelaciones_sin_respuesta
 from reglamentos.models import EstadoInfraccion, InfraccionCatalogo
 
 MEDIA_TEMP = tempfile.mkdtemp(prefix='sinconflicto_plazo_comite_')
@@ -80,7 +80,7 @@ class PlazoComiteTestCase(APITestCase):
         self.assertTrue(resumen['urgente'])
         texto = ' '.join(resumen['puntos'])
         self.assertIn(f'#{multa.id}', texto)
-        self.assertIn('quedan firmes y se cobran', texto)
+        self.assertIn('el cobro queda suspendido', texto)
 
     def test_la_administracion_tambien_lo_ve_para_empujar(self):
         self._apelacion(timedelta(days=1))
@@ -92,46 +92,58 @@ class PlazoComiteTestCase(APITestCase):
         self._apelacion(timedelta(days=10))
         self.assertFalse(resumen_para_comite(self.condominio)['urgente'])
 
-    # -- Al vencer: firme, a gastos comunes, y se le explica al residente ----
+    # -- Al vencer: el cobro queda suspendido --------------------------------
 
-    def test_al_vencer_la_multa_queda_firme_y_se_avisa_al_residente(self):
+    def test_al_vencer_la_multa_no_queda_firme_y_se_avisa_al_residente(self):
         multa = self._apelacion(-timedelta(hours=1))
 
-        cerradas = firmar_apelaciones_sin_respuesta(self.condominio)
+        marcadas = suspender_apelaciones_sin_respuesta(self.condominio)
 
-        self.assertEqual(cerradas, [multa])
+        self.assertEqual(marcadas, [multa])
         multa.refresh_from_db()
-        self.assertEqual(multa.estado, EstadoMulta.FIRME)
-        self.assertEqual(multa.descargo.resolucion, ResolucionDescargo.SIN_RESPUESTA)
-        self.assertTrue(multa.actas_selladas.filter(tipo_acto=TipoActo.FIRMEZA_SIN_RESPUESTA_COMITE).exists())
+        self.assertEqual(multa.estado, EstadoMulta.CON_DESCARGO, 'sin resolucion expresa no hay cobro')
+        self.assertEqual(multa.descargo.resolucion, ResolucionDescargo.PENDIENTE, 'el Comite aun puede resolver')
+        self.assertTrue(multa.actas_selladas.filter(tipo_acto=TipoActo.SUSPENSION_SIN_RESPUESTA_COMITE).exists())
         self.assertEqual(len(mail.outbox), 1)
         correo = mail.outbox[0]
         self.assertEqual(correo.to, ['apelante@test.local'])
-        self.assertIn('no resolvio su apelacion', correo.body)
-        self.assertIn('gastos comunes', correo.body)
+        self.assertIn('no se le cobra', correo.body)
+        self.assertIn('Juzgado de Policia Local', correo.body)
 
-    def test_un_aviso_de_cortesia_vencido_queda_sin_cobro(self):
-        multa = self._apelacion(-timedelta(hours=1), cortesia=True)
-        firmar_apelaciones_sin_respuesta(self.condominio)
+    def test_el_aviso_al_residente_no_se_repite(self):
+        self._apelacion(-timedelta(hours=1))
+        suspender_apelaciones_sin_respuesta(self.condominio)
+        self.assertEqual(suspender_apelaciones_sin_respuesta(self.condominio), [])
+        self.assertEqual(len(mail.outbox), 1)
+
+    def test_el_resumen_sigue_marcando_el_vencido_como_urgente(self):
+        multa = self._apelacion(-timedelta(hours=1))
+        suspender_apelaciones_sin_respuesta(self.condominio)
+        resumen = resumen_para_comite(self.condominio)
+        self.assertTrue(resumen['urgente'])
+        self.assertIn('VENCIDO', ' '.join(resumen['puntos']))
         multa.refresh_from_db()
-        self.assertEqual(multa.estado, EstadoMulta.CORTESIA)
-        self.assertIn('sin cobro', mail.outbox[0].body)
+        self.assertFalse(Multa.objects.filter(id=multa.id, estado=EstadoMulta.FIRME).exists())
 
     def test_si_no_ha_vencido_no_se_toca(self):
         multa = self._apelacion(timedelta(days=1))
-        self.assertEqual(firmar_apelaciones_sin_respuesta(self.condominio), [])
+        self.assertEqual(suspender_apelaciones_sin_respuesta(self.condominio), [])
         multa.refresh_from_db()
         self.assertEqual(multa.estado, EstadoMulta.CON_DESCARGO)
 
-    def test_el_resumen_diario_cierra_los_vencidos_aunque_nadie_abra_la_app(self):
+    def test_el_resumen_diario_avisa_los_vencidos_aunque_nadie_abra_la_app(self):
         multa = self._apelacion(-timedelta(hours=1))
         call_command('enviar_resumenes', stdout=StringIO())
         multa.refresh_from_db()
-        self.assertEqual(multa.estado, EstadoMulta.FIRME)
+        self.assertEqual(multa.estado, EstadoMulta.CON_DESCARGO)
         self.assertTrue(any(c.to == ['apelante@test.local'] for c in mail.outbox))
 
-    def test_queda_listo_para_exportar_a_gastos_comunes(self):
+    def test_el_comite_puede_resolver_despues_del_plazo(self):
         multa = self._apelacion(-timedelta(hours=1))
-        firmar_apelaciones_sin_respuesta(self.condominio)
-        self.assertTrue(Multa.objects.filter(id=multa.id, estado=EstadoMulta.FIRME).exists())
-        self.assertIn('lista', ' '.join(resumen_para_administracion(self.condominio)['puntos']))
+        suspender_apelaciones_sin_respuesta(self.condominio)
+        self.client.force_authenticate(Usuario.objects.get(username='comite_p'))
+        r = self.client.post(f'/api/multas/{multa.id}/resolver-descargo/', {'resolucion': 'RECHAZADO'},
+                             format='json', SERVER_NAME='localhost')
+        self.assertEqual(r.status_code, 200, r.content)
+        multa.refresh_from_db()
+        self.assertEqual(multa.estado, EstadoMulta.FIRME)

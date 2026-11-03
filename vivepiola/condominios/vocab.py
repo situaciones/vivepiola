@@ -54,6 +54,24 @@ FRASES_DEFAULT = {
         'apelar y el {organo_sancionador} resolvera.'
     ),
     'notificacion_monto': 'Monto: {monto} {unidad_monto}',
+    # Contenido minimo de toda notificacion (orientacion legal recibida): el
+    # hecho con fecha y hora, las pruebas, la calificacion y a quien reclamar.
+    'notificacion_hecho_fecha': 'El hecho se registro el {fecha} a las {hora}{lugar}.',
+    'notificacion_antecedentes': 'Antecedentes del caso: {antecedentes}.',
+    'notificacion_calificacion': 'Calificacion de la falta: {gravedad}.',
+    'notificacion_jpl': (
+        'Si no esta de acuerdo con lo que resuelva el {organo_sancionador}, puede recurrir '
+        'al Juzgado de Policia Local de su comuna dentro de {meses} meses.'
+    ),
+    # Una advertencia la emite el sistema sin que una persona la revise: hay
+    # que decirlo y ofrecer esa revision (Ley 19.628 / 21.719).
+    'notificacion_automatizada': (
+        'Esta advertencia fue emitida de forma automatizada, a partir del reporte y '
+        'del reglamento de su comunidad. Usted puede pedir que una persona del '
+        '{organo_sancionador} revise el caso y presentar sus descargos desde el enlace, '
+        'dentro del plazo indicado. Mientras ese plazo corre, la advertencia no se '
+        'considera para futuras sanciones.'
+    ),
     # El aviso de cortesia tiene que decir tres cosas: que no se cobra, cuanto
     # se habria cobrado (sin ese numero el aviso no dice nada), y que la
     # proxima vez si se cobra. Si no, se lee como una multa y asusta igual.
@@ -75,7 +93,7 @@ FRASES_DEFAULT = {
         'Esta es la numero {numero}.'
     ),
     'notificacion_plazo': (
-        'Si desea presentar descargos, dispone de un plazo de {dias} dias corridos '
+        'Si desea presentar descargos, dispone de un plazo de {dias} dias {tipo_dias} '
         'desde esta notificacion, hasta el {fecha_limite}.'
     ),
     # El plazo no corre desde el envio sino desde el acuse, asi que el correo
@@ -92,7 +110,7 @@ FRASES_DEFAULT = {
         'modo que nadie pierde su defensa por un correo que no llego a tiempo.'
     ),
     'notificacion_plazo_sin_acuse': (
-        'Dispondra de {dias} dias corridos para presentar sus descargos, contados '
+        'Dispondra de {dias} dias {tipo_dias} para presentar sus descargos, contados '
         'desde que confirme la recepcion de esta notificacion.'
     ),
     'notificacion_canal_legal': 'Este correo constituye el canal legal de notificacion del sistema.',
@@ -109,7 +127,7 @@ FRASES_DEFAULT = {
     'pdf_label_organo': 'Aprobada por el Comite',
     'pdf_label_organo_automatica': 'Cursada automaticamente',
     'pdf_aviso_descargo': (
-        'Usted dispone de un plazo de {dias} dias corridos desde esta notificacion, '
+        'Usted dispone de un plazo de {dias} dias {tipo_dias} desde esta notificacion, '
         'es decir, hasta el {fecha_limite}, para presentar descargos ante el '
         '{organo_sancionador} a traves de la plataforma. Transcurrido este plazo sin '
         'descargos, la multa quedara firme y sera incorporada como obligacion '

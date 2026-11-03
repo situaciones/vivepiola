@@ -8,7 +8,7 @@ from rest_framework.response import Response
 from accounts.models import Rol
 from accounts.permissions import EsAdministrador, EsComiteOAdministrador
 
-from .models import EstadoInfraccion, InfraccionCatalogo, Reglamento
+from .models import EstadoInfraccion, InfraccionCatalogo, Reglamento, TipoNorma
 from .serializers import InfraccionCatalogoSerializer, ReglamentoSerializer
 from .utils import normalizar_sugerencia, sugerir_infracciones_desde_texto
 
@@ -37,6 +37,14 @@ class ReglamentoViewSet(viewsets.ModelViewSet):
         hasta que un humano las confirme (ver InfraccionCatalogoViewSet.confirmar).
         """
         reglamento = self.get_object()
+        # Solo el reglamento de copropiedad inscrito crea faltas y montos; las
+        # normas internas y las actas solo los detallan (Ley 21.442, art. 8 k
+        # y 17). Esos documentos los sigue usando el asistente como contexto.
+        if reglamento.tipo != TipoNorma.REGLAMENTO_COPROPIEDAD:
+            return Response({'detail': (
+                'Solo el reglamento de copropiedad puede crear faltas y montos. Este documento '
+                'queda como detalle y lo usa el asistente para responder, pero no genera faltas nuevas.'
+            )}, status=400)
         if not reglamento.texto_extraido:
             return Response({'detail': 'No se pudo extraer texto del PDF de este reglamento.'}, status=400)
 
@@ -128,6 +136,9 @@ class InfraccionCatalogoViewSet(viewsets.ModelViewSet):
         pueda ser usada como fundamento de una multa.
         """
         infraccion = self.get_object()
+        motivo = infraccion.motivo_sin_base_legal()
+        if motivo:
+            return Response({'detail': motivo}, status=400)
         infraccion.estado = EstadoInfraccion.ACTIVA
         infraccion.confirmado_por = request.user
         infraccion.fecha_confirmacion = timezone.now()

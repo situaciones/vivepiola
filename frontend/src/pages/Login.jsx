@@ -15,7 +15,8 @@ const CON_GOOGLE = Boolean(GOOGLE_CLIENT_ID) || import.meta.env.DEV;
 // describe lo que el sistema hace de verdad: la IA propone con el catalogo que
 // el Comite confirmo, la advertencia sin cobro sale sola, toda multa con cobro
 // la aprueba la mayoria del Comite (Ley 21.442), las apelaciones las resuelven
-// personas y las actas quedan selladas.
+// personas y las actas quedan selladas. Sin frases absolutas ("nadie puede..."):
+// una multa si se puede corregir por resolucion del Comite o de un juez.
 const PASOS = [
   {
     titulo: 'Se reporta con pruebas',
@@ -34,8 +35,8 @@ const PASOS = [
     texto: 'Tu versión siempre cuenta. Apelas desde el mismo aviso y tu apelación la deciden personas del Comité, no la IA, con sus fundamentos por escrito.',
   },
   {
-    titulo: 'Nadie puede cambiar la historia',
-    texto: 'Cada paso queda sellado con fecha y hora. Ni la administración ni el Comité pueden borrarlo ni modificarlo.',
+    titulo: 'Cada acuerdo queda registrado y auditable',
+    texto: 'Quién reportó, quién votó y qué se resolvió queda sellado con fecha y hora. Si el Comité o un juez corrige una multa, la corrección también queda escrita.',
   },
 ];
 

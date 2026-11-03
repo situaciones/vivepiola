@@ -51,7 +51,7 @@ class DesignacionComiteTestCase(APITestCase):
             condominio=self.condominio, persona=self.personas[0],
         )
         self.infraccion = InfraccionCatalogo.objects.create(
-            condominio=self.condominio, codigo='R-1', descripcion='Ruidos molestos', monto=1,
+            condominio=self.condominio, codigo='R-1', descripcion='Ruidos molestos', monto=1, articulo_referencia='Art. 15',
         )
 
     def _designar(self, personas=None, desde=None, hasta=None):

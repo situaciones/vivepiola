@@ -219,7 +219,8 @@ class ResolucionDescargo(models.TextChoices):
     CORTESIA = 'CORTESIA', 'Parte de cortesia (falta acreditada, sin cobro)'
     # El Comite no respondio dentro de su plazo: la multa queda firme y se le
     # explica al residente que va a gastos comunes por esa falta de respuesta.
-    SIN_RESPUESTA = 'SIN_RESPUESTA', 'Sin respuesta del Comite en plazo (multa firme)'
+    # Historico: antes de suspender el cobro, el silencio del Comite dejaba la multa firme.
+    SIN_RESPUESTA = 'SIN_RESPUESTA', 'Sin respuesta del Comite en plazo (regla anterior)'
 
 
 class Descargo(models.Model):
@@ -247,6 +248,9 @@ class Descargo(models.Model):
     # Hasta cuando tiene el Comite para resolver. Se fija al presentarse la
     # apelacion: el plazo obliga a las dos partes, no solo al residente.
     fecha_limite_resolucion = models.DateTimeField(null=True, blank=True)
+    # Cuando se le aviso al residente que el Comite no respondio a tiempo y
+    # su cobro quedo suspendido. Evita repetir ese correo cada dia.
+    aviso_vencimiento_en = models.DateTimeField(null=True, blank=True)
 
     @property
     def resolucion_vencida(self):
@@ -481,6 +485,9 @@ class TipoActo(models.TextChoices):
     FIRMEZA_AUTOMATICA = 'FIRMEZA_AUTOMATICA', 'Firmeza automatica por vencimiento de plazo'
     FIRMEZA_SIN_RESPUESTA_COMITE = (
         'FIRMEZA_SIN_RESPUESTA_COMITE', 'Firme porque el Comite no resolvio la apelacion en plazo'
+    )
+    SUSPENSION_SIN_RESPUESTA_COMITE = (
+        'SUSPENSION_SIN_RESPUESTA', 'Cobro suspendido porque el Comite no resolvio la apelacion en plazo'
     )
     CONFIRMACION_PREVIA_COBRO = 'CONFIRMACION_PREVIA_COBRO', 'Confirmacion antes del cobro'
     # Carril de contencion (manifiesto polimorfico tipo CONTENCION)

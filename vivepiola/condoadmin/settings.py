@@ -305,6 +305,10 @@ FRONTEND_URL = config('FRONTEND_URL', default='https://sinconflicto.cl')
 
 NOVEDADES_PLAZO_RESPUESTA_DIAS = config('NOVEDADES_PLAZO_RESPUESTA_DIAS', default=20, cast=int)
 REINCIDENCIA_VENTANA_MESES = config('REINCIDENCIA_VENTANA_MESES', default=6, cast=int)
+# Plazo para reclamar ante el Juzgado de Policia Local, que toda notificacion
+# de multa debe informar (Ley 21.442). Se configura para corregirlo sin tocar
+# codigo si el abogado lo precisa.
+PLAZO_RECLAMO_JPL_MESES = config('PLAZO_RECLAMO_JPL_MESES', default=3, cast=int)
 
 # Confianza minima (0-100) del clasificador para notificar una denuncia sin que
 # una persona la tipifique antes.

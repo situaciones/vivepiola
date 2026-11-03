@@ -20,6 +20,8 @@ from django.test import override_settings
 from django.utils import timezone
 from rest_framework.test import APITestCase
 
+from multas.plazos import sumar_dias_habiles
+
 from accounts.models import Rol, Usuario
 from condominios.models import Condominio, Persona, RolOcupacion, Unidad
 from multas.models import (
@@ -110,8 +112,11 @@ class NotificacionFehacienteTestCase(APITestCase):
         multa.refresh_from_db()
         self.assertIsNotNone(multa.fecha_acuse)
         self.assertEqual(multa.canal_acuse, CanalNotificacion.EMAIL)
-        esperado = multa.fecha_acuse + timedelta(days=5)
-        self.assertAlmostEqual(multa.fecha_limite_descargo, esperado, delta=timedelta(seconds=5))
+        # El plazo corre en dias habiles desde el acuse.
+        self.assertEqual(
+            multa.fecha_limite_descargo,
+            sumar_dias_habiles(multa.fecha_acuse, self.condominio.plazo_descargo_dias),
+        )
 
         multa.fecha_limite_descargo = timezone.now() - timedelta(minutes=1)
         multa.save(update_fields=['fecha_limite_descargo'])

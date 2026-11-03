@@ -54,10 +54,11 @@ def resumen_para_comite(condominio):
         puntos.append(f'{_linea(contenciones, "paralizacion", "paralizaciones")} esperando tu ratificacion')
     if vencidos:
         puntos.append(
-            f'{_linea(vencidos, "apelacion", "apelaciones")} con el plazo de respuesta VENCIDO'
+            f'URGENTE: {_linea(vencidos, "apelacion", "apelaciones")} con el plazo de respuesta VENCIDO. '
+            'El cobro queda suspendido hasta que las resuelvas'
         )
     if por_vencer:
-        puntos.append(_linea_por_vencer(por_vencer, 'Si no las resuelves, quedan firmes y se cobran en gastos comunes.'))
+        puntos.append(_linea_por_vencer(por_vencer, 'Si no las resuelves a tiempo, el cobro queda suspendido hasta que lo hagas.'))
     if en_revision:
         puntos.append(f'{_linea(en_revision, "caso", "casos")} por revisar')
     if descargos:
@@ -126,7 +127,7 @@ def resumen_para_administracion(condominio):
     puntos = []
     if por_vencer:
         puntos.append(_linea_por_vencer(
-            por_vencer, 'Recuerdaselo al Comite: si no las resuelve, quedan firmes y se cobran.',
+            por_vencer, 'Recuerdaselo al Comite: si no las resuelve, el cobro queda suspendido.',
         ))
     if apelaciones_vencidas:
         puntos.append(

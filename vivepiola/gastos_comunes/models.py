@@ -22,6 +22,18 @@ class LoteExportacion(models.Model):
     def __str__(self):
         return f'Lote {self.periodo} - {self.condominio.nombre}'
 
+    def totales_por_unidad(self):
+        """
+        Suma por unidad de monto (UF, UTM, CLP). No se mezclan: 1 UF y 1.000
+        pesos no suman 1.001 de nada. La conversion a pesos la hace el sistema
+        de gastos comunes con el valor del dia en que emite el aviso de cobro.
+        """
+        totales = {}
+        for cargo in self.cargos.select_related('multa__infraccion'):
+            unidad = cargo.unidad_monto
+            totales[unidad] = totales.get(unidad, 0) + cargo.monto
+        return totales
+
 
 class CargoGastoComun(models.Model):
     """Linea individual: una multa firme exportada como cargo de gastos comunes."""
@@ -34,3 +46,8 @@ class CargoGastoComun(models.Model):
 
     def __str__(self):
         return f'Cargo multa #{self.multa_id} - {self.unidad.identificador}'
+
+    @property
+    def unidad_monto(self):
+        infraccion = self.multa.infraccion
+        return infraccion.unidad_monto if infraccion else 'UF'

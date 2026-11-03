@@ -1,6 +1,7 @@
 from decimal import Decimal
 
 from django.conf import settings
+from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 
 # La base normativa transversal de Chile vive en su propio modulo porque no
@@ -107,6 +108,11 @@ class InfraccionCatalogo(models.Model):
     descripcion = models.CharField(max_length=500)
     articulo_referencia = models.CharField(max_length=100, blank=True)
     monto = models.DecimalField(max_digits=12, decimal_places=2)
+    # Rango que fija el reglamento para esta falta. El Comite puede graduar la
+    # multa dentro de el, nunca fuera (no discriminacion arbitraria, Ley 21.442).
+    # Vacios: no hay rango y se aplica el monto tal cual.
+    monto_minimo = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True)
+    monto_maximo = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True)
     unidad_monto = models.CharField(
         max_length=10,
         choices=[('CLP', 'Pesos chilenos'), ('UF', 'UF'), ('UTM', 'UTM')],
@@ -116,7 +122,11 @@ class InfraccionCatalogo(models.Model):
     # Multiplicador aplicado automaticamente al monto cuando la unidad reincide
     # en esta infraccion dentro de la ventana legal (Ley 21.442). 1.00 = sin
     # agravante automatico (el Comite decide); 2.00 = doble, etc.
-    factor_reincidencia = models.DecimalField(max_digits=4, decimal_places=2, default=Decimal('1.00'))
+    # Tope: la reincidencia permite a lo mas doblar la multa.
+    factor_reincidencia = models.DecimalField(
+        max_digits=4, decimal_places=2, default=Decimal('1.00'),
+        validators=[MinValueValidator(Decimal('1.00')), MaxValueValidator(Decimal('2.00'))],
+    )
     estado = models.CharField(max_length=20, choices=EstadoInfraccion.choices, default=EstadoInfraccion.BORRADOR)
     # Contencion: la calificacion juridica se hace EN FRIO al configurar el
     # catalogo, nunca en terreno. Si conlleva_contencion=True, reportar este
@@ -144,3 +154,39 @@ class InfraccionCatalogo(models.Model):
 
     def __str__(self):
         return f'{self.codigo} - {self.descripcion[:60]}'
+
+    def rango_monto(self):
+        """(minimo, maximo) en que el Comite puede graduar la multa."""
+        return (self.monto_minimo or self.monto, self.monto_maximo or self.monto)
+
+    def motivo_monto_fuera_de_rango(self, monto):
+        minimo, maximo = self.rango_monto()
+        if minimo <= monto <= maximo:
+            return ''
+        if minimo == maximo:
+            return (
+                f'El reglamento fija {self.monto} {self.unidad_monto} para esta falta y no permite '
+                'otro monto.'
+            )
+        return (
+            f'El reglamento permite entre {minimo} y {maximo} {self.unidad_monto} para esta falta: '
+            'el monto tiene que estar dentro de ese rango.'
+        )
+
+    def motivo_sin_base_legal(self):
+        """
+        Por que esta falta no puede activarse, o cadena vacia si puede.
+
+        Solo el reglamento de copropiedad inscrito (o la ley) puede crear faltas
+        y montos; las normas internas, instructivos y actas solo detallan las
+        que ya existen.
+        """
+        if not (self.articulo_referencia or '').strip():
+            return 'Indica el articulo del reglamento de copropiedad (o de la ley) en que se funda esta falta.'
+        if self.reglamento_id and self.reglamento.tipo != TipoNorma.REGLAMENTO_COPROPIEDAD:
+            return (
+                f'Esta falta salio de "{self.reglamento.get_tipo_display()}". Las normas internas y los '
+                'acuerdos solo detallan faltas que ya estan en el reglamento de copropiedad: no pueden '
+                'crear faltas ni montos nuevos.'
+            )
+        return ''
