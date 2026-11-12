@@ -27,13 +27,32 @@ import './LandingMinimal.css';
  * medidas declaradas evitan que el texto salte cuando cargan.
  */
 
-// Fichas de la app en las tiendas. La de Play sale del applicationId
-// (cl.sinconflicto.app); la de App Store la asigna Apple al crear la app en
-// App Store Connect: hay que reemplazar el id cuando exista.
+// Fichas de la app en las tiendas, las mismas variables que usa DescargarApp.
+// Se configuran al publicar (VITE_URL_GOOGLE_PLAY, VITE_URL_APP_STORE).
+// Mientras falten, la insignia dice "Muy pronto" y no enlaza: decir
+// "Disponible en" para una app que no esta publicada es una promesa falsa.
 const TIENDAS = {
-  android: 'https://play.google.com/store/apps/details?id=cl.sinconflicto.app',
-  iphone: 'https://apps.apple.com/cl/app/sinconflicto/id0000000000',
+  android: import.meta.env.VITE_URL_GOOGLE_PLAY || '',
+  iphone: import.meta.env.VITE_URL_APP_STORE || '',
 };
+const APP_PUBLICADA = Boolean(TIENDAS.android || TIENDAS.iphone);
+
+function Tienda({ url, logo, arriba, nombre }) {
+  if (!url) {
+    return (
+      <span className="tienda tienda-pronto" aria-label={`Muy pronto en ${nombre}`}>
+        {logo}
+        <span><small>Muy pronto en</small>{nombre}</span>
+      </span>
+    );
+  }
+  return (
+    <a className="tienda" href={url} target="_blank" rel="noopener noreferrer">
+      {logo}
+      <span><small>{arriba}</small>{nombre}</span>
+    </a>
+  );
+}
 
 const PANTALLAS = [
   {
@@ -290,16 +309,14 @@ export default function Landing() {
             te necesita.
           </p>
           <div className="tiendas">
-            <a className="tienda" href={TIENDAS.android} target="_blank" rel="noopener noreferrer">
-              <LogoPlay />
-              <span><small>Disponible en</small>Google Play</span>
-            </a>
-            <a className="tienda" href={TIENDAS.iphone} target="_blank" rel="noopener noreferrer">
-              <LogoApple />
-              <span><small>Descárgala en</small>App Store</span>
-            </a>
+            <Tienda url={TIENDAS.android} logo={<LogoPlay />} arriba="Disponible en" nombre="Google Play" />
+            <Tienda url={TIENDAS.iphone} logo={<LogoApple />} arriba="Descárgala en" nombre="App Store" />
           </div>
-          <p className="descarga-nota">Android y iPhone. También funciona desde el navegador.</p>
+          <p className="descarga-nota">
+            {APP_PUBLICADA
+              ? 'Android y iPhone. También funciona desde el navegador.'
+              : 'Mientras tanto, funciona desde el navegador del celular, sin instalar nada.'}
+          </p>
         </div>
       </section>
 
