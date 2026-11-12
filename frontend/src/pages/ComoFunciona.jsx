@@ -18,7 +18,7 @@ import './ComoFunciona.css';
  * LAS CIFRAS SALEN DEL CODIGO, NO DE LO QUE SUENA BIEN:
  *   65 / 80 / 90 -> settings.CURSE_CONFIANZA_MINIMA
  *   2 cortesias  -> Condominio.cortesias_antes_de_multar
- *   5 dias       -> Condominio.plazo_descargo_dias
+ *   10 dias      -> Condominio.plazo_descargo_dias (habiles)
  *   15 dias      -> Condominio.plazo_resolucion_dias
  * Son los valores por defecto y cada comunidad los ajusta. Si cambian en el
  * backend tienen que cambiar aca: una pagina publica que promete cinco dias
@@ -70,7 +70,7 @@ const PASOS = [
     tab: 'Apelacion',
     titulo: 'Puede apelar, y con pruebas',
     frase: 'Un formulario para sus descargos y para subir el material que lo respalde. Si prefiere hablarlo, agenda una reunion en linea o presencial.',
-    dato: { valor: '5', pie: 'dias para apelar, desde el acuse' },
+    dato: { valor: '10', pie: 'dias habiles para apelar, desde el acuse' },
     nota: 'Lo que aporte entra al expediente, y el comite lo tiene que mirar.',
   },
   {
@@ -98,6 +98,131 @@ const PASOS = [
     nota: 'Se cierra sellado en cadena: alterar un paso pasado la rompe entera y se nota.',
   },
 ];
+
+/*
+ * LA IA, CONTADA DESDE SUS FUENTES.
+ *
+ * La unidad base es el caso, y cada capa dice de donde sale. Dos reglas:
+ *  - "Agente" solo para el asistente, que elige que herramienta usar. Las
+ *    demas funciones son consultas guiadas; llamarlas agentes coordinados
+ *    seria prometer algo que el producto no hace.
+ *  - Mientras la IA no este activa en produccion (VITE_IA_ACTIVA distinto de
+ *    'true'), la seccion lo dice: cada caso llega ordenado al Comite.
+ */
+const IA_ACTIVA = import.meta.env.VITE_IA_ACTIVA === 'true';
+
+const CAPAS = [
+  { nombre: 'Ley', aporta: 'Plazos, derecho a defensa y quien decide.', fuente: 'Ley 21.442 y su reglamento' },
+  { nombre: 'Reglamento', aporta: 'Que conductas son falta en su comunidad.', fuente: 'Reglamento de copropiedad inscrito' },
+  { nombre: 'Catalogo de faltas', aporta: 'Montos, gravedad y cortesia.', fuente: 'Catalogo confirmado por el Comite' },
+  { nombre: 'Evidencia', aporta: 'Fotos y videos con huella digital.', fuente: 'Lo que sube quien reporta' },
+  { nombre: 'Historial', aporta: 'Cortesias usadas y faltas previas de la unidad.', fuente: 'Casos cerrados de la comunidad' },
+];
+
+// Ficha de ejemplo: datos inventados a proposito, y rotulados como tales.
+// Nunca una captura de un caso real.
+const FICHA = [
+  { et: 'Hecho', valor: 'Auto estacionado sobre la rampa de acceso, con foto', fuente: 'Reporte del conserje' },
+  { et: 'Falta propuesta', valor: 'Obstruir accesos comunes', fuente: 'Reglamento, art. 24 (ejemplo)' },
+  { et: 'Consecuencia', valor: 'Aviso de cortesia, sin cobro', fuente: 'Catalogo: primera falta en 6 meses' },
+  { et: 'Plazo para apelar', valor: '10 dias habiles desde que confirma', fuente: 'Ley 21.442 y regla de la comunidad' },
+  { et: 'Decision', valor: 'Pendiente: 1 de 2 votos necesarios', fuente: 'Votos del Comite, registrados' },
+];
+
+const FUNCIONES = [
+  { titulo: 'Propone la regla que aplica', texto: 'Lee el reporte sin datos personales y propone una falta del catalogo, con su articulo.' },
+  { titulo: 'Lee la evidencia', texto: 'Describe lo que se ve en fotos y video. No identifica personas.' },
+  { titulo: 'Arma el primer catalogo', texto: 'Extrae posibles faltas de su reglamento. Su Comite las revisa y confirma.' },
+  { titulo: 'Un agente que responde', texto: 'El asistente busca en sus casos, su reglamento y la ley, y responde solo con lo que usted puede ver.' },
+];
+
+function ComoFuncionaIA() {
+  return (
+    <section className="doc-ia" aria-labelledby="ia-titulo">
+      <div className="doc-ia-in">
+        <span className="ia-et">Como funciona la IA</span>
+        <h2 id="ia-titulo">Cada caso, cruzado<br /><span className="acento">con las reglas de su comunidad.</span></h2>
+        <p className="ia-bajada">
+          La IA lee el reporte y lo compara con la ley, su reglamento y el catalogo
+          que aprobo su Comite. Cada propuesta muestra la regla de donde sale.
+        </p>
+        {!IA_ACTIVA && (
+          <p className="ia-aviso">
+            Estamos activando la IA por etapas. Mientras tanto, cada caso llega
+            ordenado al Comite, que decide.
+          </p>
+        )}
+
+        <h3 className="ia-sub">Nuestra unidad base: el caso</h3>
+        <div className="capas">
+          {CAPAS.map((c) => (
+            <div className="capa" key={c.nombre}>
+              <b>{c.nombre}</b>
+              <span>{c.aporta}</span>
+              <small>Fuente: {c.fuente}</small>
+            </div>
+          ))}
+        </div>
+
+        <figure className="ficha">
+          <div className="ficha-cab">
+            <span>Caso de ejemplo</span>
+            <b>Unidad 402 · Estacionamientos</b>
+          </div>
+          <dl>
+            {FICHA.map((f) => (
+              <div className="ficha-fila" key={f.et}>
+                <dt>{f.et}</dt>
+                <dd>{f.valor}<small>{f.fuente}</small></dd>
+              </div>
+            ))}
+          </dl>
+          <figcaption>Caso ficticio. Cada valor muestra la regla o el documento que lo respalda.</figcaption>
+        </figure>
+
+        <h3 className="ia-sub">Que hace la IA</h3>
+        <div className="funciones">
+          {FUNCIONES.map((f) => (
+            <div className="funcion" key={f.titulo}>
+              <b>{f.titulo}</b>
+              <span>{f.texto}</span>
+            </div>
+          ))}
+        </div>
+
+        <div className="dos-col">
+          <div>
+            <span className="col-et">Respaldo trazable</span>
+            <ul>
+              <li><b>Con fuente:</b> cada propuesta cita el articulo y su texto.</li>
+              <li><b>Sin datos personales:</b> el relato llega a la IA sin nombres, RUT, correos, telefonos ni patentes.</li>
+              <li><b>Con decision humana:</b> ninguna multa con cobro se aplica sin la mayoria del Comite.</li>
+            </ul>
+          </div>
+          <div>
+            <span className="col-et">No hace</span>
+            <ul>
+              <li>No inventa reglas ni montos.</li>
+              <li>No identifica personas en las imagenes.</li>
+              <li>No resuelve apelaciones.</li>
+              <li>No cobra.</li>
+            </ul>
+          </div>
+        </div>
+
+        <div className="ia-faq">
+          <h3>¿Por que confiar en la IA?</h3>
+          <p>
+            Porque no decide sola ni inventa reglas. Solo puede proponer faltas que
+            existen en el catalogo confirmado por su Comite, y siempre muestra el
+            articulo en que se apoya. Si la propuesta no calza, el Comite la corrige
+            o la rechaza antes de que alguien sea notificado.
+          </p>
+        </div>
+      </div>
+    </section>
+  );
+}
 
 function Banda({ imagen, alt, tono }) {
   return (
@@ -235,33 +360,7 @@ export default function ComoFunciona() {
         alt="Fila de buzones metalicos en un hall a oscuras, uno entreabierto con un sobre."
       />
 
-      {/* ---------- Que hace y que no hace la IA ---------- */}
-      <section className="doc-ia">
-        <div className="doc-ia-in">
-          <h2>Que hace la IA<br /><span className="acento">y que no hace.</span></h2>
-          <div className="dos-col">
-            <div>
-              <span className="col-et">Hace</span>
-              <ul>
-                <li>Lee el reglamento y propone el catalogo, que aprueba una persona.</li>
-                <li>Busca el pasaje que corresponde y lo cita.</li>
-                <li>Describe lo que se ve en fotos y video.</li>
-                <li>Reconoce dos reportes del mismo hecho.</li>
-              </ul>
-            </div>
-            <div>
-              <span className="col-et">No hace</span>
-              <ul>
-                <li>No inventa reglas ni montos.</li>
-                <li>No identifica personas en las imagenes.</li>
-                <li>No resuelve apelaciones.</li>
-                <li>No cobra.</li>
-              </ul>
-            </div>
-          </div>
-          <p className="frase-final">El sistema no decide. Aplica lo que ya estaba escrito.</p>
-        </div>
-      </section>
+      <ComoFuncionaIA />
 
       <Banda
         imagen="pasillo"
